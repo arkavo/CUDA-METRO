@@ -89,6 +89,8 @@ class MonteCarlo:
             M = 0.0
             X = 0.0
             generate_random_numbers(self, self.stability_runs*self.stability_wrap, self.stability_runs*self.Blocks)
+            dev.memcpy_htod(self.BJ,T)
             for j in range(stability_runs):
-                mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ)
+                mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[i*self.Blocks:(i+1)*self.Blocks-1], self.S1FULL[i*self.Blocks:(i+1)*self.Blocks-1], self.S2FULL[i*self.Blocks:(i+1)*self.Blocks-1], self.S3FULL[i*self.Blocks:(i+1)*self.Blocks-1], self.RLIST[i*self.Blocks:(i+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_UVEC, self.b, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(Threads,1,1), grid=(self.stability_runs*self.Blocks,1,1))
 
