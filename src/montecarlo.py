@@ -28,6 +28,15 @@ dev_hamiltonian = SourceModule("""
 //cuda
 #include <curand.h>
 #include <cuda_runtime.h>
+//Lattice Utility
+__global__ void cp_grid(float_t* grid, float_t* tf)
+{
+    int idx = blockIdx.x;
+    int threadID = idx;
+    grid[int(tf[threadID*4])*3] = tf[threadID*4+1];
+    grid[int(tf[threadID*4])*3+1] = tf[threadID*4+2];
+    grid[int(tf[threadID*4])*3+2] = tf[threadID*4+3];
+}
 //Vector preprocessing
 __global__ void uvec_processor(float* u, float* v, float* s1, float* s2, float* s3, float spin)
 {
@@ -213,6 +222,8 @@ __global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t
     }
 //!cuda
 """)
+
+GRID_COPY = dev_hamiltonian.get_function("cp_grid")
 
 NPREC = dev_hamiltonian.get_function("NList_processor")
 VPREC = dev_hamiltonian.get_function("uvec_processor")

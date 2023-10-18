@@ -72,6 +72,8 @@ class MonteCarlo:
 
     def mc_init(self):
         self.grid = np.zeros((self.size*self.size), dtype=np.float32)
+        self.TMATRIX = np.zeros((Blocks, 4)).astype(np.float32)
+        self.GPU_TRANS = drv.mem_alloc(TMATRIX.nbytes)
         if self.FM_Flag:
             mc.FM_N(self.grid)
         else:
