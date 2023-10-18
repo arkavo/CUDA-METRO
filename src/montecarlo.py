@@ -175,7 +175,7 @@ __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm0(float_t* mat, float_t* sheet, 
 }
 
 //Monte Carlo
-__global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, int *N1list, int *N2list, int *N3list, int *N4list, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* NVEC, float* B, int size)
+__global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* NVEC, float* B, int size)
     {
         __shared__ float L0;
         __shared__ float L1;
