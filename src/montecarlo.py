@@ -38,14 +38,14 @@ __global__ void cp_grid(float_t* grid, float_t* tf)
     grid[int(tf[threadID*4])*3+2] = tf[threadID*4+3];
 }
 //Vector preprocessing
-__global__ void uvec_processor(float* u, float* v, float* s1, float* s2, float* s3, float spin)
+__global__ void uvec_processor(float* u, float* v, float* s1, float* s2, float* s3, float* spin)
 {
     int idx = blockIdx.x;
     float phi = 2.0*3.14159265359*u[idx];
-    float theta = acosf(2.0*v[idx] - 1);
-    s1[idx] = spin*sinf(theta)*cosf(phi);
-    s2[idx] = spin*sinf(theta)*sinf(phi);
-    s3[idx] = spin*cosf(theta);
+    float theta = acosf(2.0*v[idx] - 1.0);
+    s1[idx] = spin[0]*sinf(theta)*cosf(phi);
+    s2[idx] = spin[0]*sinf(theta)*sinf(phi);
+    s3[idx] = spin[0]*cosf(theta);
 }
 
 __global__ void NList_processor(float* nlist, int* res, int* __SIZE)
@@ -110,7 +110,7 @@ __device__ void N4_6_6_6_12(int n, int size, int* NLIST)
 }
 
 //Hamiltonians
-__device__ float_t hamiltonian_tc_2d_6_6_6_12_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* n_vec, float* b, int size)
+__device__ float_t hamiltonian_tc_2d_6_6_6_12_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* NVEC, float* b, int size)
 {
     float H = 0.0;
     float d_plane = mat[25];
@@ -128,7 +128,10 @@ __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm1(float_t* mat, float_t* sheet, 
     for(int i=0; i<6; i++)
     {
         H += mat[1]*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]) + mat[5]*spinx*sheet[n1list[i]*3] + mat[6]*spiny*sheet[n1list[i]*3+1] + mat[7]*spinz*sheet[n1list[i]*3+2];
-        H += d_plane*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2])*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]);
+        float CRijx = (spinz*sheet[n1list[i]*3+1] - spiny*sheet[n1list[i]*3+2]) * NVEC[i*3];
+        float CRijy = (spinx*sheet[n1list[i]*3+2] - spinz*sheet[n1list[i]*3]) * NVEC[i*3+1];
+        float CRijz = (spiny*sheet[n1list[i]*3] - spinx*sheet[n1list[i]*3+1]) * NVEC[i*3+2];
+        H += d_plane*(CRijx+CRijy+CRijz);
     }
     for(int i=0; i<6; i++)
     {
@@ -150,7 +153,6 @@ __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm1(float_t* mat, float_t* sheet, 
 __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm0(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* n_vec, float* b, int size)
 {
     float H = 0.0;
-    float d_plane = mat[25];
 
     int n1list[6];
     int n2list[6];
@@ -184,7 +186,7 @@ __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm0(float_t* mat, float_t* sheet, 
 }
 
 //Monte Carlo
-__global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* NVEC, float* B, int size)
+__global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* NVEC, float* B, int* size)
     {
         __shared__ float L0;
         __shared__ float L1;
@@ -195,11 +197,11 @@ __global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t
         int tidx = threadIdx.x;
         if (tidx == 0)
         {  
-            L0 = hamiltonian_tc_2d_6_6_6_12_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size);
+            L0 = hamiltonian_tc_2d_6_6_6_12_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size[0]);
         }
         if (tidx == 1)
         {
-            L1 = hamiltonian_tc_2d_6_6_6_12_dm1(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], NVEC, B, size);
+            L1 = hamiltonian_tc_2d_6_6_6_12_dm1(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], NVEC, B, size[0]);
         }
         __syncthreads();
 
@@ -229,4 +231,6 @@ NPREC = dev_hamiltonian.get_function("NList_processor")
 VPREC = dev_hamiltonian.get_function("uvec_processor")
 
 
+#METROPOLIS_MC_DM0_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm0_6_6_6_12")
 METROPOLIS_MC_DM1_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm1_6_6_6_12")
+
