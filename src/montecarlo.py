@@ -109,6 +109,66 @@ __device__ void N4_6_6_6_12(int n, int size, int* NLIST)
     NLIST[11] = ((row+2)*size+ col+3 + size*size)%(size*size);
 }
 
+__device__ void N1_4_4_4_8(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row-1)*size + col   + size*size)%(size*size);
+    NLIST[1] = ((row  )*size + col-1 + size*size)%(size*size);
+    NLIST[2] = ((row+1)*size + col   + size*size)%(size*size);
+    NLIST[3] = ((row  )*size + col+1 + size*size)%(size*size);
+}
+
+__device__ void N2_4_4_4_8(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row-1)*size + col-1 + size*size)%(size*size);
+    NLIST[1] = ((row-1)*size + col+1 + size*size)%(size*size);
+    NLIST[2] = ((row+1)*size + col-1 + size*size)%(size*size);
+    NLIST[3] = ((row+1)*size + col+1 + size*size)%(size*size);
+}
+
+__device__ void N3_4_4_4_8(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row-2)*size + col   + size*size)%(size*size);
+    NLIST[1] = ((row  )*size + col-2 + size*size)%(size*size);
+    NLIST[2] = ((row+2)*size + col   + size*size)%(size*size);
+    NLIST[3] = ((row  )*size + col+2 + size*size)%(size*size);
+}
+
+__device__ void N4_4_4_4_8(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row-2)*size + col-1 + size*size)%(size*size);
+    NLIST[1] = ((row-1)*size + col-2 + size*size)%(size*size);
+    NLIST[2] = ((row-2)*size + col+1 + size*size)%(size*size);
+    NLIST[3] = ((row-1)*size + col+2 + size*size)%(size*size);
+    NLIST[4] = ((row+1)*size + col-2 + size*size)%(size*size);
+    NLIST[5] = ((row+2)*size + col-1 + size*size)%(size*size);
+    NLIST[6] = ((row+1)*size + col+2 + size*size)%(size*size);
+    NLIST[7] = ((row+2)*size + col+1 + size*size)%(size*size);
+}
+
+__device__ void N1_2_4_2_4(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row  )*size + col-1 + size*size)%(size*size);
+    NLIST[1] = ((row  )*size + col+1 + size*size)%(size*size);
+}
+
+__device__ void N2_2_4_2_4(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row+(size/2)*(row<(size/2)) + -(row>(size/2))*(1+(size/2)))*size + col -(row<(size/2)) + size*size)%(size*size);
+    NLIST[1] = ((row+(size/2)*(row<(size/2)) + -(row>(size/2))*(1+(size/2)))*size + col +                 size*size)%(size*size);
+}
+
 //Hamiltonians
 __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* NVEC, float* b, int size)
 {
