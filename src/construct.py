@@ -109,7 +109,7 @@ class MonteCarlo:
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         drv.memcpy_htod(self.GRID_GPU, self.grid)
     
-    def run_mc_tc(self, T):
+    def run_mc_tc_66612(self, T):
         for i in tqdm(range(self.S_Wrap), desc="Stabilizing...", colour="blue"):
             mag_fluc =  np.zeros(self.calculation_runs)
             M = 0.0
@@ -121,6 +121,21 @@ class MonteCarlo:
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
+    
+    def run_mc_tc_4448(self, T):
+        for i in tqdm(range(self.S_Wrap), desc="Stabilizing...", colour="blue"):
+            mag_fluc =  np.zeros(self.calculation_runs)
+            M = 0.0
+            X = 0.0
+            #generate_random_numbers(self, self.stability_runs*self.stability_wrap, self.stability_runs*self.Blocks)
+            drv.memcpy_htod(self.BJ,T[0])
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM1_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_4, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
+        
+    
     def dump_state():
         pass
 
@@ -140,7 +155,7 @@ class Analyze():
             shape = grid.shape
             grid = grid.reshape((int(np.sqrt(shape[0])), int(np.sqrt(shape[0])), 3))
             spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
-            figure = plt.figure(dpi=300)
+            figure = plt.figure(dpi=400)
             plt.title("Spin Configuration at T = "+str(ctr))
             ax = figure.add_subplot(131)
             sns.heatmap(spinz, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False, vmin=-1.0, vmax=1.0)
@@ -152,5 +167,33 @@ class Analyze():
             sns.heatmap(spinx, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
             ax.set_xlabel("X")
             plt.savefig(self.directory+"/spin_"+str(ctr)+".png")
+            plt.close()
+            ctr += 1
+    
+    def quiver_view(self):
+        ctr = 0
+        for file in self.flist:
+            print(file)
+            grid = np.load(self.directory+"/"+file)
+            shape = grid.shape
+            grid = grid.reshape((int(np.sqrt(shape[0])), int(np.sqrt(shape[0])), 3))
+            spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
+            x_mesh, y_mesh = np.meshgrid(np.arange(0, int(np.sqrt(shape[0])), 1), np.arange(0, int(np.sqrt(shape[0])), 1))
+            figure = plt.figure(dpi=400)
+            plt.title("Spin Configuration at T = "+str(ctr))
+            ax = figure.add_subplot(111)
+            rgba = np.zeros((shape[0],4))
+            spinz = np.reshape(spinz, shape[0])/1.5
+            for i in range(shape[0]):
+                rgba[i][3] = 1.0
+                rgba[i][1] = 0.0#np.abs(spinz[i])
+                if spinz[i] > 0:
+                    rgba[i][0] = spinz[i]
+                    rgba[i][2] = 0.0
+                else:
+                    rgba[i][0] = 0.0
+                    rgba[i][2] = -spinz[i]
+            plt.quiver(x_mesh, y_mesh, spinx, spiny, scale=1.5, scale_units="xy", pivot="mid", color=rgba, width=0.01, headwidth=3, headlength=4, headaxislength=3, minlength=0.1, minshaft=1)
+            plt.savefig(self.directory+"/quiver_"+str(ctr)+".png")
             plt.close()
             ctr += 1
