@@ -72,7 +72,35 @@ class MonteCarlo:
         drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
         drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
         self.save_direcotry = "../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
+        '''
+        self.metadata = {
+            "Material": self.Material,
+            "Size": self.size,
+            "Box": self.Box,
+            "Blocks": self.Blocks,
+            "Threads": self.Threads,
+            "stability_runs": self.stability_runs,
+            "calculation_runs": self.calculation_runs,
+            "Cmpl_Flag": self.Cmpl,
+            "stability_wrap": self.S_Wrap,
+            "calculation_wrap": self.C_Wrap,
+            "Prefix": self.Prefix,
+            "B": self.B_C,
+            "spin": self.spin,
+            "Temps": str(self.Temps),
+            "FM_Flag": self.FM_Flag,
+            "DMI_Flag": self.DMI_Flag,
+            "TC_Flag": self.TC_Flag,
+            "Input_flag": self.Input_flag,
+            "Input_File": self.Input_File
+        }
+        '''
         os.mkdir(self.save_direcotry)
+        '''
+        self.metadata_file = self.save_direcotry+"/metadata.json"
+        with open(self.metadata_file, 'w+') as f:
+            json.dump(self.metadata, f, indent=4)
+        '''    
 
     def generate_random_numbers(self, mult):
         self.NLIST = rg.gen_uniform((self.C1), np.float32)
@@ -114,8 +142,8 @@ class MonteCarlo:
             mag_fluc =  np.zeros(self.calculation_runs)
             M = 0.0
             X = 0.0
-            #generate_random_numbers(self, self.stability_runs*self.stability_wrap, self.stability_runs*self.Blocks)
-            drv.memcpy_htod(self.BJ,T[0])
+            beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ,beta[0])
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -127,8 +155,8 @@ class MonteCarlo:
             mag_fluc =  np.zeros(self.calculation_runs)
             M = 0.0
             X = 0.0
-            #generate_random_numbers(self, self.stability_runs*self.stability_wrap, self.stability_runs*self.Blocks)
-            drv.memcpy_htod(self.BJ,T[0])
+            beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ,beta[0])
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM1_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_4, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -140,10 +168,10 @@ class MonteCarlo:
         pass
 
 class Analyze():
-    def __init__(self, directory):
+    def __init__(self, directory, reverse=False):
         self.flist = os.listdir(directory)
         self.flist = [file for file in self.flist if file.endswith(".npy")]
-        self.flist.sort()
+        self.flist.sort(reverse=reverse)
         self.directory = directory
         print(self.flist)
 

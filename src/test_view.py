@@ -8,6 +8,6 @@ if len(args) != 2:
     exit(1)
 folder = args[1]
 
-viewer = cst.Analyze(folder)
+viewer = cst.Analyze(folder, reverse=True)
 viewer.spin_view()
-viewer.quiver_view()
+#viewer.quiver_view()
