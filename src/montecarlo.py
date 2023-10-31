@@ -181,6 +181,35 @@ __device__ void N2_2_4_2_4(int n, int size, int* NLIST)
     NLIST[1] = ((row+(size/2)*(row<(size/2)) + -(row>(size/2))*(1+(size/2)))*size + col +                 size*size)%(size*size);
 }
 
+__device__ void N1_3_6_3_6(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size
+    NLIST[0] = ((row+(row<(size/2))*(size/2)-(row>(size/2))*(1+size/2))*size + col + size*size)%(size*size);
+    NLIST[1] = ((row+(row<(size/2))*(size/2)-(row>(size/2))*(  size/2))*size + col + size*size)%(size*size);
+    NLIST[2] = ((row+(row<(size/2))*(size/2+1)-(row>(size/2))*(size/2))*size + col + size*size)%(size*size);
+}
+
+__device__ void N2_3_6_3_6(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row-1+(size/2)*(row==0||row==(size/2)))*size + col-1 + size*size)%(size*size);
+    NLIST[1] = (row*size + col + size*size)%(size*size);
+    NLIST[2] = ((row-1+(size/2)*(row==0||row==(size/2)))*size + col   + size*size)%(size*size);
+    NLIST[3] = (row*size + col-1 + size*size)%(size*size);
+    NLIST[4] = ((row+1-(row==(size-1)*(size/2)))*size + col+1 + size*size)%(size*size);
+    NLIST[5] = ((row+1-(row==(size-1)*(size/2)))*size + col   + size*size)%(size*size);
+}
+
+__device__ void N3_3_6_3_6(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row - 1 + (row<(size/2))*(size/2) - (row>(size/2))*(size/2))*size + col - (row<(size/2)) + (row>=(size/2)) + size*size)%(size*size);
+    NLIST[1] = ((row + (size/2)*(row<(size/2)-1) + (row==(size/2-1)) - (row==(size/2)) - (size/2)*(row>(size/2-1)))*size + col-1 + 2*(row==(size/2)) + size*size)%(size*size);
+    NLIST[2] = ((row*(row!=size/2) + 1 + (size/2)*(row<(size/2)) - (size/2)*(row>size/2) - (row+1-size/2)*(row==(size-1)))*size + col + 1 +size*size)%(size*size);
+}
 //Hamiltonians
 __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* NVEC, float* b, int size)
 {
@@ -331,6 +360,8 @@ __device__ float_t hamiltonian_tc_2d_4_4_4_8_dm0(float_t* mat, float_t* sheet, i
     H += b[0]*spinz;
     return -1.0*H;
 }
+
+//__device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1
 
 //Monte Carlo
 __global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* NVEC, float* B, int* size)
