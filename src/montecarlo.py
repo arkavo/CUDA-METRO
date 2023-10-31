@@ -24,6 +24,18 @@ def AFM_N(grid):
         grid[i][1] = np.sin(phi)*np.sin(theta)
         grid[i][2] = np.cos(phi)
 
+def alt_FM_N(grid, s1, s2):
+    for i in range(len(grid)):
+        grid[i][2] = s1*(grid[i][3]) + s2*(1-grid[i][3])
+
+def alt_AFM_N(grid, s1, s2):
+    for i in range(len(grid)):
+        u,v = np.random.random(),np.random.random()
+        theta, phi = 2*np.pi*u, np.arccos(2*v-1)
+        grid[i][0] = np.sin(phi)*np.cos(theta)*(s1*(grid[i][3]) + s2*(1-grid[i][3]))
+        grid[i][1] = np.sin(phi)*np.sin(theta)*(s1*(grid[i][3]) + s2*(1-grid[i][3]))
+        grid[i][2] = np.cos(phi)*(s1*(grid[i][3]) + s2*(1-grid[i][3]))
+
 dev_hamiltonian = SourceModule("""
 //cuda
 #include <curand.h>
