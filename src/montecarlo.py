@@ -620,7 +620,7 @@ __global__ void alt_grid(int* size, float_t* sheet, int* debug)
 {
     sheet[3] = 1;
     debug[0] = alt_populate(sheet, 0, size[0]);
-    for(int i=0;i<size[0]*size[0],i++)
+    for(int i=0;i<size[0]*size[0];i++)
     {
         if(sheet[i*4+3]==1)
         {
