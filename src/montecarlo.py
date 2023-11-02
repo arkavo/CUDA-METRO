@@ -580,11 +580,11 @@ __global__ void alt_metropolis(float_t *sheet, float_t *T, int* N, float_t* S1, 
 //Double Material Study
 __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size)
 {
-    int n1list[4];
-    N1_4_4_4_8(pt, size, n1list);
+    int n1list[3];
+    N1_3_6_3_6(pt, size, n1list);
     if((sheet[pt*4+3] - 1)*(sheet[pt*4+3] - 1) <= 0.0001)
     {
-        for(int j = 0; j < 4; j++)
+        for(int j = 0; j < 3; j++)
         {
             if((sheet[n1list[j]*4+3] - 2)*(sheet[n1list[j]*4+3] - 2) <= 0.0001)
             {
@@ -601,7 +601,7 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
     } 
     else if((sheet[pt*4+3] - 2)*(sheet[pt*4+3] - 2) <= 0.0001)
     {
-        for(int j = 0; j < 4; j++)
+        for(int j = 0; j < 3; j++)
         {
             if((sheet[n1list[j]*4+3] - 1)*(sheet[n1list[j]*4+3] - 1) <= 0.0001)
             {

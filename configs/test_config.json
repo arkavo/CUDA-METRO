@@ -10,7 +10,7 @@
     "Temps"           : ["38.50"],
     "Material"        : "VZr3C3II",
     "Multiple_Materials" : "TCS",
-    "SIZE"    : 4,
+    "SIZE"    : 2,
     "Box"       : 16,
     "Blocks"    : 4,
     "Threads"   : 2,
