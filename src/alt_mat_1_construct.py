@@ -23,7 +23,7 @@ import datetime
 
 class alt_Montecarlo():
     def __init__(self, config1, config2):
-        with open(config, 'r') as f:
+        with open(config1, 'r') as f:
             CONFIG = json.load(f)
         # FLAGS
         self.Single_MAT_Flag = CONFIG["Single_Mat_Flag"]
@@ -65,12 +65,6 @@ class alt_Montecarlo():
         drv.memcpy_htod(self.SGPU, spin_gpu)
         drv.memcpy_htod(self.GSIZE, size_int)
         drv.memcpy_htod(self.B_GPU, self.b)
-        self.dmi_4 = np.load("dmi_4.npy")
-        self.dmi_6 = np.load("dmi_6.npy")
-        self.GPU_DMI_4 = drv.mem_alloc(self.dmi_4.nbytes)
-        self.GPU_DMI_6 = drv.mem_alloc(self.dmi_6.nbytes)
-        drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
-        drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
         self.save_direcotry = "../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
         os.mkdir(self.save_direcotry)
     
@@ -89,7 +83,7 @@ class alt_Montecarlo():
         mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
     
     def mc_init(self):
-        self.grid = np.zeros(((self.size*self.size),3), dtype=np.float32)
+        self.grid = np.zeros(((self.size*self.size),4), dtype=np.float32)
         self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
         self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
         self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
@@ -108,3 +102,28 @@ class alt_Montecarlo():
         self.BJ = drv.mem_alloc(self.T[0].nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         drv.memcpy_htod(self.GRID_GPU, self.grid)
+
+        DEBUG = np.array([0], dtype=np.int32)
+        self.DEBUG_GPU = drv.mem_alloc(DEBUG.nbytes)
+        mc.ALT_GRID(self.GSIZE, self.GRID_GPU, self.DEBUG_GPU, block=(1,1,1),grid=(1,1,1))
+        drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        drv.memcpy_dtoh(DEBUG, self.DEBUG_GPU)
+        print(self.grid)
+        print(DEBUG)
+
+    def run_mc_3636(self, T, S1, S2):
+        S1GPU = drv.mem_alloc(S1.nbytes)
+        S2GPU = drv.mem_alloc(S2.nbytes)
+        drv.memcpy_htod(S1GPU, S1)
+        drv.memcpy_htod(S2GPU, S2)
+        for i in tqdm(range(self.S_Wrap), desc="Stabilizing...", colour="blue"):
+            mag_fluc =  np.zeros(self.calculation_runs)
+            M = 0.0
+            X = 0.0
+            beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ,beta[0])
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_ALT_MnCr_3_6_3_6(self.GRID_GPU, self.BJ, NLIST[i*self.Blocks:(i+1)*self.Blocks], S1LIST[i*self.Blocks:(i+1)*self.Blocks], S2LIST[i*self.Blocks:(i+1)*self.Blocks], S3LIST[i*self.Blocks:(i+1)*self.Blocks], RLIST[i*self.Blocks:(i+1)*self.Blocks], self.TMATRIX,  self.B_GPU, self.GSIZE, S1GPU, S2GPU,block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
