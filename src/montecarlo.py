@@ -594,9 +594,10 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
             {    
                 sheet[n1list[j]*4+2] = s2;
                 sheet[n1list[j]*4+3] = 2;
+                return alt_populate(sheet, n1list[0], s1, s2, size);
             }
         }
-        return alt_populate(sheet, n1list[0], s1, s2, size);// + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
+        // + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
     } 
     if((sheet[pt*4+3] - 2)*(sheet[pt*4+3] - 2) <= 0.0001)
     {
@@ -610,9 +611,10 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
             {
                 sheet[n1list[j]*4+2] = s1;
                 sheet[n1list[j]*4+3] = 1;
+                return alt_populate(sheet, n1list[0], s1, s2, size);
             }
         }
-        return alt_populate(sheet, n1list[0], s1, s2, size);// + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
+        // + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
     }
 }
 
