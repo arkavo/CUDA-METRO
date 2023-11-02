@@ -195,21 +195,32 @@ __device__ void N2_3_6_3_6(int n, int size, int* NLIST)
 {
     int row = n/size;
     int col = n%size;
-    NLIST[0] = ((row-1+(size/2)*(row==0||row==(size/2)))*size + col-1 + size*size)%(size*size);
-    NLIST[1] = (row*size + col + size*size)%(size*size);
-    NLIST[2] = ((row-1+(size/2)*(row==0||row==(size/2)))*size + col   + size*size)%(size*size);
-    NLIST[3] = (row*size + col-1 + size*size)%(size*size);
-    NLIST[4] = ((row+1-(row==(size-1)*(size/2)))*size + col+1 + size*size)%(size*size);
-    NLIST[5] = ((row+1-(row==(size-1)*(size/2)))*size + col   + size*size)%(size*size);
+    NLIST[0] = ((row+1)*size + col+1 + size*size)%(size*size);
+    NLIST[1] = ((row-1)*size + col+2 + size*size)%(size*size);
+    NLIST[2] = ((row-2)*size + col+1 + size*size)%(size*size);
+    NLIST[3] = ((row-1)*size + col-1 + size*size)%(size*size);
+    NLIST[4] = ((row+1)*size + col-2 + size*size)%(size*size);
+    NLIST[5] = ((row+2)*size + col-1 + size*size)%(size*size);
 }
 
 __device__ void N3_3_6_3_6(int n, int size, int* NLIST)
 {
     int row = n/size;
     int col = n%size;
-    NLIST[0] = ((row - 1 + (row<(size/2))*(size/2) - (row>(size/2))*(size/2))*size + col - (row<(size/2)) + (row>=(size/2)) + size*size)%(size*size);
-    NLIST[1] = ((row + (size/2)*(row<(size/2)-1) + (row==(size/2-1)) - (row==(size/2)) - (size/2)*(row>(size/2-1)))*size + col-1 + 2*(row==(size/2)) + size*size)%(size*size);
-    NLIST[2] = ((row*(row!=size/2) + 1 + (size/2)*(row<(size/2)) - (size/2)*(row>size/2) - (row+1-size/2)*(row==(size-1)))*size + col + 1 +size*size)%(size*size);
+    NLIST[0] = ((row+2)*size + col   + size*size)%(size*size);
+    NLIST[1] = ((row-2)*size + col+2 + size*size)%(size*size);
+    NLIST[2] = ((row  )*size + col-2 + size*size)%(size*size);
+
+__device__ void N4_3_6_3_6(int n, int size, int* NLIST)
+{
+    int row = n/size;
+    int col = n%size;
+    NLIST[0] = ((row-1)*size + col+3 + size*size)%(size*size);
+    NLIST[1] = ((row-3)*size + col+1 + size*size)%(size*size);
+    NLIST[2] = ((row-2)*size + col-1 + size*size)%(size*size);
+    NLIST[3] = ((row+2)*size + col-3 + size*size)%(size*size);
+    NLIST[4] = ((row-3)*size + col+2 + size*size)%(size*size);
+    NLIST[5] = ((row+1)*size + col+2 + size*size)%(size*size);
 }
 
 //Hamiltonians
