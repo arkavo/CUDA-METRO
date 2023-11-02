@@ -580,17 +580,17 @@ __global__ void alt_metropolis(float_t *sheet, float_t *T, int* N, float_t* S1, 
 //Double Material Study
 __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size)
 {
+    int n1list[4];
+    N1_4_4_4_8(pt, size, n1list);
     if((sheet[pt*4+3] - 1)*(sheet[pt*4+3] - 1) <= 0.0001)
     {
-        int n1list[4];
-        N1_4_4_4_8(pt, size, n1list);
-        for(int j = 0; j < 3; j++)
+        for(int j = 0; j < 4; j++)
         {
             if((sheet[n1list[j]*4+3] - 2)*(sheet[n1list[j]*4+3] - 2) <= 0.0001)
                 {return 1};
             else    
             {    
-                sheet[n1list[j]*4+2] = s2;
+                //sheet[n1list[j]*4+2] = s2;
                 sheet[n1list[j]*4+3] = 2;
                 return alt_populate(sheet, n1list[0], s1, s2, size);
             }
@@ -598,15 +598,13 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
     } 
     if((sheet[pt*4+3] - 2)*(sheet[pt*4+3] - 2) <= 0.0001)
     {
-        int n1list[4];
-        N1_4_4_4_8(pt, size, n1list);
-        for(int j = 0; j < 3; j++)
+        for(int j = 0; j < 4; j++)
         {
             if((sheet[n1list[j]*4+3] - 1)*(sheet[n1list[j]*4+3] - 1) <= 0.0001)
                 {return 1};
             else    
             {
-                sheet[n1list[j]*4+2] = s1;
+                //sheet[n1list[j]*4+2] = s1;
                 sheet[n1list[j]*4+3] = 1;
                 return alt_populate(sheet, n1list[0], s1, s2, size);
             }
