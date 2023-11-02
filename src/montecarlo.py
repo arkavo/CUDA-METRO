@@ -587,7 +587,7 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
         for(int j = 0; j < 3; j++)
         {
             if((sheet[n1list[j]*4+3] - 2)*(sheet[n1list[j]*4+3] - 2) <= 0.0001)
-                return 1;
+                {return 1};
             else    
             {    
                 sheet[n1list[j]*4+2] = s2;
@@ -603,7 +603,7 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
         for(int j = 0; j < 3; j++)
         {
             if((sheet[n1list[j]*4+3] - 1)*(sheet[n1list[j]*4+3] - 1) <= 0.0001)
-                return 1;
+                {return 1};
             else    
             {
                 sheet[n1list[j]*4+2] = s1;

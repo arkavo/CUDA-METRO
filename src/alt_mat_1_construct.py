@@ -107,6 +107,7 @@ class alt_Montecarlo():
         self.DEBUG_GPU = drv.mem_alloc(DEBUG.nbytes)
         mc.ALT_GRID(self.GSIZE, self.GRID_GPU, self.DEBUG_GPU, block=(1,1,1),grid=(1,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        print(self.GRID_GPU)
         drv.memcpy_dtoh(DEBUG, self.DEBUG_GPU)
         print(self.grid)
         print(DEBUG)
