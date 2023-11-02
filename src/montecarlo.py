@@ -599,7 +599,7 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
             }
         }
     } 
-    if((sheet[pt*4+3] - 2)*(sheet[pt*4+3] - 2) <= 0.0001)
+    else if((sheet[pt*4+3] - 2)*(sheet[pt*4+3] - 2) <= 0.0001)
     {
         for(int j = 0; j < 4; j++)
         {
@@ -618,10 +618,10 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
     }
 }
 
-__global__ void alt_grid(int size, float_t* sheet, int* debug)
+__global__ void alt_grid(int* size, float_t* sheet, int* debug)
 {
     sheet[3] = 1;
-    debug[0] = alt_populate(sheet, 0, 1.5, 1.7, size);
+    debug[0] = alt_populate(sheet, 0, 1.5, 1.7, size[0]);
 }
 
 //!cuda
