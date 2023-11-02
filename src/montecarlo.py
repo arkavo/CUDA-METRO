@@ -581,10 +581,10 @@ __global__ void alt_metropolis(float_t *sheet, float_t *T, int* N, float_t* S1, 
 __device__ int alt_populate(float_t* sheet, int pt, int size)
 {
     int n1list[3];
-    N1_6_6_6_12(pt, size, n1list);
+    N1_3_6_3_6(pt, size, n1list);
     if((sheet[pt*4+3] - 1)*(sheet[pt*4+3] - 1) <= 0.0001)
     {
-        for(int j = 0; j < 6; j++)
+        for(int j = 0; j < 3; j++)
         {
             if((sheet[n1list[j]*4+3] - 2)*(sheet[n1list[j]*4+3] - 2) <= 0.0001)
             {
@@ -600,7 +600,7 @@ __device__ int alt_populate(float_t* sheet, int pt, int size)
     } 
     else if((sheet[pt*4+3] - 2)*(sheet[pt*4+3] - 2) <= 0.0001)
     {
-        for(int j = 0; j < 6; j++)
+        for(int j = 0; j < 3; j++)
         {
             if((sheet[n1list[j]*4+3] - 1)*(sheet[n1list[j]*4+3] - 1) <= 0.0001)
             {
@@ -619,7 +619,22 @@ __device__ int alt_populate(float_t* sheet, int pt, int size)
 __global__ void alt_grid(int* size, float_t* sheet, int* debug)
 {
     sheet[3] = 1;
-    debug[0] = alt_populate(sheet, 0, 1.5, 1.7, size[0]);
+    debug[0] = alt_populate(sheet, 0, size[0]);
+    for(int i=0;i<size[0]*size[0],i++)
+    {
+        if(sheet[i*4+3]==1)
+        {
+            sheet[i*4] *= 1.5;
+            sheet[i*4+1] *= 1.5;
+            sheet[i*4+2] *= 1.5;
+        }
+        else if(sheet[i*4+3]==2)
+        {
+            sheet[i*4] *= 2.5;
+            sheet[i*4+1] *= 2.5;
+            sheet[i*4+2] *= 2.5;
+        }
+    }
 }
 
 //!cuda

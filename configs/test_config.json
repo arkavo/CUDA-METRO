@@ -10,7 +10,7 @@
     "Temps"           : ["38.50"],
     "Material"        : "CrI3",
     "Multiple_Materials" : "TCS",
-    "SIZE"    : 200,
+    "SIZE"    : 8,
     "Box"       : 16,
     "Blocks"    : 4,
     "Threads"   : 2,
