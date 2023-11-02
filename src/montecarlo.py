@@ -211,6 +211,7 @@ __device__ void N3_3_6_3_6(int n, int size, int* NLIST)
     NLIST[1] = ((row + (size/2)*(row<(size/2)-1) + (row==(size/2-1)) - (row==(size/2)) - (size/2)*(row>(size/2-1)))*size + col-1 + 2*(row==(size/2)) + size*size)%(size*size);
     NLIST[2] = ((row*(row!=size/2) + 1 + (size/2)*(row<(size/2)) - (size/2)*(row>size/2) - (row+1-size/2)*(row==(size-1)))*size + col + 1 +size*size)%(size*size);
 }
+
 //Hamiltonians
 __device__ float_t hamiltonian_tc_2d_6_6_6_12_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* NVEC, float* b, int size)
 {
@@ -399,7 +400,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
     N1_3_6_3_6(pti, size, n1list);
     N2_3_6_3_6(pti, size, n2list);
     N3_3_6_3_6(pti, size, n3list);
-    if(sheet[pti*4]+3) //Mn
+    if(sheet[pti*4]+3) //Cr
     {
         for(int i=0; i<3; i++)
         {
@@ -430,7 +431,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
 
         H += Azz_Cr*spinz*spinz;
     }
-    else //Cr
+    else //Mn   
     {
         for(int i=0; i<3; i++)
         {
@@ -587,12 +588,12 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
         N1_3_6_3_6(pt, size, n1list);
         for(int j = 0; j < 3; j++)
         {
-            if((sheet[n1list[j]*4+3] - 1.0)*(sheet[n1list[j]*4+3] - 1.0) <= 0.0001)
+            if((sheet[n1list[j]*4+3] - 2)*(sheet[n1list[j]*4+3] - 2) <= 0.0001)
                 return 1;
             else    
             {    
                 sheet[n1list[j]*4+2] = s2;
-                sheet[n1list[j]*4+3] = 1;
+                sheet[n1list[j]*4+3] = 2;
             }
         }
         return alt_populate(sheet, n1list[0], s1, s2, size) + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
@@ -603,12 +604,12 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
         N1_3_6_3_6(pt, size, n1list);
         for(int j = 0; j < 3; j++)
         {
-            if((sheet[n1list[j]*4+3] - 2.0)*(sheet[n1list[j]*4+3] - 2.0) <= 0.0001)
+            if((sheet[n1list[j]*4+3] - 1)*(sheet[n1list[j]*4+3] - 1) <= 0.0001)
                 return 1;
             else    
-            {    
+            {
                 sheet[n1list[j]*4+2] = s1;
-                sheet[n1list[j]*4+3] = 2;
+                sheet[n1list[j]*4+3] = 1;
             }
         }
         return alt_populate(sheet, n1list[0], s1, s2, size) + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
