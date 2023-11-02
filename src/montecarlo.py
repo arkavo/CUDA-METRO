@@ -594,7 +594,7 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
             {    
                 //sheet[n1list[j]*4+2] = s2;
                 sheet[n1list[j]*4+3] = 2;
-                int s = alt_populate(sheet, n1list[0], s1, s2, size);
+                int s = alt_populate(sheet, n1list[0], s1, s2, size)+alt_populate(sheet, n1list[1], s1, s2, size)+alt_populate(sheet, n1list[2], s1, s2, size);
                 return s;
             }
         }
@@ -611,7 +611,7 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
             {
                 //sheet[n1list[j]*4+2] = s1;
                 sheet[n1list[j]*4+3] = 1;
-                int s = alt_populate(sheet, n1list[0], s1, s2, size);
+                int s = alt_populate(sheet, n1list[0], s1, s2, size)+alt_populate(sheet, n1list[1], s1, s2, size)+alt_populate(sheet, n1list[2], s1, s2, size);
                 return s;
             }
         }
