@@ -596,8 +596,8 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
                 sheet[n1list[j]*4+3] = 2;
             }
         }
-        return alt_populate(sheet, n1list[0], s1, s2, size) + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
-    }
+        return alt_populate(sheet, n1list[0], s1, s2, size);// + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
+    } 
     if((sheet[pt*4+3] - 2)*(sheet[pt*4+3] - 2) <= 0.0001)
     {
         int n1list[3];
@@ -612,16 +612,12 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
                 sheet[n1list[j]*4+3] = 1;
             }
         }
-        return alt_populate(sheet, n1list[0], s1, s2, size) + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
+        return alt_populate(sheet, n1list[0], s1, s2, size);// + alt_populate(sheet, n1list[1], s1, s2, size) + alt_populate(sheet, n1list[2], s1, s2, size);
     }
 }
 
 __global__ void alt_grid(int size, float_t* sheet, int* debug)
 {
-    for(int i = 0; i < size*size*4; i++)
-    {
-        sheet[i] = 0;
-    }
     sheet[3] = 1;
     debug[0] = alt_populate(sheet, 0, 1.5, 1.7, size);
 }
