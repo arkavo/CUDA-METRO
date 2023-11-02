@@ -186,9 +186,9 @@ __device__ void N1_3_6_3_6(int n, int size, int* NLIST)
 {
     int row = n/size;
     int col = n%size;
-    NLIST[0] = ((row+(row<(size/2))*(size/2)-(row>(size/2))*(1+size/2))*size + col + size*size)%(size*size);
-    NLIST[1] = ((row+(row<(size/2))*(size/2)-(row>(size/2))*(  size/2))*size + col + size*size)%(size*size);
-    NLIST[2] = ((row+(row<(size/2))*(size/2+1)-(row>(size/2))*(size/2))*size + col + size*size)%(size*size);
+    NLIST[0] = ((row  )*size + col+1 + size*size)%(size*size);
+    NLIST[1] = ((row+1)*size + col-1 + size*size)%(size*size);
+    NLIST[2] = ((row-1)*size + col+0 + size*size)%(size*size);
 }
 
 __device__ void N2_3_6_3_6(int n, int size, int* NLIST)
@@ -578,7 +578,7 @@ __global__ void alt_metropolis(float_t *sheet, float_t *T, int* N, float_t* S1, 
     }
 }
 //Double Material Study
-__device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size)
+__device__ int alt_populate(float_t* sheet, int pt, int size)
 {
     int n1list[3];
     N1_3_6_3_6(pt, size, n1list);
@@ -592,9 +592,8 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
             }
             else    
             {    
-                //sheet[n1list[j]*4+2] = s2;
                 sheet[n1list[j]*4+3] = 2;
-                int s = alt_populate(sheet, n1list[j], s1, s2, size);
+                int s = alt_populate(sheet, n1list[j], size);
                 return s;
             }
         }
@@ -609,9 +608,8 @@ __device__ int alt_populate(float_t* sheet, int pt, float s1, float s2, int size
             }
             else    
             {
-                //sheet[n1list[j]*4+2] = s1;
                 sheet[n1list[j]*4+3] = 1;
-                int s = alt_populate(sheet, n1list[j], s1, s2, size);
+                int s = alt_populate(sheet, n1list[j], size);
                 return s;
             }
         }
