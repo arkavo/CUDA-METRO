@@ -82,17 +82,19 @@ class alt_Montecarlo():
         mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
         mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
     
-    def mc_init(self):
+    def mc_init(self, S1, S2):
         self.grid = np.zeros(((self.size*self.size),4), dtype=np.float32)
         self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
         self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
         self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
-        
+        self.S1 = np.array([S1], dtype=np.float32)
+        self.S2 = np.array([S2], dtype=np.float32)
         if self.FM_Flag:
             mc.FM_N(self.grid)
         else:
             mc.AFM_N(self.grid)
-        self.grid *= self.spin
+        
+
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
         self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
         if self.Static_T_Flag:
@@ -105,26 +107,96 @@ class alt_Montecarlo():
 
         DEBUG = np.array([0], dtype=np.int32)
         self.DEBUG_GPU = drv.mem_alloc(DEBUG.nbytes)
-        mc.ALT_GRID(self.GSIZE, self.GRID_GPU, self.DEBUG_GPU, block=(1,1,1),grid=(1,1,1))
+        SPINSET = np.array([self.S1, self.S2]).astype(np.float32)
+        self.SPINSET_GPU = drv.mem_alloc(SPINSET.nbytes)
+        drv.memcpy_htod(self.SPINSET_GPU, SPINSET)
+        mc.ALT_GRID(self.GSIZE, self.GRID_GPU, self.DEBUG_GPU, self.SPINSET_GPU, block=(1,1,1),grid=(1,1,1))
+        for i in range(self.size*self.size):
+            if self.grid[i][3] == 1:
+                self.grid[i][0] *= self.S1[0]
+                self.grid[i][1] *= self.S1[0]
+                self.grid[i][2] *= self.S1[0]
+            elif self.grid[i][3] == 2:
+                self.grid[i][0] *= self.S2[0]
+                self.grid[i][1] *= self.S2[0]
+                self.grid[i][2] *= self.S2[0]
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
         print(self.GRID_GPU)
         drv.memcpy_dtoh(DEBUG, self.DEBUG_GPU)
         print(self.grid)
         print(DEBUG)
 
-    def run_mc_3636(self, T, S1, S2):
-        S1GPU = drv.mem_alloc(S1.nbytes)
-        S2GPU = drv.mem_alloc(S2.nbytes)
-        drv.memcpy_htod(S1GPU, S1)
-        drv.memcpy_htod(S2GPU, S2)
-        for i in tqdm(range(self.S_Wrap), desc="Stabilizing...", colour="blue"):
-            mag_fluc =  np.zeros(self.calculation_runs)
-            M = 0.0
-            X = 0.0
+    def run_mc_3636(self, T):
+        self.S1GPU = drv.mem_alloc(self.S1.nbytes)
+        self.S2GPU = drv.mem_alloc(self.S2.nbytes)
+        drv.memcpy_htod(self.S1GPU, self.S1)
+        drv.memcpy_htod(self.S2GPU, self.S2)
+        for j in tqdm(range(self.S_Wrap), desc="Stabilizing...", colour="blue"):
+            #mag_fluc =  np.zeros(self.calculation_runs)
+            #M = 0.0
+            #X = 0.0
             beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ,beta[0])
-            for j in range(self.stability_runs):
-                mc.METROPOLIS_ALT_MnCr_3_6_3_6(self.GRID_GPU, self.BJ, NLIST[i*self.Blocks:(i+1)*self.Blocks], S1LIST[i*self.Blocks:(i+1)*self.Blocks], S2LIST[i*self.Blocks:(i+1)*self.Blocks], S3LIST[i*self.Blocks:(i+1)*self.Blocks], RLIST[i*self.Blocks:(i+1)*self.Blocks], self.TMATRIX,  self.B_GPU, self.GSIZE, S1GPU, S2GPU,block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            for i in range(self.stability_runs):
+                mc.METROPOLIS_ALT_MnCr_3_6_3_6(self.GRID_GPU, self.BJ, self.NFULL[i*self.Blocks:(i+1)*self.Blocks-1], self.S1FULL[i*self.Blocks:(i+1)*self.Blocks], self.S2FULL[i*self.Blocks:(i+1)*self.Blocks-1], self.S3FULL[i*self.Blocks:(i+1)*self.Blocks-1], self.RLIST[i*self.Blocks:(i+1)*self.Blocks-1], self.GPU_TRANS,  self.B_GPU, self.GSIZE, self.S1GPU, self.S2GPU, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-            np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
+            np.save(f"{self.save_direcotry}/grid_{j:04d}", self.grid)
+
+    def Analyze(self, reverse=False):
+        self.flist = os.listdir(self.save_direcotry)
+        self.flist = [file for file in self.flist if file.endswith(".npy")]
+        self.flist.sort(reverse=reverse)
+        self.directory = self.save_direcotry
+        print(self.flist)
+    
+    def spin_view(self):
+        ctr = 0
+        for file in self.flist:
+            print(file)
+            grid = np.load(self.directory+"/"+file)
+            shape = grid.shape
+            grid = grid.reshape((int(np.sqrt(shape[0])), int(np.sqrt(shape[0])), 4))
+            spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
+            figure = plt.figure(dpi=400)
+            plt.title("Spin Configuration at T = "+str(ctr))
+            ax = figure.add_subplot(131)
+            sns.heatmap(spinz, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False, vmin=-1.0, vmax=1.0)
+            ax.set_xlabel("Z")
+            ax = figure.add_subplot(132)
+            sns.heatmap(spiny, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
+            ax.set_xlabel("Y")
+            ax = figure.add_subplot(133)
+            sns.heatmap(spinx, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
+            ax.set_xlabel("X")
+            plt.savefig(self.directory+"/spin_"+str(ctr)+".png")
+            plt.close()
+            ctr += 1
+
+    def quiver_view(self):
+        ctr = 0
+        for file in self.flist:
+            print(file)
+            grid = np.load(self.directory+"/"+file)
+            shape = grid.shape
+            grid = grid.reshape((int(np.sqrt(shape[0])), int(np.sqrt(shape[0])), 4))
+            spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
+            x_mesh, y_mesh = np.meshgrid(np.arange(0, int(np.sqrt(shape[0])), 1), np.arange(0, int(np.sqrt(shape[0])), 1))
+            figure = plt.figure(dpi=400)
+            plt.title("Spin Configuration at T = "+str(ctr))
+            ax = figure.add_subplot(111)
+            rgba = np.zeros((shape[0],4))
+            spinz = np.reshape(spinz, shape[0])/2.0
+            for i in range(shape[0]):
+                rgba[i][3] = 1.0
+                rgba[i][1] = 0.0#np.abs(spinz[i])
+                if spinz[i] > 0:
+                    rgba[i][0] = spinz[i]
+                    rgba[i][2] = 0.0
+                else:
+                    rgba[i][0] = 0.0
+                    rgba[i][2] = -spinz[i]
+            plt.quiver(x_mesh, y_mesh, spinx, spiny, scale=1.5, scale_units="xy", pivot="mid", color=rgba, width=0.01, headwidth=3, headlength=4, headaxislength=3, minlength=0.1, minshaft=1)
+            plt.savefig(self.directory+"/quiver_"+str(ctr)+".png")
+            plt.close()
+            ctr += 1

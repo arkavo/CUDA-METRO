@@ -54,15 +54,10 @@ class MonteCarlo:
         self.Input_File = CONFIG["Input_File"]
         self.C1 = self.Blocks*self.stability_runs
         self.C2 = self.Blocks*self.calculation_runs
-        #placeholder spin = 1.0
-        self.spin = 1.0
-        spin_gpu = np.array([self.spin]).astype(np.float32)
         size_int = np.array([self.size]).astype(np.int32)
         self.b = np.array([self.B_C]).astype(np.float32)
-        self.SGPU = drv.mem_alloc(spin_gpu.nbytes)
         self.GSIZE = drv.mem_alloc(size_int.nbytes)
         self.B_GPU = drv.mem_alloc(self.b.nbytes)
-        drv.memcpy_htod(self.SGPU, spin_gpu)
         drv.memcpy_htod(self.GSIZE, size_int)
         drv.memcpy_htod(self.B_GPU, self.b)
         self.dmi_4 = np.load("dmi_4.npy")
@@ -71,6 +66,11 @@ class MonteCarlo:
         self.GPU_DMI_6 = drv.mem_alloc(self.dmi_6.nbytes)
         drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
         drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
+        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
+        self.spin = self.MAT_PARAMS[0]
+        spin_gpu = np.array([self.spin]).astype(np.float32)
+        self.SGPU = drv.mem_alloc(spin_gpu.nbytes)
+        drv.memcpy_htod(self.SGPU, spin_gpu)
         self.save_direcotry = "../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
         '''
         self.metadata = {
@@ -120,12 +120,12 @@ class MonteCarlo:
         self.grid = np.zeros(((self.size*self.size),3), dtype=np.float32)
         self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
         self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
-        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
-        
+        print(f"Spin = {self.spin}")
         if self.FM_Flag:
             mc.FM_N(self.grid)
         else:
             mc.AFM_N(self.grid)
+        print(self.grid)
         self.grid *= self.spin
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
         self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
@@ -162,7 +162,36 @@ class MonteCarlo:
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
-        
+    
+    def run_mc_tc_3636(self, T):
+        Mt, Xt = np.zeros(len(T)), np.zeros(len(T))
+        ct = 0
+        for t in T:
+            M, X = np.zeros(self.S_Wrap), np.zeros(self.S_Wrap)
+            for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {t}", colour="blue"):
+                mag_fluc =  np.zeros(self.stability_runs)
+                beta = np.array([1.0 / (t * 8.6173e-2)],dtype=np.float32)
+                drv.memcpy_htod(self.BJ, beta[0])
+                for j in range(self.stability_runs):
+                    mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                    mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+                #print(self.grid)
+                magx, magy, magz = self.grid[:,0], self.grid[:,1], self.grid[:,2]
+                #print(magx, magy, magz)
+                mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+                M[i] = np.abs(np.linalg.norm(mag))
+                X[i] = np.abs(np.linalg.norm(mag)**2)
+            Mt[ct], Xt[ct] = np.mean(M), np.mean(X)
+            print(f"Mean Magnetization at {t} = {Mt[ct]}")
+            print(f"Mean Susceptibility at {t} = {Xt[ct]}")
+            ct += 1
+        np.save(f"{self.save_direcotry}/Mt", M)
+        np.save(f"{self.save_direcotry}/Xt", X)
+        plt.plot(T, Mt)
+        plt.savefig(f"{self.save_direcotry}/M.png")
+        plt.close()
+    
     
     def dump_state():
         pass

@@ -210,6 +210,7 @@ __device__ void N3_3_6_3_6(int n, int size, int* NLIST)
     NLIST[0] = ((row+2)*size + col   + size*size)%(size*size);
     NLIST[1] = ((row-2)*size + col+2 + size*size)%(size*size);
     NLIST[2] = ((row  )*size + col-2 + size*size)%(size*size);
+}
 
 __device__ void N4_3_6_3_6(int n, int size, int* NLIST)
 {
@@ -374,7 +375,42 @@ __device__ float_t hamiltonian_tc_2d_4_4_4_8_dm0(float_t* mat, float_t* sheet, i
     return -1.0*H;
 }
 
-__device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spin2, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* b, int size)
+__device__ float_t hamiltonian_tc_2d_3_6_3_6_dm0(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* b, int size)
+{
+    float H = 0.0;
+
+    int n1list[3];
+    int n2list[6];
+    int n3list[3];
+    int n4list[6];
+
+    N1_3_6_3_6(pti, size, n1list);
+    N2_3_6_3_6(pti, size, n2list);
+    N3_3_6_3_6(pti, size, n3list);
+    N4_3_6_3_6(pti, size, n4list);
+
+    for(int i=0; i<3; i++)
+    {
+        H += mat[1]*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]) + mat[5]*spinx*sheet[n1list[i]*3] + mat[6]*spiny*sheet[n1list[i]*3+1] + mat[7]*spinz*sheet[n1list[i]*3+2];
+    }
+    for(int i=0; i<6; i++)
+    {
+        H += mat[2]*(spinx*sheet[n2list[i]*3] + spiny*sheet[n2list[i]*3+1] + spinz*sheet[n2list[i]*3+2]) + mat[8]*spinx*sheet[n2list[i]*3] + mat[9]*spiny*sheet[n2list[i]*3+1] + mat[10]*spinz*sheet[n2list[i]*3+2];
+    }
+    for(int i=0; i<3; i++)
+    {
+        H += mat[3]*(spinx*sheet[n3list[i]*3] + spiny*sheet[n3list[i]*3+1] + spinz*sheet[n3list[i]*3+2]) + mat[11]*spinx*sheet[n3list[i]*3] + mat[12]*spiny*sheet[n3list[i]*3+1] + mat[13]*spinz*sheet[n3list[i]*3+2];
+    }
+    for(int i=0; i<6; i++)
+    {
+        H += mat[4]*(spinx*sheet[n4list[i]*3] + spiny*sheet[n4list[i]*3+1] + spinz*sheet[n4list[i]*3+2]) + mat[14]*spinx*sheet[n4list[i]*3] + mat[15]*spiny*sheet[n4list[i]*3+1] + mat[16]*spinz*sheet[n4list[i]*3+2];
+    }
+    H += mat[17]*spinx*spinx + mat[18]*spiny*spiny + mat[19]*spinz*spinz;
+    H += b[0]*spinz;
+    return -1.0*H;
+}
+
+__device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* b, int size)
 {
     float H = 0.0;
     int n1list[3];
@@ -411,12 +447,12 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
     N1_3_6_3_6(pti, size, n1list);
     N2_3_6_3_6(pti, size, n2list);
     N3_3_6_3_6(pti, size, n3list);
-    if(sheet[pti*4]+3) //Cr
+    if(sheet[pti*4+3]-1) //Cr
     {
         for(int i=0; i<3; i++)
         {
             int pt = n1list[i];
-            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4]*J1_Cr_Mn[0][2];
+            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
             H += D_Cr_Mn[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
             H += D_Cr_Mn[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
             H += D_Cr_Mn[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
@@ -425,7 +461,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
         for(int i=0; i<6; i++)
         {
             int pt = n2list[i];
-            H += spinx*sheet[pt*4]*J2_Cr_Cr[0][0] + spiny*sheet[pt*4]*J2_Cr_Cr[0][1] + spinz*sheet[pt*4]*J2_Cr_Cr[0][2];
+            H += spinx*sheet[pt*4]*J2_Cr_Cr[0][0] + spiny*sheet[pt*4+1]*J2_Cr_Cr[0][1] + spinz*sheet[pt*4+2]*J2_Cr_Cr[0][2];
             H += D_Cr_Cr[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
             H += D_Cr_Cr[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
             H += D_Cr_Cr[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
@@ -434,7 +470,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
         for(int i=0; i<3; i++)
         {
             int pt = n3list[i];
-            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4]*J4_Mn_Cr[0][2];
+            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
             H += D_Mn_Cr[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
             H += D_Mn_Cr[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
             H += D_Mn_Cr[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
@@ -447,7 +483,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
         for(int i=0; i<3; i++)
         {
             int pt = n1list[i];
-            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4]*J1_Cr_Mn[0][2];
+            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
             H += D_Cr_Mn[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
             H += D_Cr_Mn[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
             H += D_Cr_Mn[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
@@ -456,7 +492,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
         for(int i=0; i<6; i++)
         {
             int pt = n2list[i];
-            H += spinx*sheet[pt*4]*J3_Mn_Mn[0][0] + spiny*sheet[pt*4]*J3_Mn_Mn[0][1] + spinz*sheet[pt*4]*J3_Mn_Mn[0][2];
+            H += spinx*sheet[pt*4]*J3_Mn_Mn[0][0] + spiny*sheet[pt*4+1]*J3_Mn_Mn[0][1] + spinz*sheet[pt*4+2]*J3_Mn_Mn[0][2];
             H += D_Mn_Mn[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
             H += D_Mn_Mn[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
             H += D_Mn_Mn[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
@@ -465,7 +501,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* spin1, float_t* spi
         for(int i=0; i<3; i++)
         {
             int pt = n3list[i];
-            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4]*J4_Mn_Cr[0][2];
+            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
             H += D_Mn_Cr[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
             H += D_Mn_Cr[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
             H += D_Mn_Cr[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
@@ -498,6 +534,43 @@ __global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t
 
     dE = L1 - L0;
     
+    if (dE < 0)
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = S1[threadID];
+        tf[threadID*4+2] = S2[threadID];
+        tf[threadID*4+3] = S3[threadID];
+    }
+    else if (expf(-1.0*dE*T[0]) > R[threadID])
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = S1[threadID];
+        tf[threadID*4+2] = S2[threadID];
+        tf[threadID*4+3] = S3[threadID];
+    }
+}
+
+__global__ void metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* B, int* size)
+{
+    __shared__ float L0;
+    __shared__ float L1;
+    __shared__ float dE;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = N[threadID];
+    int tidx = threadIdx.x;
+    if (tidx == 0)
+    {  
+        L0 = hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2],  B, size[0]);
+    }
+    if (tidx == 1)
+    {
+        L1 = hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
+    }
+    __syncthreads();
+
+    dE = L1 - L0;
+
     if (dE < 0)
     {
         tf[threadID*4] = pt_thread;
@@ -562,30 +635,34 @@ __global__ void alt_metropolis(float_t *sheet, float_t *T, int* N, float_t* S1, 
     int tidx = threadIdx.x;
     if (tidx == 0)
     {
-        L0 = alt_hamiltonian_MnCr_3_6_3_6_dm1(spin1, spin2, sheet, pt_thread, sheet[pt_thread*4], sheet[pt_thread*4+1], sheet[pt_thread*4+2], B, size[0]);
+        L0 = alt_hamiltonian_MnCr_3_6_3_6_dm1(sheet, pt_thread, sheet[pt_thread*4], sheet[pt_thread*4+1], sheet[pt_thread*4+2], B, size[0]);
     }
     if (tidx == 1)
     {
-        L1 = alt_hamiltonian_MnCr_3_6_3_6_dm1(spin1, spin2, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
+        L1 = alt_hamiltonian_MnCr_3_6_3_6_dm1(sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
     }
 
     __syncthreads();
 
     dE = L1 - L0;
-
+    float_t mult = 1.0;
+    if ((sheet[pt_thread*4+3] - 1.0)*(sheet[pt_thread*4+3] - 1.0) < 0.0001)
+        mult = spin1[0];
+    else
+        mult = spin2[0];
     if (dE < 0)
     {
         tf[threadID*4] = pt_thread;
-        tf[threadID*4+1] = S1[threadID];
-        tf[threadID*4+2] = S2[threadID];
-        tf[threadID*4+3] = S3[threadID];
+        tf[threadID*4+1] = mult*S1[threadID];
+        tf[threadID*4+2] = mult*S2[threadID];
+        tf[threadID*4+3] = mult*S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
         tf[threadID*4] = pt_thread;
-        tf[threadID*4+1] = S1[threadID];
-        tf[threadID*4+2] = S2[threadID];
-        tf[threadID*4+3] = S3[threadID];
+        tf[threadID*4+1] = mult*S1[threadID];
+        tf[threadID*4+2] = mult*S2[threadID];
+        tf[threadID*4+3] = mult*S3[threadID];
     }
 }
 //Double Material Study
@@ -627,7 +704,7 @@ __device__ int alt_populate(float_t* sheet, int pt, int size)
     }
 }
 
-__global__ void alt_grid(int* size, float_t* sheet, int* debug)
+__global__ void alt_grid(int* size, float_t* sheet, int* debug, float* spins)
 {
     sheet[3] = 1;
     debug[0] = alt_populate(sheet, 0, size[0]);
@@ -635,15 +712,15 @@ __global__ void alt_grid(int* size, float_t* sheet, int* debug)
     {
         if(sheet[i*4+3]==1)
         {
-            sheet[i*4] *= 1.5;
-            sheet[i*4+1] *= 1.5;
-            sheet[i*4+2] *= 1.5;
+            sheet[i*4] *= spins[0];
+            sheet[i*4+1] *= spins[0];
+            sheet[i*4+2] *= spins[0];
         }
         else if(sheet[i*4+3]==2)
         {
-            sheet[i*4] *= 2.5;
-            sheet[i*4+1] *= 2.5;
-            sheet[i*4+2] *= 2.5;
+            sheet[i*4] *= spins[1];
+            sheet[i*4+1] *= spins[1];
+            sheet[i*4+2] *= spins[1];
         }
     }
 }
@@ -656,10 +733,11 @@ GRID_COPY = dev_hamiltonian.get_function("cp_grid")
 NPREC = dev_hamiltonian.get_function("NList_processor")
 VPREC = dev_hamiltonian.get_function("uvec_processor")
 ALT_GRID = dev_hamiltonian.get_function("alt_grid")
-#ALT_POP = dev_hamiltonian.get_function("alt_populate")
 
 
-#METROPOLIS_MC_DM0_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm0_6_6_6_12")
+METROPOLIS_MC_DM0_3_6_3_6 = dev_hamiltonian.get_function("metropolis_mc_dm0_3_6_3_6")
+
+
 METROPOLIS_MC_DM1_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm1_6_6_6_12")
 METROPOLIS_MC_DM1_4_4_4_8  = dev_hamiltonian.get_function("metropolis_mc_dm1_4_4_4_8")
 METROPOLIS_ALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis")
