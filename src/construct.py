@@ -120,12 +120,12 @@ class MonteCarlo:
         self.grid = np.zeros(((self.size*self.size),3), dtype=np.float32)
         self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
         self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
-        print(f"Spin = {self.spin}")
+        #print(f"Spin = {self.spin}")
         if self.FM_Flag:
             mc.FM_N(self.grid)
         else:
             mc.AFM_N(self.grid)
-        print(self.grid)
+        #print(self.grid)
         self.grid *= self.spin
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
         self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
@@ -138,18 +138,14 @@ class MonteCarlo:
         drv.memcpy_htod(self.GRID_GPU, self.grid)
     
     def run_mc_tc_66612(self, T):
-        for i in tqdm(range(self.S_Wrap), desc="Stabilizing...", colour="blue"):
-            mag_fluc =  np.zeros(self.calculation_runs)
-            M = 0.0
-            X = 0.0
-            beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
-            drv.memcpy_htod(self.BJ,beta[0])
-            for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-            np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
-    
+        beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
+        drv.memcpy_htod(self.BJ,beta[0])
+        for j in range(self.stability_runs):
+            mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+        drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        return self.grid
+
     def run_mc_tc_4448(self, T):
         for i in tqdm(range(self.S_Wrap), desc="Stabilizing...", colour="blue"):
             mag_fluc =  np.zeros(self.calculation_runs)

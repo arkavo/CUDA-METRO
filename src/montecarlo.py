@@ -50,6 +50,14 @@ __global__ void cp_grid(float_t* grid, float_t* tf)
     grid[int(tf[threadID*4])*3+1] = tf[threadID*4+2];
     grid[int(tf[threadID*4])*3+2] = tf[threadID*4+3];
 }
+__global__ void alt_cp_grid(float_t* grid, float_t* tf)
+{
+    int idx = blockIdx.x;
+    int threadID = idx;
+    grid[int(tf[threadID*4])*4] = tf[threadID*4+1];
+    grid[int(tf[threadID*4])*4+1] = tf[threadID*4+2];
+    grid[int(tf[threadID*4])*4+2] = tf[threadID*4+3];
+}
 //Vector preprocessing
 __global__ void uvec_processor(float* u, float* v, float* s1, float* s2, float* s3, float* spin)
 {
@@ -512,6 +520,91 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* sheet, int pti, flo
     H += b[0]*spinz;
     return -1.0*H;
 }
+
+__device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm0(float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float* b, int size)
+{
+    float H = 0.0;
+    int n1list[3];
+    int n2list[6];
+    int n3list[3];
+
+    float J1_Cr_Mn[3][3] = {{1.15,0.0,0.0},
+                        {0.0,0.37,0.40},
+                        {0.0,0.40,0.51}};
+    
+    float D_Cr_Mn[3] = {0.21,0.0,0.0};
+
+    float J2_Cr_Cr[3][3] = {{0.49,0.0,0.0},
+                        {0.0,0.44,0.06},
+                        {0.0,0.06,0.42}};
+
+    float D_Cr_Cr[3] = {0.0,0.06,-0.19};
+
+    float J3_Mn_Mn[3][3] = {{-0.12,0.0,0.0},
+                            {0.0,0.93,-0.28},
+                            {0.0,-0.28,0.24}};
+    
+    float D_Mn_Mn[3] = {0.0,0.27,-0.19};
+
+    float J4_Mn_Cr[3][3] = {{0.19,0.0,0.0},
+                            {0.0,0.14,0.09},
+                            {0.0,0.9,0.22}};
+    
+    float D_Mn_Cr[3] = {-0.03,0.0,0.0};
+
+    float Azz_Cr = 0.28;
+    float Azz_Mn = 0.32;
+
+    N1_3_6_3_6(pti, size, n1list);
+    N2_3_6_3_6(pti, size, n2list);
+    N3_3_6_3_6(pti, size, n3list);
+    if(sheet[pti*4+3]-1) //Cr
+    {
+        for(int i=0; i<3; i++)
+        {
+            int pt = n1list[i];
+            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
+        }
+
+        for(int i=0; i<6; i++)
+        {
+            int pt = n2list[i];
+            H += spinx*sheet[pt*4]*J2_Cr_Cr[0][0] + spiny*sheet[pt*4+1]*J2_Cr_Cr[0][1] + spinz*sheet[pt*4+2]*J2_Cr_Cr[0][2];
+        }
+
+        for(int i=0; i<3; i++)
+        {
+            int pt = n3list[i];
+            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
+        }
+
+        H += Azz_Cr*spinz*spinz;
+    }
+    else //Mn   
+    {
+        for(int i=0; i<3; i++)
+        {
+            int pt = n1list[i];
+            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
+        }
+
+        for(int i=0; i<6; i++)
+        {
+            int pt = n2list[i];
+            H += spinx*sheet[pt*4]*J3_Mn_Mn[0][0] + spiny*sheet[pt*4+1]*J3_Mn_Mn[0][1] + spinz*sheet[pt*4+2]*J3_Mn_Mn[0][2];
+        }
+
+        for(int i=0; i<3; i++)
+        {
+            int pt = n3list[i];
+            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
+        }
+
+        H += Azz_Mn*spinz*spinz;
+    }
+    H += b[0]*spinz;
+    return -1.0*H;
+}
 //Monte Carlo
 __global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* NVEC, float* B, int* size)
 {
@@ -665,6 +758,48 @@ __global__ void alt_metropolis(float_t *sheet, float_t *T, int* N, float_t* S1, 
         tf[threadID*4+3] = mult*S3[threadID];
     }
 }
+
+__global__ void alt_metropolis_TC(float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float* tf, float* B, int* size, float* spin1, float* spin2)
+{
+    __shared__ float L0;
+    __shared__ float L1;
+    __shared__ float dE;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = N[threadID];
+    int tidx = threadIdx.x;
+    if (tidx == 0)
+    {
+        L0 = alt_hamiltonian_MnCr_3_6_3_6_dm0(sheet, pt_thread, sheet[pt_thread*4], sheet[pt_thread*4+1], sheet[pt_thread*4+2], B, size[0]);
+    }
+    if (tidx == 1)
+    {
+        L1 = alt_hamiltonian_MnCr_3_6_3_6_dm0(sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
+    }
+
+    __syncthreads();
+
+    dE = L1 - L0;
+    float_t mult = 1.0;
+    if ((sheet[pt_thread*4+3] - 1.0)*(sheet[pt_thread*4+3] - 1.0) < 0.0001)
+        mult = spin1[0];
+    else
+        mult = spin2[0];
+    if (dE < 0)
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = mult*S1[threadID];
+        tf[threadID*4+2] = mult*S2[threadID];
+        tf[threadID*4+3] = mult*S3[threadID];
+    }
+    else if (expf(-1.0*dE*T[0]) > R[threadID])
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = mult*S1[threadID];
+        tf[threadID*4+2] = mult*S2[threadID];
+        tf[threadID*4+3] = mult*S3[threadID];
+    }
+}
 //Double Material Study
 __device__ int alt_populate(float_t* sheet, int pt, int size)
 {
@@ -729,6 +864,7 @@ __global__ void alt_grid(int* size, float_t* sheet, int* debug, float* spins)
 """)
 
 GRID_COPY = dev_hamiltonian.get_function("cp_grid")
+ALT_GRID_COPY = dev_hamiltonian.get_function("alt_cp_grid")
 
 NPREC = dev_hamiltonian.get_function("NList_processor")
 VPREC = dev_hamiltonian.get_function("uvec_processor")
@@ -741,4 +877,5 @@ METROPOLIS_MC_DM0_3_6_3_6 = dev_hamiltonian.get_function("metropolis_mc_dm0_3_6_
 METROPOLIS_MC_DM1_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm1_6_6_6_12")
 METROPOLIS_MC_DM1_4_4_4_8  = dev_hamiltonian.get_function("metropolis_mc_dm1_4_4_4_8")
 METROPOLIS_ALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis")
+METROPOLIS_MALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis_TC")
 
