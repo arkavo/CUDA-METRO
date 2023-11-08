@@ -424,7 +424,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* sheet, int pti, flo
     int n1list[3];
     int n2list[6];
     int n3list[3];
-
+    
     float J1_Cr_Mn[3][3] = {{1.15,0.0,0.0},
                         {0.0,0.37,0.40},
                         {0.0,0.40,0.51}};
@@ -451,7 +451,7 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* sheet, int pti, flo
 
     float Azz_Cr = 0.28;
     float Azz_Mn = 0.32;
-
+    
     N1_3_6_3_6(pti, size, n1list);
     N2_3_6_3_6(pti, size, n2list);
     N3_3_6_3_6(pti, size, n3list);
@@ -527,7 +527,37 @@ __device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm0(float_t* sheet, int pti, flo
     int n1list[3];
     int n2list[6];
     int n3list[3];
+    //MnCrI6 System---------------------------------------------------
+    /*
+    float J1_Cr_Mn[3][3] = {{1.15,0.0,0.0},
+                        {0.0,0.37,0.40},
+                        {0.0,0.40,0.51}};
+    
+    float D_Cr_Mn[3] = {0.21,0.0,0.0};
 
+    float J2_Cr_Cr[3][3] = {{0.49,0.0,0.0},
+                        {0.0,0.44,0.06},
+                        {0.0,0.06,0.42}};
+
+    float D_Cr_Cr[3] = {0.0,0.06,-0.19};
+
+    float J3_Mn_Mn[3][3] = {{-0.12,0.0,0.0},
+                            {0.0,0.93,-0.28},
+                            {0.0,-0.28,0.24}};
+    
+    float D_Mn_Mn[3] = {0.0,0.27,-0.19};
+
+    float J4_Mn_Cr[3][3] = {{0.19,0.0,0.0},
+                            {0.0,0.14,0.09},
+                            {0.0,0.9,0.22}};
+    
+    float D_Mn_Cr[3] = {-0.03,0.0,0.0};
+
+    float Azz_Cr = 0.28;
+    float Azz_Mn = 0.32;
+    */
+
+    //Test CrI3-CrI3 System-------------------------------------------
     float J1_Cr_Mn[3][3] = {{1.15,0.0,0.0},
                         {0.0,0.37,0.40},
                         {0.0,0.40,0.51}};
@@ -782,9 +812,9 @@ __global__ void alt_metropolis_TC(float_t *sheet, float_t *T, int* N, float_t* S
     dE = L1 - L0;
     float_t mult = 1.0;
     if ((sheet[pt_thread*4+3] - 1.0)*(sheet[pt_thread*4+3] - 1.0) < 0.0001)
-        mult = spin1[0];
-    else
         mult = spin2[0];
+    else
+        mult = spin1[0];
     if (dE < 0)
     {
         tf[threadID*4] = pt_thread;
