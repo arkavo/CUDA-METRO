@@ -187,6 +187,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T} = {Mt}")
         print(f"Mean Susceptibility at {T} = {Xt}")
+        np.save(f"{self.save_direcotry}/Grid_F", self.grid)
         return Mt, Xt
 
     def run_mc_tc_en_3636(self, T):
