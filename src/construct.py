@@ -169,7 +169,7 @@ class MonteCarlo:
             np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
     
     def run_mc_tc_3636(self, T):
-        Mt, Xt, Et = 0.0, 0.0, 0.0
+        Mt, Xt = 0.0, 0.0
         ct = 0
         M = np.zeros(self.S_Wrap)
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:2f}", colour="blue"):
@@ -185,6 +185,31 @@ class MonteCarlo:
             mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
             M[i] = np.abs(np.linalg.norm(mag))
         Mt, Xt = np.mean(M), np.std(M)/T
+        print(f"Mean Magnetization at {T} = {Mt}")
+        print(f"Mean Susceptibility at {T} = {Xt}")
+        return Mt, Xt
+
+    def run_mc_tc_en_3636(self, T):
+        Mt, Xt = 0.0, 0.0
+        ct = 0
+        M = np.zeros(self.S_Wrap)
+        E = np.zeros(self.S_Wrap)
+        for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:2f}", colour="blue"):
+            Et = np.array([0.0], dtype=np.float32)
+            mag_fluc =  np.zeros(self.stability_runs)
+            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ, beta)
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, drv.InOut(Et), block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            self.grid = self.grid.reshape((self.size, self.size, 3))
+            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
+            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            M[i] = np.abs(np.linalg.norm(mag))
+            E[i] = Et
+        Mt, Xt = np.mean(M), np.std(M)/T
+        np.save(f"{self.save_direcotry}/En_{T:2f}", E)
         print(f"Mean Magnetization at {T} = {Mt}")
         print(f"Mean Susceptibility at {T} = {Xt}")
         return Mt, Xt

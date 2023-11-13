@@ -969,11 +969,42 @@ __global__ void alt_grid(int* size, float_t* sheet, int* debug, float_t* spins)
 }
 
 //Energy Calculators
-__global__ void grid_3_6_3_6(float_t* sheet, float_t* mat, float_t* E, int* size, float_t* b)
+__global__ void energy_metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* B, int* size, float_t* en)
 {
-    for (int i = 0; i < size[0]*size[0]; i++)
+    __shared__ float_t L0;
+    __shared__ float_t L1;
+    __shared__ float_t dE;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = N[threadID];
+    int tidx = threadIdx.x;
+    if (tidx == 0)
+    {  
+        L0 = hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2],  B, size[0]);
+    }
+    if (tidx == 1)
     {
-        E[i] = hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, i, sheet[i*3], sheet[i*3+1], sheet[i*3+2], b, size[0]);
+        L1 = hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
+    }
+    __syncthreads();
+
+    dE = L1 - L0;
+
+    if (dE < 0)
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = S1[threadID];
+        tf[threadID*4+2] = S2[threadID];
+        tf[threadID*4+3] = S3[threadID];
+        en[0] += dE;
+    }
+    else if (expf(-1.0*dE*T[0]) > R[threadID])
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = S1[threadID];
+        tf[threadID*4+2] = S2[threadID];
+        tf[threadID*4+3] = S3[threadID];
+        en[0] += dE;
     }
 }
 
@@ -1000,4 +1031,4 @@ METROPOLIS_MC_DM0_4_4_4_8  = dev_hamiltonian.get_function("metropolis_mc_dm0_4_4
 METROPOLIS_ALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis")
 METROPOLIS_MALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis_TC")
 
-EN_CALC_3_6_3_6 = dev_hamiltonian.get_function("grid_3_6_3_6")
+EN_CALC_3_6_3_6 = dev_hamiltonian.get_function("energy_metropolis_mc_dm0_3_6_3_6")
