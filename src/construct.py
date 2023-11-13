@@ -72,7 +72,8 @@ class MonteCarlo:
         self.SGPU = drv.mem_alloc(spin_gpu.nbytes)
         drv.memcpy_htod(self.SGPU, spin_gpu)
         self.save_direcotry = "../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
-        '''
+        self.NBS = int(self.MAT_PARAMS[20]), int(self.MAT_PARAMS[21]), int(self.MAT_PARAMS[22]), int(self.MAT_PARAMS[23])
+
         self.metadata = {
             "Material": self.Material,
             "Size": self.size,
@@ -85,8 +86,8 @@ class MonteCarlo:
             "stability_wrap": self.S_Wrap,
             "calculation_wrap": self.C_Wrap,
             "Prefix": self.Prefix,
-            "B": self.B_C,
-            "spin": self.spin,
+            "B": str(self.B_C),
+            "spin": str(self.spin),
             "Temps": str(self.Temps),
             "FM_Flag": self.FM_Flag,
             "DMI_Flag": self.DMI_Flag,
@@ -94,13 +95,13 @@ class MonteCarlo:
             "Input_flag": self.Input_flag,
             "Input_File": self.Input_File
         }
-        '''
+        metadata_file = json.dumps(self.metadata, indent=4)
         os.mkdir(self.save_direcotry)
-        '''
+        
         self.metadata_file = self.save_direcotry+"/metadata.json"
         with open(self.metadata_file, 'w+') as f:
-            json.dump(self.metadata, f, indent=4)
-        '''    
+            f.write(metadata_file)
+        
 
     def generate_random_numbers(self, mult):
         self.NLIST = rg.gen_uniform((self.C1), np.float32)
@@ -117,18 +118,18 @@ class MonteCarlo:
         mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
 
     def mc_init(self):
-        self.grid = np.zeros(((self.size*self.size),3), dtype=np.float32)
+        self.grid = np.zeros((self.size*self.size*3)).astype(np.float32)
+        self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
         self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
         self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
-        #print(f"Spin = {self.spin}")
         if self.FM_Flag:
-            mc.FM_N(self.grid)
+            mc.FM_N(self.grid, self.size)
         else:
-            mc.AFM_N(self.grid)
-        #print(self.grid)
+            mc.AFM_N(self.grid, self.size)
         self.grid *= self.spin
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
-        self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
+        
+        print(self.GRID_GPU)
         if self.Static_T_Flag:
             self.T = np.array([self.Temps]).astype(np.float32)
         else:
@@ -137,12 +138,20 @@ class MonteCarlo:
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         drv.memcpy_htod(self.GRID_GPU, self.grid)
     
-    def run_mc_tc_66612(self, T):
+    def grid_reset(self):
+        if self.FM_Flag:
+            mc.FM_N(self.grid)
+        else:
+            mc.AFM_N(self.grid)
+        self.grid *= self.spin
+        drv.memcpy_htod(self.GRID_GPU, self.grid)
+
+    def run_mc_dmi_66612(self, T):
         beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
             mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
         return self.grid
 
@@ -155,39 +164,53 @@ class MonteCarlo:
             drv.memcpy_htod(self.BJ,beta[0])
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM1_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_4, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             np.save(f"{self.save_direcotry}/grid_{i:04d}", self.grid)
     
     def run_mc_tc_3636(self, T):
-        Mt, Xt = np.zeros(len(T)), np.zeros(len(T))
+        Mt, Xt, Et = 0.0, 0.0, 0.0
         ct = 0
-        for t in T:
-            M, X = np.zeros(self.S_Wrap), np.zeros(self.S_Wrap)
-            for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {t}", colour="blue"):
-                mag_fluc =  np.zeros(self.stability_runs)
-                beta = np.array([1.0 / (t * 8.6173e-2)],dtype=np.float32)
-                drv.memcpy_htod(self.BJ, beta[0])
-                for j in range(self.stability_runs):
-                    mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                    mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-                #print(self.grid)
-                magx, magy, magz = self.grid[:,0], self.grid[:,1], self.grid[:,2]
-                #print(magx, magy, magz)
-                mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
-                M[i] = np.abs(np.linalg.norm(mag))
-                X[i] = np.abs(np.linalg.norm(mag)**2)
-            Mt[ct], Xt[ct] = np.mean(M), np.mean(X)
-            print(f"Mean Magnetization at {t} = {Mt[ct]}")
-            print(f"Mean Susceptibility at {t} = {Xt[ct]}")
-            ct += 1
-        np.save(f"{self.save_direcotry}/Mt", M)
-        np.save(f"{self.save_direcotry}/Xt", X)
-        plt.plot(T, Mt)
-        plt.savefig(f"{self.save_direcotry}/M.png")
-        plt.close()
+        M = np.zeros(self.S_Wrap)
+        for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:2f}", colour="blue"):
+            mag_fluc =  np.zeros(self.stability_runs)
+            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ, beta)
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            self.grid = self.grid.reshape((self.size, self.size, 3))
+            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
+            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            M[i] = np.abs(np.linalg.norm(mag))
+        Mt, Xt = np.mean(M), np.std(M)/T
+        print(f"Mean Magnetization at {T} = {Mt}")
+        print(f"Mean Susceptibility at {T} = {Xt}")
+        return Mt, Xt
     
+    def run_mc_tc_66612(self, T):
+        Mt, Xt = 0.0, 0.0
+        ct = 0
+        M, X = np.zeros(self.S_Wrap), np.zeros(self.S_Wrap)
+        for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T}", colour="blue"):
+            mag_fluc =  np.zeros(self.stability_runs)
+            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ, beta)
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM0_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            magx, magy, magz = self.grid[:,0], self.grid[:,1], self.grid[:,2]
+            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            M[i] = np.sum(magz)/(self.spin*self.size**2)
+            X[i] = np.abs(np.linalg.norm(mag)**2)
+        Mt, Xt = np.mean(M), np.mean(X)
+        print(f"Mean Magnetization at {T} = {Mt}")
+        print(f"Mean Susceptibility at {T} = {Xt}")
+        return Mt, Xt
+
+
     
     def dump_state():
         pass
@@ -198,6 +221,10 @@ class Analyze():
         self.flist = [file for file in self.flist if file.endswith(".npy")]
         self.flist.sort(reverse=reverse)
         self.directory = directory
+        if not os.path.exists(self.directory+"/spin"):
+            os.mkdir(self.directory+"/spin")
+        if not os.path.exists(self.directory+"/quiver"):
+            os.mkdir(self.directory+"/quiver")
         print(self.flist)
 
     def spin_view(self):
@@ -206,12 +233,13 @@ class Analyze():
             print(file)
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
-            grid = grid.reshape((int(np.sqrt(shape[0])), int(np.sqrt(shape[0])), 3))
+            print(shape)
+            grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
             spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
             figure = plt.figure(dpi=400)
             plt.title("Spin Configuration at T = "+str(ctr))
             ax = figure.add_subplot(131)
-            sns.heatmap(spinz, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False, vmin=-1.0, vmax=1.0)
+            sns.heatmap(spinz, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
             ax.set_xlabel("Z")
             ax = figure.add_subplot(132)
             sns.heatmap(spiny, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
@@ -219,7 +247,7 @@ class Analyze():
             ax = figure.add_subplot(133)
             sns.heatmap(spinx, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
             ax.set_xlabel("X")
-            plt.savefig(self.directory+"/spin_"+str(ctr)+".png")
+            plt.savefig(self.directory+"/spin/spin_"+str(ctr)+".png")
             plt.close()
             ctr += 1
     
@@ -247,6 +275,6 @@ class Analyze():
                     rgba[i][0] = 0.0
                     rgba[i][2] = -spinz[i]
             plt.quiver(x_mesh, y_mesh, spinx, spiny, scale=1.5, scale_units="xy", pivot="mid", color=rgba, width=0.01, headwidth=3, headlength=4, headaxislength=3, minlength=0.1, minshaft=1)
-            plt.savefig(self.directory+"/quiver_"+str(ctr)+".png")
+            plt.savefig(self.directory+"/quiver/quiver_"+str(ctr)+".png")
             plt.close()
             ctr += 1
