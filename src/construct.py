@@ -102,7 +102,19 @@ class MonteCarlo:
         with open(self.metadata_file, 'w+') as f:
             f.write(metadata_file)
         
-
+    def display_material(self):
+        print(f"Material: {self.Material}")
+        print(f"Size: {self.size}")
+        print(f"Spin: {self.spin}")
+        print(f"J1: {self.MAT_PARAMS[1]:.4f} J2: {self.MAT_PARAMS[2]:.4f} J3: {self.MAT_PARAMS[3]:.4f} J4: {self.MAT_PARAMS[4]:.4f}")
+        print(f"K1x: {self.MAT_PARAMS[5]:.4f} K1y: {self.MAT_PARAMS[6]:.4f} K1z: {self.MAT_PARAMS[7]:.4f}")
+        print(f"K2x: {self.MAT_PARAMS[8]:.4f} K2y: {self.MAT_PARAMS[9]:.4f} K2z: {self.MAT_PARAMS[10]:.4f}")
+        print(f"K3x: {self.MAT_PARAMS[11]:.4f} K3y: {self.MAT_PARAMS[12]:.4f} K3z: {self.MAT_PARAMS[13]:.4f}")
+        print(f"K4x: {self.MAT_PARAMS[14]:.4f} K4y: {self.MAT_PARAMS[15]:.4f} K4z: {self.MAT_PARAMS[16]:.4f}")
+        print(f"Ax: {self.MAT_PARAMS[17]:.4f} Ay: {self.MAT_PARAMS[18]:.4f} Az: {self.MAT_PARAMS[19]:.4f}")
+        print(f"NBS System: {self.NBS}")
+        print(f"File TC/NC: {self.MAT_PARAMS[24]}")
+        
     def generate_random_numbers(self, mult):
         self.NLIST = rg.gen_uniform((self.C1), np.float32)
         self.ULIST = rg.gen_uniform((self.C1), np.float32)
@@ -187,7 +199,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T} = {Mt}")
         print(f"Mean Susceptibility at {T} = {Xt}")
-        np.save(f"{self.save_direcotry}/Grid_F", self.grid)
+        np.save(f"../paperdata/grid_{T:.2f}", self.grid)
         return Mt, Xt
 
     def run_mc_tc_en_3636(self, T):

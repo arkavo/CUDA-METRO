@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 test_mc0 = cst.MonteCarlo(config="../configs/tc_config.json")
 test_mc0.mc_init()
+test_mc0.display_material()
 M, X = np.array([]), np.array([])
 for t in test_mc0.T:
     #test_mc0.grid_reset()
