@@ -269,7 +269,7 @@ class MonteCarlo:
                 mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
                 self.sampler()
-                mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.GPU_N_SAMPLE, GPU_ET, self.B_GPU, self.GSIZE, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.GPU_N_SAMPLE, GPU_ET, self.B_GPU, self.GSIZE, block=(1,1,1), grid=(self.size*self.size,1,1))
                 drv.memcpy_dtoh(Et, GPU_ET)
                 ET_S[j] = np.mean(Et)
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
