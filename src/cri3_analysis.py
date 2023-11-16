@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-metric = 10
+metric = 100
 test_mc0 = cst.MonteCarlo(config="../configs/CRI3.json")
 test_mc0.mc_init()
 test_mc0.display_material()
@@ -19,7 +19,7 @@ for t in test_mc0.T:
     for i in range(steps):
         for j in range(unit):
             test_mc0.generate_random_numbers(test_mc0.S_Wrap)
-        m, x = test_mc0.run_mc_tc_3636(t)
+            m, x = test_mc0.run_mc_tc_3636(t)
         M = np.append(M, m)
         X = np.append(X, x)
         test_mc0.sampler()
@@ -38,7 +38,6 @@ plt.title("Energy vs Step evolution")
 plt.close()
 np.save(f"{test_mc0.save_direcotry}/M_{test_mc0.size}", Mf)
 np.save(f"{test_mc0.save_direcotry}/X_{test_mc0.size}", Xf)
-np.save(f"{test_mc0.save_direcotry}/E_{test_mc0.size}", Ef)
 
 plt.plot(test_mc0.T, Mf/test_mc0.spin, label="M")
 plt.plot(test_mc0.T, Xf/Xf.max(), label="X")

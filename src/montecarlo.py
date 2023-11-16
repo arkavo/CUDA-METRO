@@ -1014,7 +1014,7 @@ __global__ void encalc_3636(float_t* mat, float_t* sheet, float_t* B, int* N, in
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = N[threadID];
-    en[idx] = hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
 }
 
 //!cuda
