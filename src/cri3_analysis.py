@@ -4,10 +4,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+
+def corr(g1,g2):
+    ac = 0
+    corr = 0.0
+    for i in range(len(g1)):
+        for j in range(3):
+            cur = g1[i][j]*g2[i][j]
+            if cur < 1.0:
+                ac += 1
+            corr += cur
+    
+    return corr/(len(g1)*3), ac/(len(g1)*3)
+
+
+
 metric = 100
 test_mc0 = cst.MonteCarlo(config="../configs/CRI3.json")
 test_mc0.mc_init()
 test_mc0.display_material()
+gprev = np.reshape(test_mc0.grid, (test_mc0.size**2, 3))/test_mc0.spin
 Mf, Xf, Ef = np.array([]), np.array([]), np.array([])
 M, X = np.array([]), np.array([])
 steps = int(metric*(test_mc0.size**2/(test_mc0.Blocks*test_mc0.stability_runs)))
@@ -15,19 +31,37 @@ unit = int(steps/metric)
 test_mc0.sampler()
 for t in test_mc0.T:
     test_mc0.grid_reset()
-    E = np.array([])
+    E, C, Ac = np.array([]), np.array([]), np.array([])
     for i in range(steps):
         for j in range(unit):
             test_mc0.generate_random_numbers(test_mc0.S_Wrap)
             m, x = test_mc0.run_mc_tc_3636(t)
+        gnext = np.reshape(test_mc0.grid, (test_mc0.size**2, 3))/test_mc0.spin
+        c, ac = corr(gprev, gnext)
+        gprev = gnext
         M = np.append(M, m)
         X = np.append(X, x)
         test_mc0.sampler()
         e = np.mean(test_mc0.en_3636(t))
         E = np.append(E, e)
+        C = np.append(C, c)
+        Ac = np.append(Ac, ac)
+    print(f"Correlation avg: {np.mean(C):.3f}")
+    print(f"Acceptance avg: {np.mean(Ac):.3f}")
     print(f"Energy/site avg: {np.mean(e):.3f} meV")
     plt.plot(E/test_mc0.size**2, label=f"{t:.2f} K")
     np.save(f"{test_mc0.save_direcotry}/Energy_{test_mc0.Blocks}_{t:.2f}", E)
+    plt.close()
+    plt.plot(C, label=f"{t:.2f} K")
+    plt.title(f"Correlation vs Step evolution at {t:.2f} K")
+    plt.savefig(f"{test_mc0.save_direcotry}/Correlation_{test_mc0.Blocks}_{t:.2f}.png")
+    np.save(f"{test_mc0.save_direcotry}/Correlation_{test_mc0.Blocks}_{t:.2f}", C)
+    plt.close()
+    plt.plot(Ac, label=f"{t:.2f} K")
+    plt.title(f"Acceptance vs Step evolution at {t:.2f} K")
+    plt.savefig(f"{test_mc0.save_direcotry}/Acceptance_{test_mc0.Blocks}_{t:.2f}.png")
+    np.save(f"{test_mc0.save_direcotry}/Acceptance_{test_mc0.Blocks}_{t:.2f}", Ac)
+    plt.close()
     Mf = np.append(Mf, np.mean(M))
     Xf = np.append(Xf, np.mean(X))
     Ef = np.append(Ef, np.mean(E))
