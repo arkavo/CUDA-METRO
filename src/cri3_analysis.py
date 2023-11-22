@@ -19,7 +19,7 @@ def corr(g1,g2):
 
 
 
-metric = 100
+metric = 2000
 test_mc0 = cst.MonteCarlo(config="../configs/CRI3.json")
 test_mc0.mc_init()
 test_mc0.display_material()
