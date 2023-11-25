@@ -151,7 +151,7 @@ class MonteCarlo:
         if self.Static_T_Flag:
             self.T = self.Temps
         else:
-            self.T = np.linspace(0.01, np.float32(1.5*self.MAT_PARAMS[24]), 25)
+            self.T = np.linspace(0.01, np.float32(1.5*self.MAT_PARAMS[24]), 41)
         self.BJ = drv.mem_alloc(self.T[0].nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         drv.memcpy_htod(self.GRID_GPU, self.grid)
@@ -248,6 +248,28 @@ class MonteCarlo:
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         np.save(f"../paperdata/grid_{T:.3f}", self.grid)
         return Mt, Xt
+    
+    def run_mc_tc_3636_2(self, T):
+        Mt, Xt = 0.0, 0.0
+        ct = 0
+        M = np.zeros(self.S_Wrap)
+        for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
+            mag_fluc =  np.zeros(self.stability_runs)
+            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ, beta)
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            self.grid = self.grid.reshape((self.size, self.size, 3))
+            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
+            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            M[i] = np.abs(np.linalg.norm(mag))
+        Mt, Xt = np.mean(M), np.std(M)/T
+        print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
+        print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
+        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        return Mt, Xt
 
     # TC SECTOR END
 
@@ -285,10 +307,51 @@ class MonteCarlo:
         print(f"Mean Specific Heat at {T:.3f} = {Et:.3f}")
         return Mt, Xt, Et
 
+    def run_mc_tc_en_3636_2(self, T):
+        Mt, Xt = 0.0, 0.0
+        ct = 0
+        M = np.zeros(self.S_Wrap)
+        E = np.zeros(self.S_Wrap)
+        Et = np.zeros(self.Blocks).astype(np.float32)
+        GPU_ET = drv.mem_alloc(Et.nbytes)
+
+        for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
+            mag_fluc =  np.zeros(self.stability_runs)
+            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ, beta)
+            ET_S = np.zeros(self.stability_runs)
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                self.sampler()
+                mc.EN_CALC_3_6_3_6_2(self.GPU_MAT, self.GRID_GPU, self.GPU_N_SAMPLE, GPU_ET, self.B_GPU, self.GSIZE, block=(1,1,1), grid=(self.size*self.size,1,1))
+                drv.memcpy_dtoh(Et, GPU_ET)
+                ET_S[j] = np.mean(Et)
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            self.grid = self.grid.reshape((self.size, self.size, 3))
+            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
+            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            M[i] = np.abs(np.linalg.norm(mag))
+            E[i] = np.mean(ET_S)
+        Mt, Xt, Et = np.mean(M), np.std(M)/T, np.std(E[-10:])/T**2
+        np.save(f"{self.save_direcotry}/En_{T:.3f}", E)
+        print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
+        print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
+        print(f"Mean Specific Heat at {T:.3f} = {Et:.3f}")
+        return Mt, Xt, Et
+
     def en_3636(self, T):
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
         mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
+        drv.memcpy_dtoh(Et, GPU_ET)
+        #E = np.mean(Et)/(self.Blocks*T**2)
+        return Et
+    
+    def en_3636_2(self, T):
+        Et = np.zeros(self.Blocks).astype(np.float32)
+        GPU_ET = drv.mem_alloc(Et.nbytes)
+        mc.EN_CALC_3_6_3_6_2(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
         #E = np.mean(Et)/(self.Blocks*T**2)
         return Et
@@ -302,7 +365,7 @@ class MonteCarlo:
 class Analyze():
     def __init__(self, directory, reverse=False):
         self.flist = os.listdir(directory)
-        self.flist = [file for file in self.flist if file.endswith(".npy")]
+        self.flist = [file for file in self.flist if file.endswith(".npy") and file.startswith("grid")]
         self.flist.sort(reverse=reverse)
         self.directory = directory
         if not os.path.exists(self.directory+"/spin"):
@@ -321,7 +384,8 @@ class Analyze():
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
             print(shape)
-            grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
+            #grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
+            grid = grid.reshape((64, 64, 3))
             spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
             figure = plt.figure(dpi=400)
             plt.title("Spin Configuration at T = "+str(ctr))

@@ -196,8 +196,8 @@ __device__ void N2_2_4_2_4(int n, int size, int* NLIST)
 
 __device__ void N1_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n%size;
-    int col = n/size;
+    int row = n/size;
+    int col = n%size;
     NLIST[0] = ((row+1)*size + col+0 + size*size)%(size*size);
     NLIST[1] = ((row-1)*size + col+1 + size*size)%(size*size);
     NLIST[2] = ((row-0)*size + col-1 + size*size)%(size*size);
@@ -205,8 +205,8 @@ __device__ void N1_3_6_3_6(int n, int size, int* NLIST)
 
 __device__ void N2_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n%size;
-    int col = n/size;
+    int row = n/size;
+    int col = n%size;
     NLIST[0] = ((row+1)*size + col+1 + size*size)%(size*size);
     NLIST[1] = ((row-1)*size + col+2 + size*size)%(size*size);
     NLIST[2] = ((row-2)*size + col+1 + size*size)%(size*size);
@@ -217,8 +217,8 @@ __device__ void N2_3_6_3_6(int n, int size, int* NLIST)
 
 __device__ void N3_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n%size;
-    int col = n/size;
+    int row = n/size;
+    int col = n%size;
     NLIST[0] = ((row+2)*size + col   + size*size)%(size*size);
     NLIST[1] = ((row-2)*size + col+2 + size*size)%(size*size);
     NLIST[2] = ((row  )*size + col-2 + size*size)%(size*size);
@@ -226,8 +226,8 @@ __device__ void N3_3_6_3_6(int n, int size, int* NLIST)
 
 __device__ void N4_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n%size;
-    int col = n/size;
+    int row = n/size;
+    int col = n%size;
     NLIST[0] = ((row-1)*size + col+3 + size*size)%(size*size);
     NLIST[1] = ((row-3)*size + col+1 + size*size)%(size*size);
     NLIST[2] = ((row-2)*size + col-1 + size*size)%(size*size);
@@ -404,6 +404,42 @@ __device__ float_t hamiltonian_tc_2d_3_6_3_6_dm0(float_t* mat, float_t* sheet, i
     for(int i=0; i<3; i++)
     {
         H += mat[1]*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]) + mat[5]*spinx*sheet[n1list[i]*3] + mat[6]*spiny*sheet[n1list[i]*3+1] + mat[7]*spinz*sheet[n1list[i]*3+2];
+    }
+    for(int i=0; i<6; i++)
+    {
+        H += mat[2]*(spinx*sheet[n2list[i]*3] + spiny*sheet[n2list[i]*3+1] + spinz*sheet[n2list[i]*3+2]) + mat[8]*spinx*sheet[n2list[i]*3] + mat[9]*spiny*sheet[n2list[i]*3+1] + mat[10]*spinz*sheet[n2list[i]*3+2];
+    }
+    for(int i=0; i<3; i++)
+    {
+        H += mat[3]*(spinx*sheet[n3list[i]*3] + spiny*sheet[n3list[i]*3+1] + spinz*sheet[n3list[i]*3+2]) + mat[11]*spinx*sheet[n3list[i]*3] + mat[12]*spiny*sheet[n3list[i]*3+1] + mat[13]*spinz*sheet[n3list[i]*3+2];
+    }
+    for(int i=0; i<6; i++)
+    {
+        H += mat[4]*(spinx*sheet[n4list[i]*3] + spiny*sheet[n4list[i]*3+1] + spinz*sheet[n4list[i]*3+2]) + mat[14]*spinx*sheet[n4list[i]*3] + mat[15]*spiny*sheet[n4list[i]*3+1] + mat[16]*spinz*sheet[n4list[i]*3+2];
+    }
+    H += mat[17]*spinx*spinx + mat[18]*spiny*spiny + mat[19]*spinz*spinz;
+    H += b[0]*spinz;
+    return -1.0*H;
+}
+
+__device__ float_t hamiltonian_tc_2d_3_6_3_6_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* b, int size)
+{
+    float_t H = 0.0;
+
+    int n1list[3];
+    int n2list[6];
+    int n3list[3];
+    int n4list[6];
+
+    N1_3_6_3_6(pti, size, n1list);
+    N2_3_6_3_6(pti, size, n2list);
+    N3_3_6_3_6(pti, size, n3list);
+    N4_3_6_3_6(pti, size, n4list);
+
+    for(int i=0; i<3; i++)
+    {
+        H += mat[1]*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]) + mat[5]*spinx*sheet[n1list[i]*3] + mat[6]*spiny*sheet[n1list[i]*3+1] + mat[7]*spinz*sheet[n1list[i]*3+2];
+        H += 0.21*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2])*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]);
     }
     for(int i=0; i<6; i++)
     {
@@ -751,6 +787,43 @@ __global__ void metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, float_t 
     }
 }
 
+__global__ void metropolis_mc_dm1_3_6_3_6(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* B, int* size)
+{
+    __shared__ float_t L0;
+    __shared__ float_t L1;
+    __shared__ float_t dE;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = N[threadID];
+    int tidx = threadIdx.x;
+    if (tidx == 0)
+    {  
+        L0 = hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2],  B, size[0]);
+    }
+    if (tidx == 1)
+    {
+        L1 = hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
+    }
+    __syncthreads();
+
+    dE = L1 - L0;
+
+    if (dE < 0)
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = S1[threadID];
+        tf[threadID*4+2] = S2[threadID];
+        tf[threadID*4+3] = S3[threadID];
+    }
+    else if (expf(-1.0*dE*T[0]) > R[threadID])
+    {
+        tf[threadID*4] = pt_thread;
+        tf[threadID*4+1] = S1[threadID];
+        tf[threadID*4+2] = S2[threadID];
+        tf[threadID*4+3] = S3[threadID];
+    }
+}
+
 __global__ void metropolis_mc_dm1_4_4_4_8(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* NVEC, float_t* B, int* size)
 {
     __shared__ float_t L0;
@@ -1017,6 +1090,15 @@ __global__ void encalc_3636(float_t* mat, float_t* sheet, float_t* B, int* N, in
     en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
 }
 
+__global__ void encalc_3636_2(float_t* mat, float_t* sheet, float_t* B, int* N, int* size, float_t* en)
+{
+    __shared__ float_t E;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = threadID;
+    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+}
+
 //!cuda
 """)
 
@@ -1029,7 +1111,7 @@ ALT_GRID = dev_hamiltonian.get_function("alt_grid")
 
 
 METROPOLIS_MC_DM0_3_6_3_6 = dev_hamiltonian.get_function("metropolis_mc_dm0_3_6_3_6")
-
+METROPOLIS_MC_DM1_3_6_3_6 = dev_hamiltonian.get_function("metropolis_mc_dm1_3_6_3_6")
 
 METROPOLIS_MC_DM1_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm1_6_6_6_12")
 METROPOLIS_MC_DM0_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm0_6_6_6_12")
@@ -1041,3 +1123,4 @@ METROPOLIS_ALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis")
 METROPOLIS_MALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis_TC")
 
 EN_CALC_3_6_3_6 = dev_hamiltonian.get_function("encalc_3636")
+EN_CALC_3_6_3_6_2 = dev_hamiltonian.get_function("encalc_3636_2")

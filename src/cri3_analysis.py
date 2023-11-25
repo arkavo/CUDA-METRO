@@ -62,9 +62,13 @@ for t in test_mc0.T:
     plt.savefig(f"{test_mc0.save_direcotry}/Acceptance_{test_mc0.Blocks}_{t:.2f}.png")
     np.save(f"{test_mc0.save_direcotry}/Acceptance_{test_mc0.Blocks}_{t:.2f}", Ac)
     plt.close()
+    np.save(f"../DiagramData/Fig1/BL_Correlation_{test_mc0.Blocks}_{t:.2f}", C)
+    np.save(f"../DiagramData/Fig1/BL_Acceptance_{test_mc0.Blocks}_{t:.2f}", Ac)
+    np.save(f"../DiagramData/Fig1/BL_Energy_{test_mc0.Blocks}_{t:.2f}", E)
     Mf = np.append(Mf, np.mean(M))
     Xf = np.append(Xf, np.mean(X))
     Ef = np.append(Ef, np.mean(E))
+    np.save(f"{test_mc0.save_direcotry}/grid_{t}", test_mc0.grid.reshape((test_mc0.size**2, 3)))
 Xf[0] = 0.0
 plt.savefig(f"{test_mc0.save_direcotry}/Energy_{test_mc0.size}.png")
 plt.legend(str(test_mc0.T),shadow=True, fancybox=True)
