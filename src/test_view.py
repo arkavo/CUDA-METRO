@@ -10,4 +10,4 @@ folder = args[1]
 
 viewer = cst.Analyze(folder, reverse=True)
 viewer.spin_view()
-viewer.quiver_view()
+#viewer.quiver_view()

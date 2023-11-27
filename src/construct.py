@@ -166,7 +166,7 @@ class MonteCarlo:
         drv.memcpy_htod(self.GRID_GPU, self.grid)
     # DMI SECTOR
     def run_mc_dmi_66612(self, T):
-        beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
+        beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
             mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -175,7 +175,7 @@ class MonteCarlo:
         return self.grid
 
     def run_mc_dmi_4448(self, T):
-        beta = np.array([1.0 / (T[0] * 8.6173e-2)],dtype=np.float32)
+        beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
             mc.METROPOLIS_MC_DM1_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -384,8 +384,8 @@ class Analyze():
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
             print(shape)
-            #grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
-            grid = grid.reshape((64, 64, 3))
+            grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
+            #grid = grid.reshape((64, 64, 3))
             spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
             figure = plt.figure(dpi=400)
             plt.title("Spin Configuration at T = "+str(ctr))
