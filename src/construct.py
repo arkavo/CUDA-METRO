@@ -9,6 +9,8 @@ import numpy as np
 from numpy import random as rd
 import seaborn as sns 
 import matplotlib.pyplot as plt 
+import matplotlib.cm as cm
+from matplotlib.colors import Normalize
 
 import os 
 import sys 
@@ -60,10 +62,13 @@ class MonteCarlo:
         self.B_GPU = drv.mem_alloc(self.b.nbytes)
         drv.memcpy_htod(self.GSIZE, size_int)
         drv.memcpy_htod(self.B_GPU, self.b)
+        self.dmi_3 = np.load("dmi_3.npy")
         self.dmi_4 = np.load("dmi_4.npy")
         self.dmi_6 = np.load("dmi_6.npy")
+        self.GPU_DMI_3 = drv.mem_alloc(self.dmi_3.nbytes)
         self.GPU_DMI_4 = drv.mem_alloc(self.dmi_4.nbytes)
         self.GPU_DMI_6 = drv.mem_alloc(self.dmi_6.nbytes)
+        drv.memcpy_htod(self.GPU_DMI_3, self.dmi_3)
         drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
         drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
         self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
@@ -182,6 +187,16 @@ class MonteCarlo:
             mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
         return self.grid
+    
+    def run_mc_dmi_3636(self, T):
+        beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+        drv.memcpy_htod(self.BJ,beta[0])
+        for j in range(self.stability_runs):
+            mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_3, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+        drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        return self.grid
+    
     #DMI SECTOR END
 
     # TC SECTOR
@@ -416,16 +431,10 @@ class Analyze():
             ax = figure.add_subplot(111)
             rgba = np.zeros((shape[0],4))
             spinz = np.reshape(spinz, int(shape[0]/3))
-            for i in range(int(shape[0]/3)):
-                rgba[i][3] = 1.0
-                rgba[i][1] = 0.0
-                if spinz[i] > 0:
-                    rgba[i][0] = spinz[i]/self.spin
-                    rgba[i][2] = 0.0
-                else:
-                    rgba[i][0] = 0.0
-                    rgba[i][2] = -spinz[i]/self.spin
-            plt.quiver(x_mesh, y_mesh, spinx, spiny, scale=self.spin, scale_units="xy", pivot="mid", color=rgba, width=0.01, headwidth=3, headlength=4, headaxislength=3, minlength=0.1, minshaft=1)
+            norm = Normalize()
+            norm.autoscale(spinz)
+            colormap = cm.Spectral
+            plt.quiver(x_mesh, y_mesh, spinx, spiny, scale=self.spin, scale_units="xy", pivot="mid", color=colormap(norm(spinz)), width=0.01, headwidth=3, headlength=4, headaxislength=3, minlength=0.1, minshaft=1)
             plt.savefig(self.directory+"/quiver/quiver_"+str(ctr)+".png")
             plt.close()
             ctr += 1

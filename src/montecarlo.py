@@ -422,9 +422,10 @@ __device__ float_t hamiltonian_tc_2d_3_6_3_6_dm0(float_t* mat, float_t* sheet, i
     return -1.0*H;
 }
 
-__device__ float_t hamiltonian_tc_2d_3_6_3_6_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* b, int size)
+__device__ float_t hamiltonian_tc_2d_3_6_3_6_dm1(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* NVEC, float_t* b, int size)
 {
     float_t H = 0.0;
+    float_t d_plane = mat[25];
 
     int n1list[3];
     int n2list[6];
@@ -439,7 +440,10 @@ __device__ float_t hamiltonian_tc_2d_3_6_3_6_dm1(float_t* mat, float_t* sheet, i
     for(int i=0; i<3; i++)
     {
         H += mat[1]*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]) + mat[5]*spinx*sheet[n1list[i]*3] + mat[6]*spiny*sheet[n1list[i]*3+1] + mat[7]*spinz*sheet[n1list[i]*3+2];
-        H += 0.21*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2])*(spinx*sheet[n1list[i]*3] + spiny*sheet[n1list[i]*3+1] + spinz*sheet[n1list[i]*3+2]);
+        float_t CRijx = (spinz*sheet[n1list[i]*3+1] - spiny*sheet[n1list[i]*3+2]) * NVEC[i*3];
+        float_t CRijy = (spinx*sheet[n1list[i]*3+2] - spinz*sheet[n1list[i]*3]) * NVEC[i*3+1];
+        float_t CRijz = (spiny*sheet[n1list[i]*3] - spinx*sheet[n1list[i]*3+1]) * NVEC[i*3+2];
+        H += d_plane*(CRijx+CRijy+CRijz);
     }
     for(int i=0; i<6; i++)
     {
@@ -787,7 +791,7 @@ __global__ void metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, float_t 
     }
 }
 
-__global__ void metropolis_mc_dm1_3_6_3_6(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* B, int* size)
+__global__ void metropolis_mc_dm1_3_6_3_6(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* NVEC, float_t* B, int* size)
 {
     __shared__ float_t L0;
     __shared__ float_t L1;
@@ -798,11 +802,11 @@ __global__ void metropolis_mc_dm1_3_6_3_6(float_t *mat, float_t *sheet, float_t 
     int tidx = threadIdx.x;
     if (tidx == 0)
     {  
-        L0 = hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2],  B, size[0]);
+        L0 = hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size[0]);
     }
     if (tidx == 1)
     {
-        L1 = hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
+        L1 = hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], NVEC, B, size[0]);
     }
     __syncthreads();
 
@@ -1096,7 +1100,7 @@ __global__ void encalc_3636_2(float_t* mat, float_t* sheet, float_t* B, int* N, 
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
-    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
 }
 
 //!cuda
