@@ -15,7 +15,7 @@
     "Blocks"    : 128,
     "Threads"   : 2,
     "B"         : "0.",
-    "stability_runs"    : 50000,
+    "stability_runs"    : 500,
     "calculation_runs"  : 50,
     "stability_wrap"    : 30,
     "calculation_wrap"  : 35,

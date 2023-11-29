@@ -135,6 +135,20 @@ class MonteCarlo:
         mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
         mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
 
+    def generate_ising_numbers(self, mult):
+        self.NLIST = rg.gen_uniform((self.C1), np.float32)
+        self.ULIST = rg.gen_uniform((self.C1), np.float32)
+        self.VLIST = rg.gen_uniform((self.C1), np.float32)
+        self.RLIST = rg.gen_uniform((self.C1), np.float32)
+
+        self.NFULL = pycuda.gpuarray.zeros((self.C1), dtype=np.int32)
+        self.S1FULL = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.S2FULL = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.S3FULL = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+
+        mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
+        mc.ISING(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
+    
     def sampler(self):
         self.N_SAMPLE = rg.gen_uniform((self.Blocks), np.float32)
         self.GPU_N_SAMPLE = drv.mem_alloc(self.N_SAMPLE.nbytes)

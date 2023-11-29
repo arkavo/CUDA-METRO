@@ -73,6 +73,23 @@ __global__ void uvec_processor(float_t* u, float_t* v, float_t* s1, float_t* s2,
     s3[idx] = spin[0]*cosf(theta);
 }
 
+__global__ void alt_uvec_ising(float_t* u, float_t* v, float_t* s1, float_t* s2, float_t* s3, float_t* spin)
+{
+    int idx = blockIdx.x;
+    float_t phi = 2.0*3.14159265359*u[idx];
+    float_t theta = acosf(2.0*v[idx] - 1.0);
+    s1[idx] = 0.0;
+    s2[idx] = 0.0;
+    if(cosf(theta) >= 0.0)
+    {
+        s3[idx] = spin[0];
+    }
+    else
+    {
+        s3[idx] = -spin[0];
+    }
+}
+
 __global__ void NList_processor(float_t* nlist, int* res, int* __SIZE)
 {
     int Idx = blockIdx.x;
@@ -1184,6 +1201,7 @@ ALT_GRID_COPY = dev_hamiltonian.get_function("alt_cp_grid")
 
 NPREC = dev_hamiltonian.get_function("NList_processor")
 VPREC = dev_hamiltonian.get_function("uvec_processor")
+ISING = dev_hamiltonian.get_function("alt_uvec_ising")
 ALT_GRID = dev_hamiltonian.get_function("alt_grid")
 
 
