@@ -19,6 +19,10 @@ np.save(f"{test_mc0.save_direcotry}/BLX_{test_mc0.size}_{test_mc0.Blocks}", X)
 X[0] = 0.0
 
 plt.plot(test_mc0.T, M/test_mc0.spin, label="M")
-#plt.plot(test_mc0.T, X/X.max(), label="X")
 plt.title(f"Magnetization vs Temperature of {test_mc0.MAT_NAME} at size {test_mc0.size}x{test_mc0.size}")
 plt.savefig(f"{test_mc0.save_direcotry}/M_{test_mc0.size}.png")
+plt.close()
+plt.plot(test_mc0.T, X/X.max(), label="X")
+plt.title(f"Susceptibility vs Temperature of {test_mc0.MAT_NAME} at size {test_mc0.size}x{test_mc0.size}")
+plt.savefig(f"{test_mc0.save_direcotry}/X_{test_mc0.size}.png")
+plt.close()

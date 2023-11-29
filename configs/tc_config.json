@@ -8,7 +8,7 @@
     "Input_flag"      : 0,
     "Input_File"      : "Starting_States/state.npy",
     "Temps"           : ["32.50"],
-    "Material"        : "I-CrI3",
+    "Material"        : "I-CrOCl",
     "Multiple_Materials" : "TCS",
     "SIZE"    : 64,
     "Box"       : 16,
