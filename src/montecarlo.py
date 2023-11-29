@@ -211,8 +211,8 @@ __device__ void N2_2_4_2_4(int n, int size, int* NLIST)
 
 __device__ void N1_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n/size;
-    int col = n%size;
+    int row = n%size;
+    int col = n/size;
     NLIST[0] = ((row+1)*size + col+0 + size*size)%(size*size);
     NLIST[1] = ((row-1)*size + col+1 + size*size)%(size*size);
     NLIST[2] = ((row-0)*size + col-1 + size*size)%(size*size);
@@ -220,8 +220,8 @@ __device__ void N1_3_6_3_6(int n, int size, int* NLIST)
 
 __device__ void N2_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n/size;
-    int col = n%size;
+    int row = n%size;
+    int col = n/size;
     NLIST[0] = ((row+1)*size + col+1 + size*size)%(size*size);
     NLIST[1] = ((row-1)*size + col+2 + size*size)%(size*size);
     NLIST[2] = ((row-2)*size + col+1 + size*size)%(size*size);
@@ -232,8 +232,8 @@ __device__ void N2_3_6_3_6(int n, int size, int* NLIST)
 
 __device__ void N3_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n/size;
-    int col = n%size;
+    int row = n%size;
+    int col = n/size;
     NLIST[0] = ((row+2)*size + col   + size*size)%(size*size);
     NLIST[1] = ((row-2)*size + col+2 + size*size)%(size*size);
     NLIST[2] = ((row  )*size + col-2 + size*size)%(size*size);
@@ -241,8 +241,8 @@ __device__ void N3_3_6_3_6(int n, int size, int* NLIST)
 
 __device__ void N4_3_6_3_6(int n, int size, int* NLIST)
 {
-    int row = n/size;
-    int col = n%size;
+    int row = n%size;
+    int col = n/size;
     NLIST[0] = ((row-1)*size + col+3 + size*size)%(size*size);
     NLIST[1] = ((row-3)*size + col+1 + size*size)%(size*size);
     NLIST[2] = ((row-2)*size + col-1 + size*size)%(size*size);
