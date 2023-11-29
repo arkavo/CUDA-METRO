@@ -86,7 +86,7 @@ __global__ void alt_uvec_ising(float_t* u, float_t* v, float_t* s1, float_t* s2,
     }
     else
     {
-        s3[idx] = -spin[0];
+        s3[idx] = -1.0*spin[0];
     }
 }
 
