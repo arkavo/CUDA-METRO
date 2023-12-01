@@ -8,7 +8,7 @@
     "Input_flag"      : 0,
     "Input_File"      : "Starting_States/state.npy",
     "Temps"           : ["32.50"],
-    "Material"        : "I-FeI2",
+    "Material"        : "I-Fe2Si",
     "Multiple_Materials" : "TCS",
     "SIZE"    : 64,
     "Box"       : 16,
