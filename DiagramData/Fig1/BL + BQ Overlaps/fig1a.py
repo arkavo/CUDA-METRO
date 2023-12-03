@@ -50,4 +50,3 @@ ax.plot(T_ref,green3/1.5)
 plt.legend(["Ref", "512", "1024", "2048", "4096"])
 plt.savefig("Figure_1B.png")
 plt.close()
-

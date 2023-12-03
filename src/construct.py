@@ -289,7 +289,7 @@ class MonteCarlo:
             beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM2_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             self.grid = self.grid.reshape((self.size, self.size, 3))
