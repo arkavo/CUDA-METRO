@@ -24,14 +24,14 @@ runs_4070ti = np.load("Runs_4070Ti.npy")
 runs_a100 = np.load("Runs_A100SXM4.npy")
 runs_v100 = np.load("Runs_V100SXM2.npy")
 
-plt.plot(x, runs_4070ti, label="RTX 4070 Ti")
-plt.plot(x, runs_a100, label="A100 SXM4")
-plt.plot(x, runs_v100, label="V100 SXM2")
+plt.plot(x,10.0/12.0* runs_4070ti/2310.0, label="RTX 4070 Ti")
+plt.plot(x,10.0/40.0* runs_a100/1095.0, label="A100 SXM4")
+plt.plot(x,10.0/32.0* runs_v100/1245.0, label="V100 SXM2")
 
 plt.legend(["RTX 4070 Ti", "A100 SXM4", "V100 SXM2"])   
 plt.title("Runs vs Grid Size")
 plt.xlabel("Grid Size")
-plt.ylabel("Runs")
+plt.ylabel("Time(s)")
 plt.savefig("Runs.png")
 plt.close()
 
