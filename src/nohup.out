@@ -1,0 +1,485 @@
+['grid_0029.npy', 'grid_0028.npy', 'grid_0027.npy', 'grid_0026.npy', 'grid_0025.npy', 'grid_0024.npy', 'grid_0023.npy', 'grid_0022.npy', 'grid_0021.npy', 'grid_0020.npy', 'grid_0019.npy', 'grid_0018.npy', 'grid_0017.npy', 'grid_0016.npy', 'grid_0015.npy', 'grid_0014.npy', 'grid_0013.npy', 'grid_0012.npy', 'grid_0011.npy', 'grid_0010.npy', 'grid_0009.npy', 'grid_0008.npy', 'grid_0007.npy', 'grid_0006.npy', 'grid_0005.npy', 'grid_0004.npy', 'grid_0003.npy', 'grid_0002.npy', 'grid_0001.npy', 'grid_0000.npy']
+grid_0029.npy
+(196608,)
+grid_0028.npy
+(196608,)
+grid_0027.npy
+(196608,)
+grid_0026.npy
+(196608,)
+Traceback (most recent call last):
+  File "test_view.py", line 12, in <module>
+    viewer.spin_view()
+  File "/home/arkavo/2DM/src/construct.py", line 422, in spin_view
+    sns.heatmap(spinx, cbar=False, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/seaborn/_decorators.py", line 46, in inner_f
+    return f(**kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/seaborn/matrix.py", line 553, in heatmap
+    plotter.plot(ax, cbar_ax, kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/seaborn/matrix.py", line 336, in plot
+    _draw_figure(ax.figure)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/seaborn/utils.py", line 95, in _draw_figure
+    fig.canvas.draw()
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/backends/backend_agg.py", line 407, in draw
+    self.figure.draw(self.renderer)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/artist.py", line 41, in draw_wrapper
+    return draw(artist, renderer, *args, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/figure.py", line 1864, in draw
+    renderer, self, artists, self.suppressComposite)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/image.py", line 131, in _draw_list_compositing_images
+    a.draw(renderer)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/artist.py", line 41, in draw_wrapper
+    return draw(artist, renderer, *args, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/cbook/deprecation.py", line 411, in wrapper
+    return func(*inner_args, **inner_kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/axes/_base.py", line 2747, in draw
+    mimage._draw_list_compositing_images(renderer, self, artists)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/image.py", line 131, in _draw_list_compositing_images
+    a.draw(renderer)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/artist.py", line 41, in draw_wrapper
+    return draw(artist, renderer, *args, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/collections.py", line 2053, in draw
+    self._antialiased, self.get_edgecolors().reshape((-1, 4)))
+KeyboardInterrupt
+/home/arkavo/2DM/src/construct.py:439: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.
+  ax = figure.add_subplot(111)
+['grid_0029.npy', 'grid_0028.npy', 'grid_0027.npy', 'grid_0026.npy', 'grid_0025.npy', 'grid_0024.npy', 'grid_0023.npy', 'grid_0022.npy', 'grid_0021.npy', 'grid_0020.npy', 'grid_0019.npy', 'grid_0018.npy', 'grid_0017.npy', 'grid_0016.npy', 'grid_0015.npy', 'grid_0014.npy', 'grid_0013.npy', 'grid_0012.npy', 'grid_0011.npy', 'grid_0010.npy', 'grid_0009.npy', 'grid_0008.npy', 'grid_0007.npy', 'grid_0006.npy', 'grid_0005.npy', 'grid_0004.npy', 'grid_0003.npy', 'grid_0002.npy', 'grid_0001.npy', 'grid_0000.npy']
+grid_0029.npy
+(196608,)
+grid_0028.npy
+(196608,)
+grid_0027.npy
+(196608,)
+grid_0026.npy
+(196608,)
+grid_0025.npy
+(196608,)
+grid_0024.npy
+(196608,)
+grid_0023.npy
+(196608,)
+grid_0022.npy
+(196608,)
+grid_0021.npy
+(196608,)
+grid_0020.npy
+(196608,)
+grid_0019.npy
+(196608,)
+grid_0018.npy
+(196608,)
+grid_0017.npy
+(196608,)
+grid_0016.npy
+(196608,)
+grid_0015.npy
+(196608,)
+grid_0014.npy
+(196608,)
+grid_0013.npy
+(196608,)
+grid_0012.npy
+(196608,)
+grid_0011.npy
+(196608,)
+grid_0010.npy
+(196608,)
+grid_0009.npy
+(196608,)
+grid_0008.npy
+(196608,)
+grid_0007.npy
+(196608,)
+grid_0006.npy
+(196608,)
+grid_0005.npy
+(196608,)
+grid_0004.npy
+(196608,)
+grid_0003.npy
+(196608,)
+grid_0002.npy
+(196608,)
+grid_0001.npy
+(196608,)
+grid_0000.npy
+(196608,)
+grid_0029.npy
+grid_0028.npy
+grid_0027.npy
+grid_0026.npy
+grid_0025.npy
+grid_0024.npy
+grid_0023.npy
+Traceback (most recent call last):
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/ImageFile.py", line 504, in _save
+    fh = fp.fileno()
+AttributeError: '_idat' object has no attribute 'fileno'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "test_view.py", line 13, in <module>
+    viewer.quiver_view()
+  File "/home/arkavo/2DM/src/construct.py", line 446, in quiver_view
+    plt.savefig(self.directory+"/quiver/quiver_"+str(ctr)+".png")
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/backend_bases.py", line 2217, in print_figure
+    **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/backends/backend_agg.py", line 512, in print_png
+    dpi=self.figure.dpi, metadata=metadata, pil_kwargs=pil_kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/Image.py", line 2240, in save
+    save_handler(self, fp, filename)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/PngImagePlugin.py", line 1348, in _save
+    ImageFile._save(im, _idat(fp, chunk), [("zip", (0, 0) + im.size, 0, rawmode)])
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/ImageFile.py", line 519, in _save
+    fp.write(d)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/PngImagePlugin.py", line 1044, in write
+    self.chunk(self.fp, b"IDAT", data)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/PngImagePlugin.py", line 1031, in putchunk
+    fp.write(data)
+OSError: [Errno 28] No space left on device
+['grid_0099.npy', 'grid_0098.npy', 'grid_0097.npy', 'grid_0096.npy', 'grid_0095.npy', 'grid_0094.npy', 'grid_0093.npy', 'grid_0092.npy', 'grid_0091.npy', 'grid_0090.npy', 'grid_0089.npy', 'grid_0088.npy', 'grid_0087.npy', 'grid_0086.npy', 'grid_0085.npy', 'grid_0084.npy', 'grid_0083.npy', 'grid_0082.npy', 'grid_0081.npy', 'grid_0080.npy', 'grid_0079.npy', 'grid_0078.npy', 'grid_0077.npy', 'grid_0076.npy', 'grid_0075.npy', 'grid_0074.npy', 'grid_0073.npy', 'grid_0072.npy', 'grid_0071.npy', 'grid_0070.npy', 'grid_0069.npy', 'grid_0068.npy', 'grid_0067.npy', 'grid_0066.npy', 'grid_0065.npy', 'grid_0064.npy', 'grid_0063.npy', 'grid_0062.npy', 'grid_0061.npy', 'grid_0060.npy', 'grid_0059.npy', 'grid_0058.npy', 'grid_0057.npy', 'grid_0056.npy', 'grid_0055.npy', 'grid_0054.npy', 'grid_0053.npy', 'grid_0052.npy', 'grid_0051.npy', 'grid_0050.npy', 'grid_0049.npy', 'grid_0048.npy', 'grid_0047.npy', 'grid_0046.npy', 'grid_0045.npy', 'grid_0044.npy', 'grid_0043.npy', 'grid_0042.npy', 'grid_0041.npy', 'grid_0040.npy', 'grid_0039.npy', 'grid_0038.npy', 'grid_0037.npy', 'grid_0036.npy', 'grid_0035.npy', 'grid_0034.npy', 'grid_0033.npy', 'grid_0032.npy', 'grid_0031.npy', 'grid_0030.npy', 'grid_0029.npy', 'grid_0028.npy', 'grid_0027.npy', 'grid_0026.npy', 'grid_0025.npy', 'grid_0024.npy', 'grid_0023.npy', 'grid_0022.npy', 'grid_0021.npy', 'grid_0020.npy', 'grid_0019.npy', 'grid_0018.npy', 'grid_0017.npy', 'grid_0016.npy', 'grid_0015.npy', 'grid_0014.npy', 'grid_0013.npy', 'grid_0012.npy', 'grid_0011.npy', 'grid_0010.npy', 'grid_0009.npy', 'grid_0008.npy', 'grid_0007.npy', 'grid_0006.npy', 'grid_0005.npy', 'grid_0004.npy', 'grid_0003.npy', 'grid_0002.npy', 'grid_0001.npy', 'grid_0000.npy']
+grid_0099.npy
+(120000,)
+Traceback (most recent call last):
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/ImageFile.py", line 504, in _save
+    fh = fp.fileno()
+AttributeError: '_idat' object has no attribute 'fileno'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "test_view.py", line 12, in <module>
+    viewer.spin_view()
+  File "/home/arkavo/2DM/src/construct.py", line 438, in spin_view
+    plt.savefig(self.directory+"/spin/spin_"+str(ctr)+".png")
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/pyplot.py", line 859, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/figure.py", line 2311, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/backend_bases.py", line 2217, in print_figure
+    **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/backend_bases.py", line 1639, in wrapper
+    return func(*args, **kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/backends/backend_agg.py", line 512, in print_png
+    dpi=self.figure.dpi, metadata=metadata, pil_kwargs=pil_kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/matplotlib/image.py", line 1611, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/Image.py", line 2240, in save
+    save_handler(self, fp, filename)
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/PngImagePlugin.py", line 1348, in _save
+    ImageFile._save(im, _idat(fp, chunk), [("zip", (0, 0) + im.size, 0, rawmode)])
+  File "/home/arkavo/pyenv3/lib/python3.6/site-packages/PIL/ImageFile.py", line 518, in _save
+    l, s, d = e.encode(bufsize)
+KeyboardInterrupt
+/home/arkavo/2DM/src/construct.py:453: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.
+  ax = figure.add_subplot(111)
+['grid_0099.npy', 'grid_0098.npy', 'grid_0097.npy', 'grid_0096.npy', 'grid_0095.npy', 'grid_0094.npy', 'grid_0093.npy', 'grid_0092.npy', 'grid_0091.npy', 'grid_0090.npy', 'grid_0089.npy', 'grid_0088.npy', 'grid_0087.npy', 'grid_0086.npy', 'grid_0085.npy', 'grid_0084.npy', 'grid_0083.npy', 'grid_0082.npy', 'grid_0081.npy', 'grid_0080.npy', 'grid_0079.npy', 'grid_0078.npy', 'grid_0077.npy', 'grid_0076.npy', 'grid_0075.npy', 'grid_0074.npy', 'grid_0073.npy', 'grid_0072.npy', 'grid_0071.npy', 'grid_0070.npy', 'grid_0069.npy', 'grid_0068.npy', 'grid_0067.npy', 'grid_0066.npy', 'grid_0065.npy', 'grid_0064.npy', 'grid_0063.npy', 'grid_0062.npy', 'grid_0061.npy', 'grid_0060.npy', 'grid_0059.npy', 'grid_0058.npy', 'grid_0057.npy', 'grid_0056.npy', 'grid_0055.npy', 'grid_0054.npy', 'grid_0053.npy', 'grid_0052.npy', 'grid_0051.npy', 'grid_0050.npy', 'grid_0049.npy', 'grid_0048.npy', 'grid_0047.npy', 'grid_0046.npy', 'grid_0045.npy', 'grid_0044.npy', 'grid_0043.npy', 'grid_0042.npy', 'grid_0041.npy', 'grid_0040.npy', 'grid_0039.npy', 'grid_0038.npy', 'grid_0037.npy', 'grid_0036.npy', 'grid_0035.npy', 'grid_0034.npy', 'grid_0033.npy', 'grid_0032.npy', 'grid_0031.npy', 'grid_0030.npy', 'grid_0029.npy', 'grid_0028.npy', 'grid_0027.npy', 'grid_0026.npy', 'grid_0025.npy', 'grid_0024.npy', 'grid_0023.npy', 'grid_0022.npy', 'grid_0021.npy', 'grid_0020.npy', 'grid_0019.npy', 'grid_0018.npy', 'grid_0017.npy', 'grid_0016.npy', 'grid_0015.npy', 'grid_0014.npy', 'grid_0013.npy', 'grid_0012.npy', 'grid_0011.npy', 'grid_0010.npy', 'grid_0009.npy', 'grid_0008.npy', 'grid_0007.npy', 'grid_0006.npy', 'grid_0005.npy', 'grid_0004.npy', 'grid_0003.npy', 'grid_0002.npy', 'grid_0001.npy', 'grid_0000.npy']
+grid_0099.npy
+(120000,)
+grid_0098.npy
+(120000,)
+grid_0097.npy
+(120000,)
+grid_0096.npy
+(120000,)
+grid_0095.npy
+(120000,)
+grid_0094.npy
+(120000,)
+grid_0093.npy
+(120000,)
+grid_0092.npy
+(120000,)
+grid_0091.npy
+(120000,)
+grid_0090.npy
+(120000,)
+grid_0089.npy
+(120000,)
+grid_0088.npy
+(120000,)
+grid_0087.npy
+(120000,)
+grid_0086.npy
+(120000,)
+grid_0085.npy
+(120000,)
+grid_0084.npy
+(120000,)
+grid_0083.npy
+(120000,)
+grid_0082.npy
+(120000,)
+grid_0081.npy
+(120000,)
+grid_0080.npy
+(120000,)
+grid_0079.npy
+(120000,)
+grid_0078.npy
+(120000,)
+grid_0077.npy
+(120000,)
+grid_0076.npy
+(120000,)
+grid_0075.npy
+(120000,)
+grid_0074.npy
+(120000,)
+grid_0073.npy
+(120000,)
+grid_0072.npy
+(120000,)
+grid_0071.npy
+(120000,)
+grid_0070.npy
+(120000,)
+grid_0069.npy
+(120000,)
+grid_0068.npy
+(120000,)
+grid_0067.npy
+(120000,)
+grid_0066.npy
+(120000,)
+grid_0065.npy
+(120000,)
+grid_0064.npy
+(120000,)
+grid_0063.npy
+(120000,)
+grid_0062.npy
+(120000,)
+grid_0061.npy
+(120000,)
+grid_0060.npy
+(120000,)
+grid_0059.npy
+(120000,)
+grid_0058.npy
+(120000,)
+grid_0057.npy
+(120000,)
+grid_0056.npy
+(120000,)
+grid_0055.npy
+(120000,)
+grid_0054.npy
+(120000,)
+grid_0053.npy
+(120000,)
+grid_0052.npy
+(120000,)
+grid_0051.npy
+(120000,)
+grid_0050.npy
+(120000,)
+grid_0049.npy
+(120000,)
+grid_0048.npy
+(120000,)
+grid_0047.npy
+(120000,)
+grid_0046.npy
+(120000,)
+grid_0045.npy
+(120000,)
+grid_0044.npy
+(120000,)
+grid_0043.npy
+(120000,)
+grid_0042.npy
+(120000,)
+grid_0041.npy
+(120000,)
+grid_0040.npy
+(120000,)
+grid_0039.npy
+(120000,)
+grid_0038.npy
+(120000,)
+grid_0037.npy
+(120000,)
+grid_0036.npy
+(120000,)
+grid_0035.npy
+(120000,)
+grid_0034.npy
+(120000,)
+grid_0033.npy
+(120000,)
+grid_0032.npy
+(120000,)
+grid_0031.npy
+(120000,)
+grid_0030.npy
+(120000,)
+grid_0029.npy
+(120000,)
+grid_0028.npy
+(120000,)
+grid_0027.npy
+(120000,)
+grid_0026.npy
+(120000,)
+grid_0025.npy
+(120000,)
+grid_0024.npy
+(120000,)
+grid_0023.npy
+(120000,)
+grid_0022.npy
+(120000,)
+grid_0021.npy
+(120000,)
+grid_0020.npy
+(120000,)
+grid_0019.npy
+(120000,)
+grid_0018.npy
+(120000,)
+grid_0017.npy
+(120000,)
+grid_0016.npy
+(120000,)
+grid_0015.npy
+(120000,)
+grid_0014.npy
+(120000,)
+grid_0013.npy
+(120000,)
+grid_0012.npy
+(120000,)
+grid_0011.npy
+(120000,)
+grid_0010.npy
+(120000,)
+grid_0009.npy
+(120000,)
+grid_0008.npy
+(120000,)
+grid_0007.npy
+(120000,)
+grid_0006.npy
+(120000,)
+grid_0005.npy
+(120000,)
+grid_0004.npy
+(120000,)
+grid_0003.npy
+(120000,)
+grid_0002.npy
+(120000,)
+grid_0001.npy
+(120000,)
+grid_0000.npy
+(120000,)
+grid_0099.npy
+grid_0098.npy
+grid_0097.npy
+grid_0096.npy
+grid_0095.npy
+grid_0094.npy
+grid_0093.npy
+grid_0092.npy
+grid_0091.npy
+grid_0090.npy
+grid_0089.npy
+grid_0088.npy
+grid_0087.npy
+grid_0086.npy
+grid_0085.npy
+grid_0084.npy
+grid_0083.npy
+grid_0082.npy
+grid_0081.npy
+grid_0080.npy
+grid_0079.npy
+grid_0078.npy
+grid_0077.npy
+grid_0076.npy
+grid_0075.npy
+grid_0074.npy
+grid_0073.npy
+grid_0072.npy
+grid_0071.npy
+grid_0070.npy
+grid_0069.npy
+grid_0068.npy
+grid_0067.npy
+grid_0066.npy
+grid_0065.npy
+grid_0064.npy
+grid_0063.npy
+grid_0062.npy
+grid_0061.npy
+grid_0060.npy
+grid_0059.npy
+grid_0058.npy
+grid_0057.npy
+grid_0056.npy
+grid_0055.npy
+grid_0054.npy
+grid_0053.npy
+grid_0052.npy
+grid_0051.npy
+grid_0050.npy
+grid_0049.npy
+grid_0048.npy
+grid_0047.npy
+grid_0046.npy
+grid_0045.npy
+grid_0044.npy
+grid_0043.npy
+grid_0042.npy
+grid_0041.npy
+grid_0040.npy
+grid_0039.npy
+grid_0038.npy
+grid_0037.npy
+grid_0036.npy
+grid_0035.npy
+grid_0034.npy
+grid_0033.npy
+grid_0032.npy
+grid_0031.npy
+grid_0030.npy
+grid_0029.npy
+grid_0028.npy
+grid_0027.npy
+grid_0026.npy
+grid_0025.npy
+grid_0024.npy
+grid_0023.npy
+grid_0022.npy
+grid_0021.npy
+grid_0020.npy
+grid_0019.npy
+grid_0018.npy
+grid_0017.npy
+grid_0016.npy
+grid_0015.npy
+grid_0014.npy
+grid_0013.npy
+grid_0012.npy
+grid_0011.npy
+grid_0010.npy
+grid_0009.npy
+grid_0008.npy
+grid_0007.npy
+grid_0006.npy
+grid_0005.npy
+grid_0004.npy
+grid_0003.npy
+grid_0002.npy
+grid_0001.npy
+grid_0000.npy
