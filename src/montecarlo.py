@@ -1191,6 +1191,15 @@ __global__ void encalc_3636_2(float_t* mat, float_t* sheet, float_t* B, int* N, 
     en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
 }
 
+__global__ void encalc_66612(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en, float_t* NVEC)
+{
+    __shared__ float_t E;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = threadID;
+    en[idx] = -1.0*hamiltonian_tc_2d_6_6_6_12_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size[0]);
+}
+
 //!cuda
 """)
 
@@ -1218,3 +1227,4 @@ METROPOLIS_MALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis_TC")
 
 EN_CALC_3_6_3_6 = dev_hamiltonian.get_function("encalc_3636")
 EN_CALC_3_6_3_6_2 = dev_hamiltonian.get_function("encalc_3636_2")
+EN_CALC_6_6_6_12 = dev_hamiltonian.get_function("encalc_66612")

@@ -386,6 +386,15 @@ class MonteCarlo:
         drv.memcpy_dtoh(Et, GPU_ET)
         #E = np.mean(Et)/(self.Blocks*T**2)
         return Et
+
+    def run_mc_tc_en_66612(self, T):
+        Et = np.zeros(self.Blocks).astype(np.float32)
+        GPU_ET = drv.mem_alloc(Et.nbytes)
+        mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
+        drv.memcpy_dtoh(Et, GPU_ET)
+        #E = np.mean(Et)/(self.Blocks*T**2)
+        return Et
+        
     # TC EN SECTOR 
     
     # MISC SECTOR
@@ -415,6 +424,19 @@ class Analyze():
         self.metadata = json.load(open(self.directory+"/metadata.json", 'r'))
         self.size = self.metadata["Size"]
         self.spin = np.float32(self.metadata["spin"])
+        self.Blocks = self.metadata["Blocks"]
+        Mat = self.metadata["Material"]
+        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../inputs/"+"TC_"+Mat+".csv")
+        self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
+        drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
+        self.B_GPU = drv.mem_alloc(self.MAT_PARAMS[0].nbytes)
+        drv.memcpy_htod(self.B_GPU, np.array([self.metadata["B"]]).astype(np.float32))
+        self.GSIZE = drv.mem_alloc(np.array([self.size]).astype(np.int32).nbytes)
+        drv.memcpy_htod(self.GSIZE, np.array([self.size]).astype(np.int32))
+        DMI_6 = np.load("dmi_6.npy")
+        self.GPU_DMI_6 = drv.mem_alloc(DMI_6.nbytes)
+        drv.memcpy_htod(self.GPU_DMI_6, DMI_6)
+
 
     def spin_view(self):
         ctr = 0
@@ -462,3 +484,26 @@ class Analyze():
             plt.savefig(self.directory+"/quiver/quiver_"+str(ctr)+".png")
             plt.close()
             ctr += 1
+        
+    def en_66612(self):
+        ctr = 0
+        E_f = np.zeros(len(self.flist))
+        for file in self.flist:
+            print(file)
+            grid = np.load(self.directory+"/"+file)
+            shape = grid.shape
+            grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
+            Et = np.zeros(self.Blocks).astype(np.float32)
+            self.GRID_GPU = drv.mem_alloc(grid.nbytes)
+            drv.memcpy_htod(self.GRID_GPU, grid)
+            GPU_ET = drv.mem_alloc(Et.nbytes)
+            mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GSIZE, GPU_ET, self.GPU_DMI_6, block=(1,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(Et, GPU_ET)
+            print(np.mean(-Et))
+            E_f[ctr] = -np.mean(Et)
+            ctr += 1
+        np.save(self.directory+"/En", E_f)
+        plt.plot(E_f)
+        plt.savefig(self.directory+"/En.png")
+        np.savetxt(self.directory+"/En.txt", E_f)
+        
