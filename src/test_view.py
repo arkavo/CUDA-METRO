@@ -9,6 +9,6 @@ if len(args) != 2:
 folder = args[1]
 
 viewer = cst.Analyze(folder, reverse=False)
-#viewer.spin_view()
-#viewer.quiver_view()
+viewer.spin_view()
+viewer.quiver_view()
 viewer.en_66612()

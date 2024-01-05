@@ -14,7 +14,7 @@ for file in flist:
     shape = grid.shape
     grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
     spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
-    figure = plt.figure(figsize=(30,25), dpi=1200)
+    figure = plt.figure(figsize=(30,25), dpi=600)
     #plt.title("Spin Configuration")
     ax = sns.heatmap(spinz, cbar=True, cmap="coolwarm", square=True, xticklabels=False, yticklabels=False)
     plt.savefig("Sz_"+file+".png")

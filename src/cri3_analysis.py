@@ -35,14 +35,14 @@ for t in test_mc0.T:
     for i in range(steps):
         for j in range(unit):
             test_mc0.generate_random_numbers(test_mc0.S_Wrap)
-            m, x = test_mc0.run_mc_tc_3636_2(t)
+            m, x = test_mc0.run_mc_tc_3636(t)
         gnext = np.reshape(test_mc0.grid, (test_mc0.size**2, 3))/test_mc0.spin
         c, ac = corr(gprev, gnext)
         gprev = gnext
         M = np.append(M, m)
         X = np.append(X, x)
         test_mc0.sampler()
-        e = np.mean(test_mc0.en_3636_2(t))
+        e = np.mean(test_mc0.en_3636(t))
         E = np.append(E, e)
         C = np.append(C, c)
         Ac = np.append(Ac, ac)

@@ -302,6 +302,50 @@ class MonteCarlo:
         np.save(f"../paperdata/grid_{T:.3f}", self.grid)
         return Mt, Xt
 
+    def run_mc_tc_2242(self, T):
+        Mt, Xt = 0.0, 0.0
+        ct = 0
+        M = np.zeros(self.S_Wrap)
+        for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
+            mag_fluc =  np.zeros(self.stability_runs)
+            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ, beta)
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM0_2_2_4_2(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            self.grid = self.grid.reshape((self.size, self.size, 3))
+            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
+            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            M[i] = np.abs(np.linalg.norm(mag))
+        Mt, Xt = np.mean(M), np.std(M)/T
+        print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
+        print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
+        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        return Mt, Xt
+    
+    def run_mc_tc_2424(self, T):
+        Mt, Xt = 0.0, 0.0
+        ct = 0
+        M = np.zeros(self.S_Wrap)
+        for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
+            mag_fluc =  np.zeros(self.stability_runs)
+            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            drv.memcpy_htod(self.BJ, beta)
+            for j in range(self.stability_runs):
+                mc.METROPOLIS_MC_DM0_2_4_2_4(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+            self.grid = self.grid.reshape((self.size, self.size, 3))
+            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
+            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            M[i] = np.abs(np.linalg.norm(mag))
+        Mt, Xt = np.mean(M), np.std(M)/T
+        print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
+        print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
+        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        return Mt, Xt
+
     # TC SECTOR END
 
     # TC EN SECTOR
@@ -479,7 +523,7 @@ class Analyze():
             spinz = np.reshape(spinz, int(shape[0]/3))
             norm = Normalize()
             norm.autoscale(spinz)
-            colormap = cm.RdBu
+            colormap = cm.bwr
             plt.quiver(x_mesh, y_mesh, spinx, spiny, scale=self.spin, scale_units="xy", pivot="mid", color=colormap(norm(spinz)), width=0.01, headwidth=3, headlength=4, headaxislength=3, minlength=0.1, minshaft=1)
             plt.savefig(self.directory+"/quiver/quiver_"+str(ctr)+".png")
             plt.close()
