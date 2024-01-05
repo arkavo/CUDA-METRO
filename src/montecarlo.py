@@ -213,9 +213,9 @@ __device__ void N3_2_2_4_2(int n, int size, int* NLIST)
 {
     int row = n/size;
     int col = n%size;
-    NLIST[0] = ((row+1)*size + col-1 + size*size)%(size*size);
+    NLIST[0] = ((row+1)*size + (col-1+size)%size + size*size)%(size*size);
     NLIST[1] = ((row+1)*size + col+1 + size*size)%(size*size);
-    NLIST[2] = ((row-1)*size + col-1 + size*size)%(size*size);
+    NLIST[2] = (size - (row-1)*size + col-1 + size*size)%(size*size);
     NLIST[3] = ((row-1)*size + col+1 + size*size)%(size*size);
 }
 
