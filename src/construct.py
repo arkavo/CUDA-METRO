@@ -170,7 +170,7 @@ class MonteCarlo:
         if self.Static_T_Flag:
             self.T = self.Temps
         else:
-            self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), 21)
+            self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), 11)
         self.BJ = drv.mem_alloc(self.T[0].nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         drv.memcpy_htod(self.GRID_GPU, self.grid)
