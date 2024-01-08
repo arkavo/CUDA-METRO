@@ -1077,25 +1077,25 @@ __global__ void energy_metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, f
 
 __global__ void encalc_3636(float_t* mat, float_t* sheet, float_t* B, int* N, int* size, float_t* en)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
     en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
 }
 
-__global__ void encalc_3636_2(float_t* mat, float_t* sheet, float_t* B, int* N, int* size, float_t* en)
+__global__ void encalc_3636_2(float_t* mat, float_t* sheet, float_t* B, int* N, int* size, float_t* en, float_t* NVEC)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
-    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size[0]);
 }
 
 __global__ void encalc_66612(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
@@ -1104,7 +1104,7 @@ __global__ void encalc_66612(float_t* mat, float_t* sheet, float_t* B, int* size
 
 __global__ void encalc_66612_2(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en, float_t* NVEC)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
@@ -1113,7 +1113,7 @@ __global__ void encalc_66612_2(float_t* mat, float_t* sheet, float_t* B, int* si
 
 __global__ void encalc_4448(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
@@ -1122,7 +1122,7 @@ __global__ void encalc_4448(float_t* mat, float_t* sheet, float_t* B, int* size,
 
 __global__ void encalc_4448_2(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en, float_t* NVEC)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
@@ -1131,7 +1131,7 @@ __global__ void encalc_4448_2(float_t* mat, float_t* sheet, float_t* B, int* siz
 
 __global__ void encalc_2424(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
@@ -1140,7 +1140,7 @@ __global__ void encalc_2424(float_t* mat, float_t* sheet, float_t* B, int* size,
 
 __global__ void encalc_2242(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
 {
-    __shared__ float_t E;
+    
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
@@ -1172,11 +1172,6 @@ METROPOLIS_MC_DM0_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm0_6_6
 
 METROPOLIS_MC_DM1_4_4_4_8  = dev_hamiltonian.get_function("metropolis_mc_dm1_4_4_4_8")
 METROPOLIS_MC_DM0_4_4_4_8  = dev_hamiltonian.get_function("metropolis_mc_dm0_4_4_4_8")
-
-
-#Redundant modules
-METROPOLIS_ALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis")
-METROPOLIS_MALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis_TC")
 
 EN_CALC_3_6_3_6 = dev_hamiltonian.get_function("encalc_3636")
 EN_CALC_3_6_3_6_2 = dev_hamiltonian.get_function("encalc_3636_2")
