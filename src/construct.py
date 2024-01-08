@@ -29,12 +29,12 @@ class MonteCarlo:
             CONFIG = json.load(f)
         # FLAGS
         self.Single_MAT_Flag = CONFIG["Single_Mat_Flag"]
-        self.Animation_Flags = CONFIG["Animation_Flags"]
         self.Static_T_Flag = CONFIG["Static_T_Flag"]
         self.Temps = [np.float32(item) for item in CONFIG["Temps"]]
         self.FM_Flag = CONFIG["FM_Flag"]
         self.DMI_Flag = CONFIG["DMI_Flag"]
         self.TC_Flag = CONFIG["TC_Flag"]
+        
         # CONSTANTS AND PATHS
         self.Material = CONFIG["Material"]
         self.Multiple_Materials = CONFIG["Multiple_Materials"]
@@ -44,7 +44,6 @@ class MonteCarlo:
         self.size = CONFIG["SIZE"]
         self.Box = CONFIG["Box"]
         self.Blocks = CONFIG["Blocks"]
-        self.Threads = CONFIG["Threads"]
         self.stability_runs = CONFIG["stability_runs"]
         self.calculation_runs = CONFIG["calculation_runs"]
         self.Cmpl = CONFIG["Cmpl_Flag"]
@@ -84,7 +83,7 @@ class MonteCarlo:
             "Size": self.size,
             "Box": self.Box,
             "Blocks": self.Blocks,
-            "Threads": self.Threads,
+            "Threads": 2,
             "stability_runs": self.stability_runs,
             "calculation_runs": self.calculation_runs,
             "Cmpl_Flag": self.Cmpl,
@@ -233,7 +232,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        
         return Mt, Xt
     
     def run_mc_tc_66612(self, T):
@@ -255,7 +254,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        
         return Mt, Xt
 
     def run_mc_tc_3636(self, T):
@@ -277,7 +276,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        
         return Mt, Xt
     
     def run_mc_tc_3636_2(self, T):
@@ -299,7 +298,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        
         return Mt, Xt
 
     def run_mc_tc_2242(self, T):
@@ -321,7 +320,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        
         return Mt, Xt
     
     def run_mc_tc_2424(self, T):
@@ -343,7 +342,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        np.save(f"../paperdata/grid_{T:.3f}", self.grid)
+        
         return Mt, Xt
 
     # TC SECTOR END

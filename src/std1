@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "test_main.py", line 6, in <module>
-    test_mc0 = cst.MonteCarlo(config="../configs/test_config.json")
-  File "/home/arkavo/2DM/src/construct.py", line 74, in __init__
-    self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
-  File "../utilities/Material_Reader.py", line 7, in read_2dmat
-    with open(filename, 'r') as f:
-FileNotFoundError: [Errno 2] No such file or directory: '../inputs/TC_VZrC3II.csv'

@@ -4,6 +4,7 @@ import pycuda.driver as drv
 from numpy import random as rd
 from pycuda.compiler import SourceModule
 
+#PREPROCESSORS
 def PREC_N(n,box,size):
     NLIST = np.zeros(size)
     for i in range(4):
@@ -40,7 +41,7 @@ def alt_AFM_N(grid, s1, s2, size):
         grid[i*4+1] = np.sin(phi)*np.sin(theta)*(s1*(grid[i*4+3]) + s2*(1-grid[i*4+3]))
         grid[i*4+2] = np.cos(phi)*(s1*(grid[i*4+3]) + s2*(1-grid[i*4+3]))
 
-
+#KERNEL CODE
 dev_hamiltonian = SourceModule("""
 //cuda
 #include <curand.h>
@@ -421,7 +422,7 @@ __device__ float_t hamiltonian_tc_2d_4_4_4_8_dm1(float_t* mat, float_t* sheet, i
     return -1.0*H;
 }
 
-__device__ float_t hamiltonian_tc_2d_4_4_4_8_dm0(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* n_vec, float_t* b, int size)
+__device__ float_t hamiltonian_tc_2d_4_4_4_8_dm0(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* b, int size)
 {
     float_t H = 0.0;
 
@@ -567,223 +568,6 @@ __device__ float_t hamiltonian_tc_2d_3_6_3_6_dm2(float_t* mat, float_t* sheet, i
     return -1.0*H;
 }
 
-__device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm1(float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* b, int size)
-{
-    float_t H = 0.0;
-    int n1list[3];
-    int n2list[6];
-    int n3list[3];
-    
-    float_t J1_Cr_Mn[3][3] = {{1.15,0.0,0.0},
-                        {0.0,0.37,0.40},
-                        {0.0,0.40,0.51}};
-    
-    float_t D_Cr_Mn[3] = {0.21,0.0,0.0};
-
-    float_t J2_Cr_Cr[3][3] = {{0.49,0.0,0.0},
-                        {0.0,0.44,0.06},
-                        {0.0,0.06,0.42}};
-
-    float_t D_Cr_Cr[3] = {0.0,0.06,-0.19};
-
-    float_t J3_Mn_Mn[3][3] = {{-0.12,0.0,0.0},
-                            {0.0,0.93,-0.28},
-                            {0.0,-0.28,0.24}};
-    
-    float_t D_Mn_Mn[3] = {0.0,0.27,-0.19};
-
-    float_t J4_Mn_Cr[3][3] = {{0.19,0.0,0.0},
-                            {0.0,0.14,0.09},
-                            {0.0,0.9,0.22}};
-    
-    float_t D_Mn_Cr[3] = {-0.03,0.0,0.0};
-
-    float_t Azz_Cr = 0.28;
-    float_t Azz_Mn = 0.32;
-    
-    N1_3_6_3_6(pti, size, n1list);
-    N2_3_6_3_6(pti, size, n2list);
-    N3_3_6_3_6(pti, size, n3list);
-    if(sheet[pti*4+3]-1) //Cr
-    {
-        for(int i=0; i<3; i++)
-        {
-            int pt = n1list[i];
-            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
-            H += D_Cr_Mn[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
-            H += D_Cr_Mn[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
-            H += D_Cr_Mn[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
-        }
-
-        for(int i=0; i<6; i++)
-        {
-            int pt = n2list[i];
-            H += spinx*sheet[pt*4]*J2_Cr_Cr[0][0] + spiny*sheet[pt*4+1]*J2_Cr_Cr[0][1] + spinz*sheet[pt*4+2]*J2_Cr_Cr[0][2];
-            H += D_Cr_Cr[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
-            H += D_Cr_Cr[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
-            H += D_Cr_Cr[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
-        }
-
-        for(int i=0; i<3; i++)
-        {
-            int pt = n3list[i];
-            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
-            H += D_Mn_Cr[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
-            H += D_Mn_Cr[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
-            H += D_Mn_Cr[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
-        }
-
-        H += Azz_Cr*spinz*spinz;
-    }
-    else //Mn   
-    {
-        for(int i=0; i<3; i++)
-        {
-            int pt = n1list[i];
-            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
-            H += D_Cr_Mn[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
-            H += D_Cr_Mn[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
-            H += D_Cr_Mn[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
-        }
-
-        for(int i=0; i<6; i++)
-        {
-            int pt = n2list[i];
-            H += spinx*sheet[pt*4]*J3_Mn_Mn[0][0] + spiny*sheet[pt*4+1]*J3_Mn_Mn[0][1] + spinz*sheet[pt*4+2]*J3_Mn_Mn[0][2];
-            H += D_Mn_Mn[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
-            H += D_Mn_Mn[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
-            H += D_Mn_Mn[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
-        }
-
-        for(int i=0; i<3; i++)
-        {
-            int pt = n3list[i];
-            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
-            H += D_Mn_Cr[0]*(spiny*sheet[pt*4+2] - spinz*sheet[pt*4+1]);
-            H += D_Mn_Cr[1]*(spinz*sheet[pt*4] - spinx*sheet[pt*4+2]);
-            H += D_Mn_Cr[2]*(spinx*sheet[pt*4+1] - spiny*sheet[pt*4]);
-        }
-
-        H += Azz_Mn*spinz*spinz;
-    }
-    H += b[0]*spinz;
-    return -1.0*H;
-}
-
-__device__ float_t alt_hamiltonian_MnCr_3_6_3_6_dm0(float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* b, int size)
-{
-    float_t H = 0.0;
-    int n1list[3];
-    int n2list[6];
-    int n3list[3];
-    //MnCrI6 System---------------------------------------------------
-    
-    float_t J1_Cr_Mn[3][3] = {{1.15,0.0,0.0},
-                        {0.0,0.37,0.40},
-                        {0.0,0.40,0.51}};
-    
-    float_t D_Cr_Mn[3] = {0.21,0.0,0.0};
-
-    float_t J2_Cr_Cr[3][3] = {{0.49,0.0,0.0},
-                        {0.0,0.44,0.06},
-                        {0.0,0.06,0.42}};
-
-    float_t D_Cr_Cr[3] = {0.0,0.06,-0.19};
-
-    float_t J3_Mn_Mn[3][3] = {{-0.12,0.0,0.0},
-                            {0.0,0.93,-0.28},
-                            {0.0,-0.28,0.24}};
-    
-    float_t D_Mn_Mn[3] = {0.0,0.27,-0.19};
-
-    float_t J4_Mn_Cr[3][3] = {{0.19,0.0,0.0},
-                            {0.0,0.14,0.09},
-                            {0.0,0.9,0.22}};
-    
-    float_t D_Mn_Cr[3] = {-0.03,0.0,0.0};
-
-    float_t Azz_Cr = 0.28;
-    float_t Azz_Mn = 0.32;
-    
-
-    //Test CrI3-CrI3 System-------------------------------------------
-    // float_t J1_Cr_Mn[3][3] = {{1.15,0.0,0.0},
-    //                     {0.0,0.37,0.40},
-    //                     {0.0,0.40,0.51}};
-    
-    // float_t D_Cr_Mn[3] = {0.21,0.0,0.0};
-
-    // float_t J2_Cr_Cr[3][3] = {{0.49,0.0,0.0},
-    //                     {0.0,0.44,0.06},
-    //                     {0.0,0.06,0.42}};
-
-    // float_t D_Cr_Cr[3] = {0.0,0.06,-0.19};
-
-    // float_t J3_Mn_Mn[3][3] = {{-0.12,0.0,0.0},
-    //                         {0.0,0.93,-0.28},
-    //                         {0.0,-0.28,0.24}};
-    
-    // float_t D_Mn_Mn[3] = {0.0,0.27,-0.19};
-
-    // float_t J4_Mn_Cr[3][3] = {{0.19,0.0,0.0},
-    //                         {0.0,0.14,0.09},
-    //                         {0.0,0.9,0.22}};
-    
-    // float_t D_Mn_Cr[3] = {-0.03,0.0,0.0};
-
-    // float_t Azz_Cr = 0.28;
-    // float_t Azz_Mn = 0.32;
-
-    N1_3_6_3_6(pti, size, n1list);
-    N2_3_6_3_6(pti, size, n2list);
-    N3_3_6_3_6(pti, size, n3list);
-    if(sheet[pti*4+3]-1) //Cr
-    {
-        for(int i=0; i<3; i++)
-        {
-            int pt = n1list[i];
-            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
-        }
-
-        for(int i=0; i<6; i++)
-        {
-            int pt = n2list[i];
-            H += spinx*sheet[pt*4]*J2_Cr_Cr[0][0] + spiny*sheet[pt*4+1]*J2_Cr_Cr[0][1] + spinz*sheet[pt*4+2]*J2_Cr_Cr[0][2];
-        }
-
-        for(int i=0; i<3; i++)
-        {
-            int pt = n3list[i];
-            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
-        }
-
-        H += Azz_Cr*spinz*spinz;
-    }
-    else //Mn   
-    {
-        for(int i=0; i<3; i++)
-        {
-            int pt = n1list[i];
-            H += spinx*sheet[pt*4]*J1_Cr_Mn[0][0] + spiny*sheet[pt*4+1]*J1_Cr_Mn[0][1] + spinz*sheet[pt*4+2]*J1_Cr_Mn[0][2];
-        }
-
-        for(int i=0; i<6; i++)
-        {
-            int pt = n2list[i];
-            H += spinx*sheet[pt*4]*J3_Mn_Mn[0][0] + spiny*sheet[pt*4+1]*J3_Mn_Mn[0][1] + spinz*sheet[pt*4+2]*J3_Mn_Mn[0][2];
-        }
-
-        for(int i=0; i<3; i++)
-        {
-            int pt = n3list[i];
-            H += spinx*sheet[pt*4]*J4_Mn_Cr[0][0] + spiny*sheet[pt*4+1]*J4_Mn_Cr[0][1] + spinz*sheet[pt*4+2]*J4_Mn_Cr[0][2];
-        }
-
-        H += Azz_Mn*spinz*spinz;
-    }
-    H += b[0]*spinz;
-    return -1.0*H;
-}
 
 __device__ float_t hamiltonian_tc_2d_2_2_4_2_dm0(float_t* mat, float_t* sheet, int pti, float_t spinx, float_t spiny, float_t spinz, float_t* b, int size)
 {
@@ -1088,11 +872,11 @@ __global__ void metropolis_mc_dm0_4_4_4_8(float_t *mat, float_t *sheet, float_t 
     int tidx = threadIdx.x;
     if (tidx == 0)
     {  
-        L0 = hamiltonian_tc_2d_4_4_4_8_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size[0]);
+        L0 = hamiltonian_tc_2d_4_4_4_8_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
     }
     if (tidx == 1)
     {
-        L1 = hamiltonian_tc_2d_4_4_4_8_dm0(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], NVEC, B, size[0]);
+        L1 = hamiltonian_tc_2d_4_4_4_8_dm0(mat, sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
     }
     __syncthreads();
 
@@ -1111,90 +895,6 @@ __global__ void metropolis_mc_dm0_4_4_4_8(float_t *mat, float_t *sheet, float_t 
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
-    }
-}
-
-__global__ void alt_metropolis(float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* B, int* size, float_t* spin1, float_t* spin2)
-{
-    __shared__ float_t L0;
-    __shared__ float_t L1;
-    __shared__ float_t dE;
-    int idx = blockIdx.x;
-    int threadID = idx;
-    int pt_thread = N[threadID];
-    int tidx = threadIdx.x;
-    if (tidx == 0)
-    {
-        L0 = alt_hamiltonian_MnCr_3_6_3_6_dm1(sheet, pt_thread, sheet[pt_thread*4], sheet[pt_thread*4+1], sheet[pt_thread*4+2], B, size[0]);
-    }
-    if (tidx == 1)
-    {
-        L1 = alt_hamiltonian_MnCr_3_6_3_6_dm1(sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
-    }
-
-    __syncthreads();
-
-    dE = L1 - L0;
-    float_t mult = 1.0;
-    if ((sheet[pt_thread*4+3] - 1.0)*(sheet[pt_thread*4+3] - 1.0) < 0.0001)
-        mult = spin1[0];
-    else
-        mult = spin2[0];
-    if (dE < 0)
-    {
-        tf[threadID*4] = pt_thread;
-        tf[threadID*4+1] = mult*S1[threadID];
-        tf[threadID*4+2] = mult*S2[threadID];
-        tf[threadID*4+3] = mult*S3[threadID];
-    }
-    else if (expf(-1.0*dE*T[0]) > R[threadID])
-    {
-        tf[threadID*4] = pt_thread;
-        tf[threadID*4+1] = mult*S1[threadID];
-        tf[threadID*4+2] = mult*S2[threadID];
-        tf[threadID*4+3] = mult*S3[threadID];
-    }
-}
-
-__global__ void alt_metropolis_TC(float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* B, int* size, float_t* spin1, float_t* spin2)
-{
-    __shared__ float_t L0;
-    __shared__ float_t L1;
-    __shared__ float_t dE;
-    int idx = blockIdx.x;
-    int threadID = idx;
-    int pt_thread = N[threadID];
-    int tidx = threadIdx.x;
-    if (tidx == 0)
-    {
-        L0 = alt_hamiltonian_MnCr_3_6_3_6_dm0(sheet, pt_thread, sheet[pt_thread*4], sheet[pt_thread*4+1], sheet[pt_thread*4+2], B, size[0]);
-    }
-    if (tidx == 1)
-    {
-        L1 = alt_hamiltonian_MnCr_3_6_3_6_dm0(sheet, pt_thread, S1[threadID], S2[threadID], S3[threadID], B, size[0]);
-    }
-
-    __syncthreads();
-
-    dE = L1 - L0;
-    float_t mult = 1.0;
-    if ((sheet[pt_thread*4+3] - 1.0)*(sheet[pt_thread*4+3] - 1.0) < 0.0001)
-        mult = spin2[0];
-    else
-        mult = spin1[0];
-    if (dE < 0)
-    {
-        tf[threadID*4] = pt_thread;
-        tf[threadID*4+1] = mult*S1[threadID];
-        tf[threadID*4+2] = mult*S2[threadID];
-        tf[threadID*4+3] = mult*S3[threadID];
-    }
-    else if (expf(-1.0*dE*T[0]) > R[threadID])
-    {
-        tf[threadID*4] = pt_thread;
-        tf[threadID*4+1] = mult*S1[threadID];
-        tf[threadID*4+2] = mult*S2[threadID];
-        tf[threadID*4+3] = mult*S3[threadID];
     }
 }
 
@@ -1390,10 +1090,19 @@ __global__ void encalc_3636_2(float_t* mat, float_t* sheet, float_t* B, int* N, 
     int idx = blockIdx.x;
     int threadID = idx;
     int pt_thread = threadID;
-    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+    en[idx] = -1.0*hamiltonian_tc_2d_3_6_3_6_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
 }
 
-__global__ void encalc_66612(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en, float_t* NVEC)
+__global__ void encalc_66612(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
+{
+    __shared__ float_t E;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = threadID;
+    en[idx] = -1.0*hamiltonian_tc_2d_6_6_6_12_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+}
+
+__global__ void encalc_66612_2(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en, float_t* NVEC)
 {
     __shared__ float_t E;
     int idx = blockIdx.x;
@@ -1402,8 +1111,46 @@ __global__ void encalc_66612(float_t* mat, float_t* sheet, float_t* B, int* size
     en[idx] = -1.0*hamiltonian_tc_2d_6_6_6_12_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size[0]);
 }
 
+__global__ void encalc_4448(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
+{
+    __shared__ float_t E;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = threadID;
+    en[idx] = -1.0*hamiltonian_tc_2d_4_4_4_8_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+}
+
+__global__ void encalc_4448_2(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en, float_t* NVEC)
+{
+    __shared__ float_t E;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = threadID;
+    en[idx] = -1.0*hamiltonian_tc_2d_4_4_4_8_dm1(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], NVEC, B, size[0]);
+}
+
+__global__ void encalc_2424(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
+{
+    __shared__ float_t E;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = threadID;
+    en[idx] = -1.0*hamiltonian_tc_2d_2_4_2_4_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+}
+
+__global__ void encalc_2242(float_t* mat, float_t* sheet, float_t* B, int* size, float_t* en)
+{
+    __shared__ float_t E;
+    int idx = blockIdx.x;
+    int threadID = idx;
+    int pt_thread = threadID;
+    en[idx] = -1.0*hamiltonian_tc_2d_2_2_4_2_dm0(mat, sheet, pt_thread, sheet[pt_thread*3], sheet[pt_thread*3+1], sheet[pt_thread*3+2], B, size[0]);
+}
+
 //!cuda
 """)
+#KERNEL CODE END
+
 
 GRID_COPY = dev_hamiltonian.get_function("cp_grid")
 ALT_GRID_COPY = dev_hamiltonian.get_function("alt_cp_grid")
@@ -1426,9 +1173,16 @@ METROPOLIS_MC_DM0_6_6_6_12 = dev_hamiltonian.get_function("metropolis_mc_dm0_6_6
 METROPOLIS_MC_DM1_4_4_4_8  = dev_hamiltonian.get_function("metropolis_mc_dm1_4_4_4_8")
 METROPOLIS_MC_DM0_4_4_4_8  = dev_hamiltonian.get_function("metropolis_mc_dm0_4_4_4_8")
 
+
+#Redundant modules
 METROPOLIS_ALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis")
 METROPOLIS_MALT_MnCr_3_6_3_6 = dev_hamiltonian.get_function("alt_metropolis_TC")
 
 EN_CALC_3_6_3_6 = dev_hamiltonian.get_function("encalc_3636")
 EN_CALC_3_6_3_6_2 = dev_hamiltonian.get_function("encalc_3636_2")
 EN_CALC_6_6_6_12 = dev_hamiltonian.get_function("encalc_66612")
+EN_CALC_6_6_6_12_2 = dev_hamiltonian.get_function("encalc_66612_2")
+EN_CALC_4_4_4_8 = dev_hamiltonian.get_function("encalc_4448")
+EN_CALC_4_4_4_8_2 = dev_hamiltonian.get_function("encalc_4448_2")
+EN_CALC_2_4_2_4 = dev_hamiltonian.get_function("encalc_2424")
+EN_CALC_2_2_4_2 = dev_hamiltonian.get_function("encalc_2242")
