@@ -552,25 +552,7 @@ class Analyze():
         np.savetxt(self.directory+"/En.txt", E_f)
         
 
-class serial_MonteCarlo:
-    def __init__(self, config):
-        self.size = config["Size"]
-        self.spin = config["spin"]
-        self.FM_Flag = config["FM"]
-        self.Blocks = config["Blocks"]
-        self.stability_runs = config["Stability"]
-        self.save_direcotry = config["Directory"]
-        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../inputs/"+"TC_"+config["Material"]+".csv")
-        self.B = config["B"]
-        
-    def mc_init(self):
-        self.grid = np.zeros((self.size*self.size*3)).astype(np.float32)
-        self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
-        if self.FM_Flag:
-            mc.FM_N(self.grid, self.size)
-        else:
-            mc.AFM_N(self.grid, self.size)
-        self.grid *= self.spin
-        self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), 11)
-        self.BJ = np.array([1.0 / (self.T * 8.6173e-2)],dtype=np.float32)
-        self.BJ = self.BJ[0]
+
+    
+    
+    
