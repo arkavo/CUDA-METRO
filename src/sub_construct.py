@@ -345,6 +345,68 @@ def H_3_6_3_6_DM0(mat, grid, pt, sx, sy, sz, B, size):
     H += B*sz
     return -H
 
+def H_2_2_4_2_DM0(mat, grid, pt, sx, sy, sz, dmi, size):
+    H = 0.0
+    n1 = n1_2_2_4_2(pt, size)
+    n2 = n2_2_2_4_2(pt, size)
+    n3 = n3_2_2_4_2(pt, size)
+    n4 = n4_2_2_4_2(pt, size)
+    
+    for i in range(2):
+        H += mat[1]*(sx*grid[n1[i]*3] + sy*grid[n1[i]*3+1] + sz*grid[n1[i]*3+2]) + mat[5]*sx*grid[n1[i]*3] + mat[6]*sy*grid[n1[i]*3+1] + mat[7]*sz*grid[n1[i]*3+2]
+    
+    for i in range(2):
+        H += mat[2]*(sx*grid[n2[i]*3] + sy*grid[n2[i]*3+1] + sz*grid[n2[i]*3+2]) + mat[8]*sx*grid[n2[i]*3] + mat[9]*sy*grid[n2[i]*3+1] + mat[10]*sz*grid[n2[i]*3+2]
+    
+    for i in range(4):
+        H += mat[3]*(sx*grid[n3[i]*3] + sy*grid[n3[i]*3+1] + sz*grid[n3[i]*3+2]) + mat[11]*sx*grid[n3[i]*3] + mat[12]*sy*grid[n3[i]*3+1] + mat[13]*sz*grid[n3[i]*3+2]
+    
+    for i in range(2):
+        H += mat[4]*(sx*grid[n4[i]*3] + sy*grid[n4[i]*3+1] + sz*grid[n4[i]*3+2]) + mat[14]*sx*grid[n4[i]*3] + mat[15]*sy*grid[n4[i]*3+1] + mat[16]*sz*grid[n4[i]*3+2]
+        
+    H += mat[17]*sx*sx + mat[18]*sy*sy + mat[19]*sz*sz
+    H += B*sz
+    return -H
+
+def H_2_4_2_4_DM0(mat, grid, pt, sx, sy, sz, dmi, size):
+    H = 0.0
+    n1 = n1_2_4_2_4(pt, size)
+    n2 = n2_2_4_2_4(pt, size)
+    n3 = n3_2_4_2_4(pt, size)
+    n4 = n4_2_4_2_4(pt, size)
+    
+    for i in range(2):
+        H += mat[1]*(sx*grid[n1[i]*3] + sy*grid[n1[i]*3+1] + sz*grid[n1[i]*3+2]) + mat[5]*sx*grid[n1[i]*3] + mat[6]*sy*grid[n1[i]*3+1] + mat[7]*sz*grid[n1[i]*3+2]
+    
+    for i in range(4):
+        H += mat[2]*(sx*grid[n2[i]*3] + sy*grid[n2[i]*3+1] + sz*grid[n2[i]*3+2]) + mat[8]*sx*grid[n2[i]*3] + mat[9]*sy*grid[n2[i]*3+1] + mat[10]*sz*grid[n2[i]*3+2]
+    
+    for i in range(2):
+        H += mat[3]*(sx*grid[n3[i]*3] + sy*grid[n3[i]*3+1] + sz*grid[n3[i]*3+2]) + mat[11]*sx*grid[n3[i]*3] + mat[12]*sy*grid[n3[i]*3+1] + mat[13]*sz*grid[n3[i]*3+2]
+    
+    for i in range(4):
+        H += mat[4]*(sx*grid[n4[i]*3] + sy*grid[n4[i]*3+1] + sz*grid[n4[i]*3+2]) + mat[14]*sx*grid[n4[i]*3] + mat[15]*sy*grid[n4[i]*3+1] + mat[16]*sz*grid[n4[i]*3+2]
+        
+    H += mat[17]*sx*sx + mat[18]*sy*sy + mat[19]*sz*sz
+    H += B*sz
+    return -H
+
+def Serial_MC_6_6_6_12_DM1(grid, size, T, BJ, TMATRIX, stability_runs):
+    for i in range(stability_runs):
+        for j in range(size*size):
+            pt = np.random.randint(0, size*size)
+            sx, sy, sz = grid[pt*3], grid[pt*3+1], grid[pt*3+2]
+            H = H_6_6_6_12_DM1(TMATRIX, grid, pt, sx, sy, sz, BJ, size)
+            if H < 0:
+                grid[pt*3] *= -1
+                grid[pt*3+1] *= -1
+                grid[pt*3+2] *= -1
+            elif np.exp(-H/T) > np.random.rand():
+                grid[pt*3] *= -1
+                grid[pt*3+1] *= -1
+                grid[pt*3+2] *= -1
+    return grid
+
 class serial_MonteCarlo:
     def __init__(self, config):
         self.size = config["Size"]
@@ -375,5 +437,6 @@ class serial_MonteCarlo:
         else:
             mc.AFM_N(self.grid, self.size)
         self.grid *= self.spin
-        
+    
+    
     
