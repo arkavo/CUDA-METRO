@@ -8,7 +8,7 @@ import Material_Reader as rm
 import datetime
 import tqdm as tqdm
 
-kb = 8.617333262145e-5 # eV/K
+kb = 8.617333262145e-2 # meV/K
 
 # Definitions of neighbours
 def n1_6_6_6_12(pt, size):
@@ -180,6 +180,7 @@ def n2_3_6_3_6(pt, size):
     nbs[3] = ((row-1)*size + col-1 + size*size)%(size*size)
     nbs[4] = ((row+1)*size + col-2 + size*size)%(size*size)
     nbs[5] = ((row+2)*size + col-1 + size*size)%(size*size)
+    return nbs
 
 def n3_3_6_3_6(pt, size):
     nbs = np.zeros(3).astype(np.int32)
@@ -418,7 +419,7 @@ def Serial_MC_6_6_6_12_DM1(mat, grid, size, dmi, T, BJ):
             if r_rn[j] < np.exp(-(H1-H0)*T):
                 grid[pt*3], grid[pt*3+1], grid[pt*3+2] = sx, sy, sz
 
-def Serial_MC_6_6_6_12_DM0(mat, grid, size, T, BJ):
+def Serial_MC_6_6_6_12_DM0(mat, grid, size, T, BJ, spin):
     n_rn = cp.random.randint(0, size*size, size=size*size).get()
     u_rn = cp.random.uniform(size=size*size).get()
     v_rn = cp.random.uniform(size=size*size).get()
@@ -427,8 +428,25 @@ def Serial_MC_6_6_6_12_DM0(mat, grid, size, T, BJ):
         pt = n_rn[j]
         H0 = H_6_6_6_12_DM0(mat, grid, pt, grid[pt*3], grid[pt*3+1], grid[pt*3+2], BJ, size)
         theta, phi = 2.0*np.pi*u_rn[j], np.arccos(2.0*v_rn[j]-1.0)
-        sx, sy, sz = np.sin(phi)*np.cos(theta), np.sin(phi)*np.sin(theta), np.cos(phi)
+        sx, sy, sz = np.sin(phi)*np.cos(theta)*spin, np.sin(phi)*np.sin(theta)*spin, np.cos(phi)*spin
         H1 = H_6_6_6_12_DM0(mat, grid, pt, sx, sy, sz, BJ, size)
+        if H1 < H0:
+            grid[pt*3], grid[pt*3+1], grid[pt*3+2] = sx, sy, sz
+        else:
+            if r_rn[j] < np.exp(-(H1-H0)*T):
+                grid[pt*3], grid[pt*3+1], grid[pt*3+2] = sx, sy, sz
+
+def Serial_MC_3_6_3_6_DM0(mat, grid, size, T, BJ, spin):
+    n_rn = cp.random.randint(0, size*size, size=size*size).get()
+    u_rn = cp.random.uniform(size=size*size).get()
+    v_rn = cp.random.uniform(size=size*size).get()
+    r_rn = cp.random.uniform(size=size*size).get()
+    for j in range(size*size):
+        pt = n_rn[j]
+        H0 = H_3_6_3_6_DM0(mat, grid, pt, grid[pt*3], grid[pt*3+1], grid[pt*3+2], BJ, size)
+        theta, phi = 2.0*np.pi*u_rn[j], np.arccos(2.0*v_rn[j]-1.0)
+        sx, sy, sz = np.sin(phi)*np.cos(theta)*spin, np.sin(phi)*np.sin(theta)*spin, np.cos(phi)*spin
+        H1 = H_3_6_3_6_DM0(mat, grid, pt, sx, sy, sz, BJ, size)
         if H1 < H0:
             grid[pt*3], grid[pt*3+1], grid[pt*3+2] = sx, sy, sz
         else:
@@ -471,7 +489,7 @@ class serial_MonteCarlo:
         self.dmi_6 = np.load("dmi_6.npy")
         self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
         self.spin = self.MAT_PARAMS[0]
-        self.save_direcotry = "../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
+        self.save_direcotry = "../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")+ "/")
         self.NBS = int(self.MAT_PARAMS[20]), int(self.MAT_PARAMS[21]), int(self.MAT_PARAMS[22]), int(self.MAT_PARAMS[23])
         
         self.metadata = {
@@ -533,7 +551,7 @@ class serial_MonteCarlo:
             self.T = self.Temps
         else:
             self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), 11)
-        
+        self.T_copy = self.T.copy()
         for i in range(len(self.T)):
             self.T[i] = 1/np.float32(self.T[i]*kb)
         
@@ -556,12 +574,30 @@ class serial_MonteCarlo:
         M, X = [], []
         for j in range(len(self.T)):
             for i in tqdm.tqdm(range(self.calculation_runs)):
-                Serial_MC_6_6_6_12_DM0(self.MAT_PARAMS, self.grid, self.size, self.T[j], self.B_C)
+                Serial_MC_6_6_6_12_DM0(self.MAT_PARAMS, self.grid, self.size, self.T[j], self.B_C, self.spin)
             
             np.save(self.save_direcotry + "grid_" + str(j), self.grid)
             m = np.sum(self.grid[2::3])/self.size/self.size
             M.append(m)
             X.append(m*m)
+            print(f"Temp: {self.T_copy[j]:.4f} M: {m:.4f}")
+            print(f"Temp: {self.T_copy[j]:.4f} X: {m*m:.4f}")
+            print("-"*20)
         np.save(self.save_direcotry + "M", M)
         np.save(self.save_direcotry + "X", X)
-        
+    
+    def mc_tc_3_6_3_6_dm0(self):
+        M, X = [], []
+        for j in range(len(self.T)):
+            for i in tqdm.tqdm(range(self.calculation_runs)):
+                Serial_MC_3_6_3_6_DM0(self.MAT_PARAMS, self.grid, self.size, self.T[j], self.B_C, self.spin)
+            
+            np.save(self.save_direcotry + "grid_" + str(j), self.grid)
+            m = np.sum(self.grid[2::3])/self.size/self.size
+            M.append(m)
+            X.append(m*m)
+            print(f"Temp: {self.T_copy[j]:.4f} M: {m:.4f}")
+            print(f"Temp: {self.T_copy[j]:.4f} X: {m*m:.4f}")
+            print("-"*20)
+        np.save(self.save_direcotry + "M", M)
+        np.save(self.save_direcotry + "X", X)
