@@ -10,7 +10,7 @@ M, X = np.array([]), np.array([])
 for t in test_mc0.T:
     test_mc0.grid_reset()
     test_mc0.generate_random_numbers(test_mc0.S_Wrap)
-    m, x = test_mc0.run_mc_tc_2242(t)
+    m, x = test_mc0.run_mc_tc_3636(t)
     M = np.append(M, m)
     X = np.append(X, x)
 np.save(f"{test_mc0.save_direcotry}/BQM_{test_mc0.size}_{test_mc0.Blocks}", M)
