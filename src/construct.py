@@ -1,3 +1,7 @@
+# Constructors and wrappers for the Monte Carlo simulation CUDA code in 'montecarlo.py'
+# Create additional directives and algorithms here to run the simulation, more information in the README.md
+#--------------------------------------------
+
 import pycuda
 import pycuda.autoinit
 import pycuda.driver as drv

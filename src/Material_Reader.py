@@ -1,3 +1,6 @@
+# This file contains the function to read the material properties from a file
+# Sample file structures are in the 'inputs' folder
+#--------------------------------------------
 import numpy as np
 import re
 

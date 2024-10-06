@@ -1,3 +1,6 @@
+# Main kernel code for the Monte Carlo simulation
+#--------------------------------------------
+
 import numpy as np
 import pycuda.autoinit
 import pycuda.driver as drv

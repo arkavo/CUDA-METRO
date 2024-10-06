@@ -1,3 +1,6 @@
+# This file is used to calculate the Curie temperature of a material using Monte Carlo simulation.
+#--------------------------------------------
+
 import construct as cst
 import montecarlo as mc
 import numpy as np

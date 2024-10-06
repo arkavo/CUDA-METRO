@@ -1,3 +1,6 @@
+# Benchmarking script for the Monte Carlo simulation
+
+#--------------------------------------------
 import construct as cst
 import montecarlo as mc
 import numpy as np
