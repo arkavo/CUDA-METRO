@@ -22,10 +22,15 @@ Some template codes have already been provided under folder ```/src``` along wit
 This code is a tool for efficient parallelization and running of the 2D classical Heisenberg model on newer hardware like GPUs. Efficient parallelization of Metropolis Monte Carlo simulation is challenging since the evolving states are typically not independent because of the Markov property. Here we focus on simulating magnetic phase transition under the anisotropic Heisenberg Model in a very high dimensional space, which is important for emerging two-dimensional (2D) magnetism and nontrivial topological spin textures. Previous attempts for parallelization are restricted to the simpler Ising Model and not applicable to 2D materials because of their finite magneto-crystalline anisotropy, complex crystal structures and long-range interactions.
 
 # Working principle of Metropolis Monte Carlo
-Given 2 states$\Omega_{1},\Omega_{2}$, and their energies $E_{1},E_{2}$ respectively, statistical mechanics and thermodynamics tells us that the relative probability between them existing at a time is $$\frac{p(E_2)}{p(E_1)}=\frac{e^{-\beta E_2}}{e^{-\beta E_1}}$$
+Given 2 states$\Omega_{1},\Omega_{2}$, and their energies $E_{1},E_{2}$ respectively, statistical mechanics and thermodynamics tells us that the relative probability between them existing at a time is 
+$$\frac{p(E_2)}{p(E_1)}=\frac{e^{-\beta E_2}}{e^{-\beta E_1}}$$
+
 where where $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the temperature. The energy of the Heisenberg model is calculated as
+
 $$H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\mu B \cdot \sum s_i$$
+
 Using these, we run the simulation towards an energy minima and then visualize the spin vectors.
+
 # Results
 
 The resulting code `CUDA-METRO` has returned satisfactory results in most of its test scenarios. It has been used to verify the Curie Temperature of a n umber of materials. Most notably, it has been used to verify spintronic microstructures in 2D materials like skyrmions and merons. Some of the most notable ones are shown below ![[Figure 4.png]]
