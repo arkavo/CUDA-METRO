@@ -25,6 +25,7 @@ This code is a tool for efficient parallelization and running of the 2D classica
 
 # Working principle of Metropolis Monte Carlo
 Given 2 states$\Omega_{1},\Omega_{2}$, and their energies $E_{1},E_{2}$ respectively, statistical mechanics and thermodynamics tells us that the relative probability between them existing at a time is 
+
 $$\frac{p(E_2)}{p(E_1)}=\frac{e^{-\beta E_2}}{e^{-\beta E_1}}$$
 
 where where $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the temperature. The energy of the Heisenberg model is calculated as
@@ -35,13 +36,13 @@ Using these, we run the simulation towards an energy minima and then visualize t
 
 # Results
 
-The resulting code `CUDA-METRO` has returned satisfactory results in most of its test scenarios. It has been used to verify the Curie Temperature of a n umber of materials. Most notably, it has been used to verify spintronic microstructures in 2D materials like skyrmions and merons. Some of the most notable ones are shown below ![[figures/Figure 4.png]]
+The resulting code `CUDA-METRO` has returned satisfactory results in most of its test scenarios. It has been used to verify the Curie Temperature of a n umber of materials. Most notably, it has been used to verify spintronic microstructures in 2D materials like skyrmions and merons. Some of the most notable ones are shown below !(Figure 1)[figures/Figure_1.png]
 Fig1. Merons forming in $CrCl_3$ at $T=0.5K$, a grid size of $500\times 500$, and a total kernel size of $8192$(~3% of $500\times 500$). This simulation took $440s$.
-![[figures/Figure 5.png]]
+!(Figure 2)[figures/Figure_2.png]
 Fig2. Left: Antiferromagnetic skyrmions in $MnBr_{2}$, Right: Ferromagnetic skyrmions in $CrInSe_3$. These simulations used a grid size of $200\times 200$, using a kernel size of $8192$(~20% of $200\times 200$). These simulations took a $700s$.
 
 # Method
-This is an *approximate* algorithm which mimics the classic single spin Metropolis Monte Carlo algorithm. This algorithm, however maximizes speed at the cost of minor accuracy. While in the single spin method, only 1 lattice point is evaluated at any given step, we take it further and evaluate multiple points at the same time. This works well for some time until we start evaluating too many points at the same time. It is advised to limit the parallelization to $~10\%$ of the total number, using more parallelization distorts the accuracy of further results. A benchmark for this has been recorded where we try to simulate the Curie temperature of $CrI_3$, with the results given below.![[figures/Figure 3_ds.png]]
+This is an *approximate* algorithm which mimics the classic single spin Metropolis Monte Carlo algorithm. This algorithm, however maximizes speed at the cost of minor accuracy. While in the single spin method, only 1 lattice point is evaluated at any given step, we take it further and evaluate multiple points at the same time. This works well for some time until we start evaluating too many points at the same time. It is advised to limit the parallelization to $~10\%$ of the total number, using more parallelization distorts the accuracy of further results. A benchmark for this has been recorded where we try to simulate the Curie temperature of $CrI_3$, with the results given below.!(Figure 3)[figures/Figure_3.png]
 # Tools
 If one does not wish to use this purely for observation of microstructures in material, they can alternatively make use of its other modes like
 ## 1. Vector analysis/visualization
