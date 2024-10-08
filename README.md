@@ -38,11 +38,16 @@ Using these, we run the simulation towards an energy minima and then visualize t
 
 The resulting code `CUDA-METRO` has returned satisfactory results in most of its test scenarios. It has been used to verify the Curie Temperature of a n umber of materials. Most notably, it has been used to verify spintronic microstructures in 2D materials like skyrmions and merons. Some of the most notable ones are shown below ![Figure 1](figures/Figure_1.png)
 Fig1. Merons forming in $CrCl_3$ at $T=0.5K$, a grid size of $500\times 500$, and a total kernel size of $8192$(~3% of $500\times 500$). This simulation took $440s$.
+
 ![Figure 2](figures/Figure_2.png)
 Fig2. Left: Antiferromagnetic skyrmions in $MnBr_{2}$, Right: Ferromagnetic skyrmions in $CrInSe_3$. These simulations used a grid size of $200\times 200$, using a kernel size of $8192$(~20% of $200\times 200$). These simulations took a $700s$.
 
 # Method
 This is an *approximate* algorithm which mimics the classic single spin Metropolis Monte Carlo algorithm. This algorithm, however maximizes speed at the cost of minor accuracy. While in the single spin method, only 1 lattice point is evaluated at any given step, we take it further and evaluate multiple points at the same time. This works well for some time until we start evaluating too many points at the same time. It is advised to limit the parallelization to $~10\%$ of the total number, using more parallelization distorts the accuracy of further results. A benchmark for this has been recorded where we try to simulate the Curie temperature of $CrI_3$, with the results given below.![Figure 3](figures/Figure_3.png)
+Fig3. The distortion of results with an increase in the number of points evaluated in parallel. Note how $<10\%$, the simulation closely follows the experimental reference results.
+
+The above experiment shows a raw theoretical increase of $N\times$ amount increase in performance, while compromising slightly on the results. This makes this code most suited for large supercells which saturate the CUDA cores of any given GPU, even considering the high throughput of each Metropolis step.
+
 # Tools
 If one does not wish to use this purely for observation of microstructures in material, they can alternatively make use of its other modes like
 ## 1. Vector analysis/visualization
