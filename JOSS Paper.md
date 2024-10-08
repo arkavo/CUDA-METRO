@@ -34,9 +34,11 @@ Here we present CUDA-METRO, a graphical processing unit (GPU) based open source 
 # Summary
 We consider a lattice system with a periodic arrangement of atoms, where each atom is represented by a 3D spin vector.  This atomistic spin model is founded on the spin Hamiltonian, which delineates the essential spin-dependent interactions at the atomic scale, excluding the influences of potential and kinetic energy and electron correlations. The spin Hamiltonian is conventionally articulated as
 
-$$H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\mu B \cdot \sum s_i$$
+$$
+H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\mu B \cdot \sum s_i
+$$
 
-where $s_j$ are the first set of neighbours. We continue this calculation for however many neighbours sets as required. Since these energies are short range in nature, they typically die out in a span of 3-4 bond lengths(10-15$\textup{~\AA})$
+Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exchange parameters, $A$ is the single ion exchange parameter, $\mu$ is the dipole moment of a single atom and $B$ is the external magnetic field. $s_i,s_j$ are individual atomic spin vectors. $s_j$ are the first set of neighbours. We continue this calculation for however many neighbours sets as required. Since these energies are short range in nature, they typically die out in a span of 3-4 bond lengths(10-15$\textup{~\AA})$
 
 Starting from a random spin configuration, in this many-body problem, our objective is to find the orientation of spin vectors for every atom so that the energy of the entire lattice reaches to its minimum for a given magnetic field and temperature. 
 Traditionally single spin update (SSU) scheme is employed to solve this problem, which satisfies the detailed balance condition. Very briefly explain SSU with Metropolis scheme.  In the SSU method of updating the state, a single atomic spin is chosen at random and changed, while noting down the energy shift. This new state is then accepted or rejected using the Metropolis criteria. It is imperative that SSU becomes extremely inefficient as the dimensionality increases. We propose the following parallel algorithm to find the ground state, which is inaccessible by SSU scheme.
@@ -75,7 +77,8 @@ where $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the 
 
 $$H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\mu B \cdot \sum s_i$$
 
-where $s_j$ are the first set of neighbours. We continue this calculation for however many neighbours sets as required. Since these energies are short range in nature, they typically die out in a span of 3-4 bond lengths(10-15$\textup{~\AA}$
+as defined in the first section.
+where $s_j$ are the first set of neighbours. We continue this calculation for however many neighbours sets as required. Since these energies are short range in nature, they typically die out in a span of 3-4 bond lengths(10-15$\textup{~\AA})$
 The Metropolis Monte Carlo works by randomly instantiating a state$(\Omega_1)$ close to a starting state$(\Omega_0)$ and then comparing the energies of the starting and the modified state. If the energy of this new state$(\Omega_1)$ is lower than the original state$(\Omega_0)$, then this new state$(\Omega_1)$ becomes our next $\Omega_0$, while if the energy of $\Omega_1$ is higher than $\Omega_0$, then we choose $\Omega_1$ with a probability of $e^{-\beta \Delta E}$ where $\Delta E=E(\Omega_1)-E(\Omega_0)$, the difference between the energies of 2 states. The Monte Carlo then proceeds to the next stage with the new state.
 
 # Acknowledgements
