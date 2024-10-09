@@ -7,22 +7,27 @@ tags:
   -  CUDA
   -  spintronics
   -  2D
-  authors:
-  -  name: Arkavo Hait
+authors:
+  - name: Arkavo Hait
     orcid: 0000-0000-0000-0000
     equal-contrib: true
     affiliation: 1 
-  -  name: Santanu Mahapatra
-  - orcid: 0000-0000-0000-0000
+  - name: Santanu Mahapatra
+    orcid: 0000-0000-0000-0000
     equal-contrib: true 
     affiliation: 1
-  - affiliations:
-  -  name: Indian Institute of Science
-   index: 1
-   ror: [04dese585](https://ror.org/04dese585)
-  -  name: Indian Institute of Science, India
+affiliations:
+  - name: Indian Institute of Science
+    index: 1
+    ror: [04dese585](https://ror.org/04dese585)
+  - name: Indian Institute of Science, India
+header-includes:
+  - \usepackage{algorithmic}
+  - \usepackage[noend]{algpseudocode}
+
 date: 30 Sept 2024
 bibliography: references.bib
+
 ---
 
 # Statement of need
@@ -47,7 +52,30 @@ In our method, we select multiple atomic spins at the same time and change them 
 
 A basic schematic of the algorithm is given below:
 
-![Figure 1](figures/Figure_1.PNG)
+\begin{algorithm}
+    \caption{Parallel Monte Carlo}
+    \label{algorithm:step}
+    \begin{algorithmic}[0]
+        \Procedure{Step}
+        \texttt{}
+        \State \texttt{Read State $\Omega_i$}
+        \State \texttt{Create 4 $P\times B$ length uniform random arrays}
+        \State \texttt{Process 4 arrays into $N,\theta, \phi, R$}
+        \For{\texttt{$i<B$}}
+            \State \texttt{Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
+            \State \texttt{Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)[j]$}\Comment{$j\in [P\times i,P\times (i+1)]$}
+            \For{In each BLOCK}
+                \State \texttt{Evaluate $H$ before(T0) and after(T1) spin change}\Comment{Multithreading}
+                \State \texttt{Select spins according to $S_{new} = S_f(M(H_f,H_i)) + S_i(1-M(H_f,H_i))$}
+                \State \texttt{Wait for all BLOCKS to finish}
+            \EndFor
+            \State \texttt{Update all $P$ spins to state}
+            \State \texttt{$\Omega_{i+1} \leftarrow \Omega_{i}$}
+        \EndFor
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
 
 At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category (Ref: Patterns), and for neighbour mapping, we use analytical relations (Ref: IOP paper).
 
