@@ -55,31 +55,21 @@ For a lattice of size $N\times N$, $100\%$ parallelization would correspond to s
 
 Since the proposed algorithm may not adhere to the detailed balance conditions, it yields approximate results, and there is a trade-off between parallelization/acceleration and accuracy. It is found that if the parallelization is limited to $10\%$ of the lattice size, we obtain very accurate results with significant acceleration. We can see the effect of excess parallelization in $CrI_3$ below with respect to the standard results. However, the problem disappears at larger grid sizes where even modern hardware cannot achieve higher levels of parallelization leaving us with satisfactory results highlighted below. Along with these, the additional speed gives us the chance to observe the lifetime of microstructures in these materials, from their conception to destruction, as is also highlighted below. For each image, the overall grid size, the parallelization percentage (how much of the total number of atoms we are changing at one step), total time taken and temperature are given. External magnetic field is $0.0T$ unless stated otherwise.
 
+Below, we demonstrate some of the results we get from ```CUDA-METRO``` with respect to the formation of spin microstructures in some materials. All these results replicate previously observed experimental phenomena. We have shown 2 broad types of spin structures in skyrmions(vortex) and merons(anti-vortex) in Fig 2, note the topological difference between the . In Fig 3, we have shown anti-skyrmions and compared them to skyrmions, anti-skyrmions are the analogue of skyrmions in anti-ferromagnetic materials. In Fig 4, we show the increasing deviation from expected results the more points we take in parallel. Finally, in Fig 5 we demonstrate the lifetime of a skyrmion, which also shows that they are mostly a "local minima of energy" phenomena, and die out when the material approaches its global energy minima.
+
+
 ![Figure 2](figures/Figure_2.png)
-Fig 2: Presence of Skyrmions and Merons in $CrCl_3$. [@augustin_properties_2021].
+Fig 2: Presence of Skyrmions and Merons in $CrCl_3$. [@augustin_properties_2021]. The material parameters are taken from [@]. The color bar represents normalized spin vectors in the z direction.
 
 ![Figure 3](figures/Figure_3.png)
-Fig 3: Presence of anti-skyrmions in $MnBr_2$ and skyrmions in $CrInSe_3$. [@]
+Fig 3: Presence of anti-skyrmions in $MnBr_2$ and skyrmions in $CrInSe_3$. [@], The material parameters are taken from [@]. The color bar represents normalized spin vectors in the z direction. Note that the spins of $MnBr_2$ appear purple because there are "red-blue" spin pairs for the vast majority.
 
 ![Figure 4](figures/Figure_4.png)
-Fig 4: Discrepancy between experimantal and simuation results at differing levels of parallelization. Note how at $10\%$, the simulation results are almost indistinguishable from the reference data.
+Fig 4: Discrepancy between experimantal and simuation results at differing levels of parallelization. Note how at $10\%$, the simulation results are almost indistinguishable from the reference data. The material parameters are taken from [@].
 
 ![Figure 5](figures/Figure_5.PNG)
 Fig 5: Lifetime of a skyrmion, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected.
-# State Propagation
 
-
-According to the laws of thermodynamics, two different states with energies $E_1$ and $E_2$ will have relative probabilities of existence as 
-
-$$\frac{p(E_2)}{p(E_1)}=\frac{e^{-\beta E_2}}{e^{-\beta E_1}}$$
-
-where $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the temperature. The energy of the Heisenberg model is calculated as 
-
-$$H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\mu B \cdot \sum s_i$$
-
-as defined in the first section.
-where $s_j$ are the first set of neighbours. We continue this calculation for however many neighbours sets as required. Since these energies are short range in nature, they typically die out in a span of 3-4 bond lengths(10-15$\textup{~\AA})$
-The Metropolis Monte Carlo works by randomly instantiating a state$(\Omega_1)$ close to a starting state$(\Omega_0)$ and then comparing the energies of the starting and the modified state. If the energy of this new state$(\Omega_1)$ is lower than the original state$(\Omega_0)$, then this new state$(\Omega_1)$ becomes our next $\Omega_0$, while if the energy of $\Omega_1$ is higher than $\Omega_0$, then we choose $\Omega_1$ with a probability of $e^{-\beta \Delta E}$ where $\Delta E=E(\Omega_1)-E(\Omega_0)$, the difference between the energies of 2 states. The Monte Carlo then proceeds to the next stage with the new state.
 
 # Acknowledgements
 This work is supported by the Core Research Grant (CRG) scheme of the Science and Engineering Research
