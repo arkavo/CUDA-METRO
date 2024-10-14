@@ -1,6 +1,6 @@
+# CUDA METRO
 
-
-[![DOI](https://zenodo.org/badge/705754637.svg)](https://zenodo.org/doi/10.5281/zenodo.10472803)
+# Description/Installation
 
 A pyCUDA based Metropolis Monte Carlo simulator for 2D-magnetism systems. This code uses NVIDIA CUDA architecture wrapped by a simple python wrapper to work.
 
@@ -19,34 +19,107 @@ To setup the environment after creation, simply run
 
 Some template codes have already been provided under folder ```/src``` along with sample input files in ```/inputs``` and running configurations in ```/configs```
 
-There are 4 seperate files to design your simulations. To run a simple simulation, use ```python main.py <input_file_name>```. 
-# Summary
-This code is a tool for efficient parallelization and running of the 2D classical Heisenberg model on newer hardware like GPUs. Efficient parallelization of Metropolis Monte Carlo simulation is challenging since the evolving states are typically not independent because of the Markov property. Here we focus on simulating magnetic phase transition under the anisotropic Heisenberg Model in a very high dimensional space, which is important for emerging two-dimensional (2D) magnetism and nontrivial topological spin textures. Previous attempts for parallelization are restricted to the simpler Ising Model and not applicable to 2D materials because of their finite magneto-crystalline anisotropy, complex crystal structures and long-range interactions.
+There are 4 seperate files to design your simulations. To run a simple simulation, use ```python main.py <input_file_name>```.
 
-# Working principle of Metropolis Monte Carlo
-Given 2 states$\Omega_{1},\Omega_{2}$, and their energies $E_{1},E_{2}$ respectively, statistical mechanics and thermodynamics tells us that the relative probability between them existing at a time is 
+# Custom input files
 
-$$\frac{p(E_2)}{p(E_1)}=\frac{e^{-\beta E_2}}{e^{-\beta E_1}}$$
+If one wants to create their own input file from scratch, just copy this json template at your convenience:
+```
+{
+    "Single_Mat_Flag" : 1 if single material 0 otherwise (int),
+    "Animation_Flags" : DEPRECATED,
+    "DMI_Flag"        : 1 if simulation in DMI mode 0 otherwise (int),
+    "TC_Flag"         : 1 if simulation is in Curie Temperature mode 0 otherwise (int),
+    "Static_T_Flag"   : 1 if simulation has a single temperature 0 otherwise (int),
+    "FM_Flag"         : 1 if starting state is FM 0 otherwise,
+    "Input_flag"      : 1 if starting from a specified <input.npy> state 0 otherwise,
+    "Input_File"      : String value(use quotes please) for starting state file name (if applicable),
+    "Temps"           : Array form of temperatures used for simulation (only in Curie Temperature mode),
+    "Material"        : Material name (omit the ".csv"),
+    "Multiple_Materials" : File name with multiple materials (omit the ".csv"),
+    "SIZE"    :  Lattice size (int),
+    "Box"       : DEPRECATED,
+    "Blocks"    : How much to parallelize (int),
+    "Threads"   : 2 (dont change this),
+    "B"         : external magnetic field (use quotes, double),
+    "stability_runs"    : MC Phase 1 batch runs,
+    "calculation_runs"  : MC Phase 2 batch runs,
+    "stability_wrap"    : MC Phase 1 batch size,
+    "calculation_wrap"  : MC Phase 2 batch size,
+    "Cmpl_Flag"         : DEPRECATED,
+    "Prefix"            : String value to appear in FRONT of output folder
+}
+```
+> **_NOTE 1:_** The simulator can work in *either* Curie Temperature or DMI mode, because of the different Hamiltonians, while it is easy to see its an OR condition, please do not attempt to use 1 on both.
+>  
+> **_NOTE 2:_** The total number of raw MC steps will be ```Blocks x (MC Phase 1 runs x MC Phase 1 size + MC Phase 1 runs x MC Phase 1 size)```. We typically divide the phases to study the Curie temperature, since that typically gives the simulation time to settle down in ```Phase 1``` and then find out the statistical properties in ```Phase 2```(which is our data collection phase). For any raw simulation, where the evolution of states are required from start to finish, one may keep any one phase and omit the other.
 
-where where $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the temperature. The energy of the Heisenberg model is calculated as
+# Functions
 
-$$H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\mu B \cdot \sum s_i$$
+A template file is given as ```main.py```, import the requisite 2 libraries to work as ```construct``` and ```montecarlo```. 
 
-Using these, we run the simulation towards an energy minima and then visualize the spin vectors.
+MonteCarlo is a class object which is defined in ```construct.py``` as the Main code with ```montecarlo.py``` having all the Hamiltonian constructs as the GPU kernel (written in CUDA cpp). 
 
-# Results
+## Construct MonteCarlo
 
-The resulting code `CUDA-METRO` has returned satisfactory results in most of its test scenarios. It has been used to verify the Curie Temperature of a n umber of materials. Most notably, it has been used to verify spintronic microstructures in 2D materials like skyrmions and merons. Some of the most notable ones are shown below ![Figure 1](figures/Figure_1.png)
-Fig1. Merons forming in $CrCl_3$ at $T=0.5K$, a grid size of $500\times 500$, and a total kernel size of $8192$(~3% of $500\times 500$). This simulation took $440s$.
+```construct.MonteCarlo``` is the MonteCarlo class construct.
+
+```construct.MonteCarlo.mc_init()``` initializes the simulation (but does not run it yet).
+
+```construct.MonteCarlo.display_material()``` prints out the current material properties.
+
+```construct.MonteCarlo.grid_reset()``` resets the grid to ALL $(0,0,1)$ if ```FM_Flag=1``` else randomizes all spins.
+
+```construct.MonteCarlo.generate_random_numbers(int size)``` creates 4 GPU processed arrays of size ```size``` using the pyCUDA XORWOW random number generator.
+
+```construct.MonteCarlo.generate_ising_numbers(int size)``` creates 4 GPU processed arrays of size ```size``` using the pyCUDA XORWOW random number generator but the spin vectors are either $(0,0,1)$ or $(0,0,-1)$.
+
+```construct.MonteCarlo.run_mc_dmi_66612(double T)``` runs a single ```Phase 1``` batch size run, with the output as a ```np.array(NxNx3)``` individual spin directions as raw output. This can be saved using the ```np.save``` command.
+
+Other variations of ```run_mc_dmi_66612(T)``` are ```run_mc_<tc/dmi>_<mode>(T)```
+
+```tc``` and ```dmi``` mode both contain modes for ```66612```,```4448```,```3636```,```2424``` and ```2242```, which are the primary lattice types explored in this code. ```dmi``` can only be invoked by the configs ```66612,4448,3636```, for the rest, if you wish to open a running simulation, use ```tc``` mode with single temperature.
+
+## Construct Analyze
+
+The template file to run a visual analyzer is given in ```visualize.py```, this will compile images for all given state ```*.npy``` files in a given folder.
+
+```construct.Analyze(<Folder name>, reverse=False)``` to create the Analyzer instance with an option to start from the opposite end (in case you only want end results)
+
+```construct.Analyze.spin_view()``` creates a subfolder in the main folder called "spins" with the spin vector images inside. They are split into components as $z = s(x,y)$ as the functional form.
+
+```construct.Ananlyze.quiver_view()``` creates a subfolder in the main folder called "quiver" with the spin vector images inside. They show only the planar(xy) part of the spins on a flat surface. This is useful for finding patterns in results.
+
+
+# Working Principle
+
+We consider a lattice system with a periodic arrangement of atoms, where each atom is represented by a 3D spin vector.  This atomistic spin model is founded on the spin Hamiltonian, which delineates the essential spin-dependent interactions at the atomic scale, excluding the influences of potential and kinetic energy and electron correlations. The spin Hamiltonian is conventionally articulated as
+
+$$
+H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\sum\lambda(s_i\cdot s_j)^2 -\sum D_{ij}\cdot (s_i \times s_j) -\mu B \cdot \sum s_i
+$$
+
+Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exchange parameters, $A$ is the single ion exchange parameter, $\lambda$ is the biquadratic parameter, $D$ is the Dyzaloshinskii-Moriya Interaction(DMI) parameter. $\mu$ is the dipole moment of a single atom and $B$ is the external magnetic field. $s_i,s_j$ are individual atomic spin vectors. $s_j$ are the first set of neighbours. From this equation, we see that energy of an atom depends on its interactions with the neighbours. In our code, we have limited the number of neighbour sets to be 4 since it is expected for 2D materials that the interaction energy dies down beyond that.
+
+# Brief results
+
+![Figure 1](figures/Figure_1.png)
+Fig 1: Discrepancy between reference and simuation results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data. 
 
 ![Figure 2](figures/Figure_2.png)
-Fig2. Left: Antiferromagnetic skyrmions in $MnBr_{2}$, Right: Ferromagnetic skyrmions in $CrInSe_3$. These simulations used a grid size of $200\times 200$, using a kernel size of $8192$(~20% of $200\times 200$). These simulations took a $700s$.
+Fig 2: Presence of Skyrmions and Merons in $CrCl_3$. The material parameters are taken from [@augustin_properties_2021]. The color bar represents normalized spin vectors in the z direction.
 
-# Method
-This is an *approximate* algorithm which mimics the classic single spin Metropolis Monte Carlo algorithm. This algorithm, however maximizes speed at the cost of minor accuracy. While in the single spin method, only 1 lattice point is evaluated at any given step, we take it further and evaluate multiple points at the same time. This works well for some time until we start evaluating too many points at the same time. It is advised to limit the parallelization to $~10\%$ of the total number, using more parallelization distorts the accuracy of further results. A benchmark for this has been recorded where we try to simulate the Curie temperature of $CrI_3$, with the results given below.![Figure 3](figures/Figure_3.png)
-Fig3. The distortion of results with an increase in the number of points evaluated in parallel. Note how $<10\%$, the simulation closely follows the experimental reference results.
+![Figure 3](figures/Figure_3.png)
+Fig 3: Presence of anti-skyrmions in $MnBr_2$ and skyrmions in $CrInSe_3$. The color bar represents normalized spin vectors in the z direction. Note that the spins of $MnBr_2$ appear purple because there are "red-blue" spin pairs for the vast majority.
 
-The above experiment shows a raw theoretical increase of $N\times$ amount increase in performance, while compromising slightly on the results. This makes this code most suited for large supercells which saturate the CUDA cores of any given GPU, even considering the high throughput of each Metropolis step.
+![Figure 4](figures/Figure_4.png)
+Fig 4: Lifetime of a skyrmion in $MnSTe$, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: $30s$.
+
+![Figure 5](figures/Figure_5.PNG)
+Fig 5: Lifetime of a skyrmion in $VZr_3C_3II$, from its creation to annihilation. The graph denotes the average energy per atom. Note how the entire field is now blue (as opposed to red as in Fig 4), this is because unlike the simulation in Fig 4, there is no external magnetic field applied, this means that the ground state would either be all spins up(red) or all spins down(blue) with a $50\%$ probability for either. Total time: $9$ hrs.
+
+
+All these results and more are explored more in the attached ```JOSS Paper.md``` file, which forms the cover for the project.
 
 # Tools
 If one does not wish to use this purely for observation of microstructures in material, they can alternatively make use of its other modes like
@@ -65,3 +138,7 @@ To run a Curie temperature analysis, execute ```python tc_sims.py``` after confi
   
 
 After the run, a graph of temperature vs magnetization and temperature vs susceptibility will be auto generated. If the graph is not desired, please comment out everything from line 21.
+
+
+
+# Citation
