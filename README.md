@@ -29,12 +29,12 @@ If one wants to create their own input file from scratch, just copy this json te
     "Single_Mat_Flag" : 1 if single material 0 otherwise (int),
     "Animation_Flags" : DEPRECATED,
     "DMI_Flag"        : 1 if simulation in DMI mode 0 otherwise (int),
-    "TC_Flag"         : 1 if simulation is in Curie Temperature mode 0 otherwise (int),
+    "TC_Flag"         : 1 if simulation is in Critical Temperature mode 0 otherwise (int),
     "Static_T_Flag"   : 1 if simulation has a single temperature 0 otherwise (int),
     "FM_Flag"         : 1 if starting state is FM 0 otherwise,
     "Input_flag"      : 1 if starting from a specified <input.npy> state 0 otherwise,
     "Input_File"      : String value(use quotes please) for starting state file name (if applicable),
-    "Temps"           : Array form of temperatures used for simulation (only in Curie Temperature mode),
+    "Temps"           : Array form of temperatures used for simulation (only in Critical Temperature mode),
     "Material"        : Material name (omit the ".csv"),
     "Multiple_Materials" : File name with multiple materials (omit the ".csv"),
     "SIZE"    :  Lattice size (int),
@@ -50,9 +50,9 @@ If one wants to create their own input file from scratch, just copy this json te
     "Prefix"            : String value to appear in FRONT of output folder
 }
 ```
-> **_NOTE 1:_** The simulator can work in *either* Curie Temperature or DMI mode, because of the different Hamiltonians, while it is easy to see its an OR condition, please do not attempt to use 1 on both.
+> **_NOTE 1:_** The simulator can work in *either* Critical Temperature or DMI mode, because of the different Hamiltonians, while it is easy to see its an OR condition, please do not attempt to use 1 on both.
 >  
-> **_NOTE 2:_** The total number of raw MC steps will be ```Blocks x (MC Phase 1 runs x MC Phase 1 size + MC Phase 1 runs x MC Phase 1 size)```. We typically divide the phases to study the Curie temperature, since that typically gives the simulation time to settle down in ```Phase 1``` and then find out the statistical properties in ```Phase 2```(which is our data collection phase). For any raw simulation, where the evolution of states are required from start to finish, one may keep any one phase and omit the other.
+> **_NOTE 2:_** The total number of raw MC steps will be ```Blocks x (MC Phase 1 runs x MC Phase 1 size + MC Phase 1 runs x MC Phase 1 size)```. We typically divide the phases to study the Critical temperature, since that typically gives the simulation time to settle down in ```Phase 1``` and then find out the statistical properties in ```Phase 2```(which is our data collection phase). For any raw simulation, where the evolution of states are required from start to finish, one may keep any one phase and omit the other.
 
 # Functions
 
@@ -131,9 +131,9 @@ After execution, an output folder will be created with name ```<prefix>_<materia
 
 For casual viewing, it is advised to use the in-built viewer as ```python test_view.py <folder name>``` to provide visuals of the spin magnitudes in 3 directions as well as a top-down vector map of the spins.
 
-## 2. Curie temperature analysis
+## 2. Critical temperature analysis
 
-To run a Curie temperature analysis, execute ```python tc_sims.py``` after configuring the appropriate config file in ```/configs/tc_config.json```.
+To run a Critical temperature analysis, execute ```python tc_sims.py``` after configuring the appropriate config file in ```/configs/tc_config.json```.
 
   
 
