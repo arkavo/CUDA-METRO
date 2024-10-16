@@ -61,7 +61,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
     \label{algorithm:MS}
     \begin{algorithmic}[0]
         \Procedure{Step}{}
-            \State \texttt{Read State $\Omega_i$}
+            \State \texttt{Read initial state}
             \State \texttt{Create 4 $P\times B$ length uniform random arrays}
             \State \texttt{Process 4 arrays into $N,\theta, \phi, R$}
         \EndProcedure
