@@ -10,6 +10,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Open Journals PDF Generator
         uses: openjournals/openjournals-draft-action@v.1.0
+      - name: Install LaTeX packages
+        run: sudo apt-get update && sudo apt-get install -y texlive-science
         with:
           journal: joss
           # This should be the path to the paper within your repo.
