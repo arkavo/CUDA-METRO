@@ -23,8 +23,6 @@ header-includes:
   - \usepackage{algorithm}
   - \usepackage[noend]{algpseudocode}
   - \usepackage{chemformula}
-output:
-  pdf_document
 date: 30 Sept 2024
 bibliography: references.bib
 
