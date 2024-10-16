@@ -181,3 +181,12 @@ Board (SERB), Government of India, under Grant No. CRG/2020/000758.
             \State  \texttt{$\Omega_{i+1} \leftarrow \Omega_{i}$}
         \EndFor
         \EndProcedure
+
+\begin{algorithm}
+    \caption{Parallel Monte Carlo}
+    \label{algorithm:step}
+    \begin{algorithmic}[0]
+        \Procedure{Step}
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
