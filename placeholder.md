@@ -86,3 +86,19 @@ bibliography: references.bib
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
+
+\begin{algorithm}[t]
+    \caption{Metropolis Selection}
+    \label{algorithm:MS}
+    \begin{algorithmic}[0]
+        \Procedure{M}{$H_f,H_i$}
+            \If {$\Delta H < 0$}
+            \State \texttt{Return 1 (ACCEPT)}
+            \ElsIf {$e^{\beta \Delta H} < R$}\Comment{$R$ is uniformly random}
+            \State \texttt{Return 1 (ACCEPT)}
+            \Else
+            \State \texttt{Return 0 (REJECT)}
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
