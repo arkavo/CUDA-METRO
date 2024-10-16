@@ -1,4 +1,4 @@
-﻿---
+---
 title: 'CUDA-METRO: Parallel Metropolis Monte-Carlo for 2D Atomistic Spin Texture Simulation'
 tags:
   - Python
