@@ -72,7 +72,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
                 \State \texttt{Wait for all BLOCKS to finish}
             \EndFor
             \State  \texttt{Update all $P$ spins to state}
-            \State  \texttt{$\Omega_{i+1} \leftarrow \Omega_{i}$}
+            \State  \texttt{Final state \leftarrow Initial State$}
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
