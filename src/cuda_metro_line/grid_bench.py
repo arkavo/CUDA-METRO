@@ -12,7 +12,7 @@ tol = 1e-2
 
 timings, runs = np.array([]), np.array([])
 for i in range(6):
-    mc_gb = cst.MonteCarlo(config=f"../configs/grid_benchs/grid_bench_{i}.json")
+    mc_gb = cst.MonteCarlo(config=f"../../configs/grid_benchs/grid_bench_{i}.json")
     mc_gb.mc_init()
     mc_gb.display_material()
     mc_gb.grid_reset()

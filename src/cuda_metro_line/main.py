@@ -7,7 +7,7 @@ import numpy as np
 import tqdm as tqdm
 
 # Set your config file here
-test_mc0 = cst.MonteCarlo(config="../configs/test_config.json")
+test_mc0 = cst.MonteCarlo(config="../../configs/test_config.json")
 
 # Initialize the Monte Carlo simulation
 test_mc0.mc_init()

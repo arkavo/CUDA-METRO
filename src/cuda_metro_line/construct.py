@@ -18,7 +18,6 @@ from matplotlib.colors import Normalize
 
 import os 
 import sys 
-sys.path.append("../utilities/")
 import Material_Reader as rm 
 import montecarlo as mc
 from tqdm import tqdm 
@@ -75,12 +74,12 @@ class MonteCarlo:
         drv.memcpy_htod(self.GPU_DMI_3, self.dmi_3)
         drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
         drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
-        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../"+self.Input_Folder+"TC_"+self.Material+".csv")
+        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../../"+self.Input_Folder+"TC_"+self.Material+".csv")
         self.spin = self.MAT_PARAMS[0]
         spin_gpu = np.array([self.spin]).astype(np.float32)
         self.SGPU = drv.mem_alloc(spin_gpu.nbytes)
         drv.memcpy_htod(self.SGPU, spin_gpu)
-        self.save_direcotry = "../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
+        self.save_direcotry = "../../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
         self.NBS = int(self.MAT_PARAMS[20]), int(self.MAT_PARAMS[21]), int(self.MAT_PARAMS[22]), int(self.MAT_PARAMS[23])
 
         self.metadata = {
@@ -474,7 +473,7 @@ class Analyze():
         self.spin = np.float32(self.metadata["spin"])
         self.Blocks = self.metadata["Blocks"]
         Mat = self.metadata["Material"]
-        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../inputs/"+"TC_"+Mat+".csv")
+        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../../inputs/"+"TC_"+Mat+".csv")
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         self.B_GPU = drv.mem_alloc(self.MAT_PARAMS[0].nbytes)

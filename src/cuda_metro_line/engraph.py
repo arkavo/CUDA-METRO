@@ -5,7 +5,7 @@ import tqdm as tqdm
 import sys
 import os
 
-test_mc0 = cst.MonteCarlo(config="../configs/test_config.json")
+test_mc0 = cst.MonteCarlo(config="../../configs/test_config.json")
 test_mc0.mc_init()
 
 args = sys.argv
