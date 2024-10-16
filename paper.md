@@ -75,7 +75,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
         \EndFor
         \EndProcedure
     \end{algorithmic}
-\end{algorithm}[t]
+\end{algorithm}
 
 
 At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category [@kabiraj_massive_2022], and for neighbour mapping, we use analytical relations [@Koziol2020-cp].
