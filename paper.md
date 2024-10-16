@@ -14,7 +14,6 @@ affiliations:
 header-includes:
  - \usepackage{algorithm}
  - \usepackage[noend]{algpseudocode}
- - \usepackage{chemformula}
 date: 30 September 2024
 bibliography: references.bib
 
