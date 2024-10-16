@@ -54,11 +54,18 @@ Here $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the t
 
 In our method, as depicted in Algorithm 2, we select multiple atomic spins at the same time and change them all at once, treating them as independent events. For any individual spin, they do not feel the effects of the other changed spins. In each of these points, we use the Metropolis criteria to accept or reject the changed spin vectors. This becomes our new state.
 
-\begin{algorithm}
-    \caption{Parallel Monte Carlo}
-    \label{algorithm:step}
+\begin{algorithm}[t]
+    \caption{Metropolis Selection}
+    \label{algorithm:MS}
     \begin{algorithmic}[0]
-        \Procedure{Step}
+        \Procedure{Step}{}
+            \If {$\Delta H < 0$}
+            \State \texttt{Return 1 (ACCEPT)}
+            \ElsIf {$e^{\beta \Delta H} < R$}\Comment{$R$ is uniformly random}
+            \State \texttt{Return 1 (ACCEPT)}
+            \Else
+            \State \texttt{Return 0 (REJECT)}
+            \EndIf
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
