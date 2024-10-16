@@ -19,12 +19,15 @@ affiliations:
   - name: Indian Institute of Science
     index: 1
     ror: [04dese585](https://ror.org/04dese585)
-  - name: Indian Institute of Science, India
-
+header-includes: |
+  - \usepackage{algorithm}
+  - \usepackage[noend]{algpseudocode}
+  - \usepackage{chemformula}
 output:
   pdf_document
 date: 30 Sept 2024
 bibliography: references.bib
+
 ---
 
 # Statement of need
@@ -72,7 +75,7 @@ Second we simulate skyrmions in \ch{MnBr2}`[@doi:10.1021/acs.nanolett.1c04803]` 
 In Fig 4 we demonstrate the skyrmion neucleation process for the material \ch{MnSTe} `[@kulish_single-layer_2017]`, which has a hexagonal lattice. While we first observe observe several skyrmions, with evolving MCS, they disappear and the whole lattice eventually becomes uniformly ferromagnetic,which happens to be the direction of the applied magnetic field. This has not been reported in the original literature `[@liang_very_2020]`, possibly because of the high computational time required for a traditional single spin update algorithm. In Fig 5, we further show a similar life cycle evolution for a giant skyrmion of diameter $21nm$ hosted in the material \ch{VZr3C3II} `[@kabiraj_realizing_2023]`. To host such a large skyrmion, the simulation was conducted in a supercell of size $750\times 750$ with a parallelization ratio of $1\%$ utilizing $70\%$ VRAM of an A100-SXM4 GPU. As mentioned before, our parallelization is limited by the number of CUDA cores and so we cannot go more than $1\%$ parallelization for this simulation. However, even with this low parallelization ratio, we can still access 8000 lattice points simultaneously and by careful tuning of our parameter $B$, we can observe the ground state of a $750\times750$ supercell in $9$ hours using an A100-SXM4 GPU. The formation of the skyrmion roughly takes $100$ mins.
 
 ![Figure 1](figures/Figure_1.png)
-Fig 1: Discrepancy between reference and reference`[@Kartsev-2020]` results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.
+Fig 1: Discrepancy between simulation and reference`[@Kartsev-2020]` results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.
 
 ![Figure 2](figures/Figure_2.png)
 Fig 2: Presence of Skyrmions and Merons in \ch{CrCl3}. The material parameters are taken from `[@augustin_properties_2021]`. The color bar represents normalized spin vectors in the z direction.
