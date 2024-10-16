@@ -20,7 +20,6 @@ bibliography: references.bib
 
 ---
 
-
 # Statement of need
 
 Atomistic spin texture simulations are crucial for understanding and predicting the behaviour of magnetic materials at the nanoscale. These simulations provide insights into fundamental properties like magnetic phase transition and are thus useful for exploring novel materials [@kabiraj_realizing_2023]. The Metropolis[@metropolis_equation_1953] Monte-Carlo[@heisenberg_zur_1928] (MC) method is frequently utilised for atomistic spin texture simulations as a sampling algorithm to investigate the phase space of a system and is especially effective for calculating equilibrium properties [@evans_atomistic_2014;@PhysRevB.99.224414].
@@ -29,10 +28,6 @@ Here we present CUDA-METRO, a graphical processing unit (GPU) based open source 
 
 # Summary
 We consider a lattice system with a periodic arrangement of atoms, where each atom is represented by a 3D spin vector.  This atomistic spin model is founded on the spin Hamiltonian, which delineates the essential spin-dependent interactions at the atomic scale, excluding the influences of potential and kinetic energy and electron correlations. The spin Hamiltonian of the $i^{th}$ atom is conventionally articulated as
-
-
-
-
 
 Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exchange parameters, with the superscript denoting the spin direction, $A$ is the single ion exchange parameter, $\lambda$ is the biquadratic parameter, $D$ is the Dyzaloshinskii-Moriya Interaction(DMI) parameter. $\mu$ is the dipole moment of a single atom and $B$ is the external magnetic field. $s_i,s_j$ are individual atomic spin vectors. $\{s_j\}$ are the first set of neighbours, $\{s_k\}$ are the second set of neighbours and so on. The subscripts below all $J$s and $K$s denote the neighbour set, $J_1$ denotes the first neighbours, $J_2$ the second and so on. From this equation, we see that energy of an atom depends on its interactions with the neighbours. In our code, we have limited the number of neighbour sets to be 4 since it is expected for 2D materials that the interaction energy dies down beyond that.
 
@@ -61,7 +56,7 @@ Next, we demonstrate the nucleation of topological spin textures which are emerg
 
 First, we report the "meron" and "anti-meron", which are structures with topological numbers $-1/2$ and $+1/2$ respectively observed in {CrCl3} by Landau Lifshitz Gilbert(LLG)equations of spin dynamics. The results of our simulation are shown in Fig 2. {CrCl3} has a honeycomb lattice structure and for this simulation, we have considered up to the third nearest neighbour with biquadratic exchange. We can see all 4 types of meron and anti-meron structures as found in the previous report[@augustin_properties_2021]. This simulation was conducted in a $500 \times 500(143 \times 143 nm^2)$ supercell and took 300s to stabilize these topological spin textures at a parallelization of $3\%$ conducted on an A100-SXM4 processor.
 
-Second we simulate skyrmions in {MnBr2}[@doi:10.1021/acs.nanolett.1c04803] as shown in Fig 3; {MnBr2} is a square lattice and for this simulation, we have considered up to the second nearest neighbour. The uniqueness of this material is that it exhibits anisotropic DMI with an anti-ferromagnetic ground state. Such an anti-ferromagnetic skyrmion spin texture is accurately reproduced in our simulation. Anti-ferromagnetic skyrmions are technologically important since they do not exhibit skyrmion Hall effect. We further study the material {CrInSe3} `[@du_spontaneous_2022]` which has a hexagonal lattice. This simulation was conducted considering only the nearest neighbours and the formation of skyrmions is shown in Fig 3. Once again our results are in agreement with the original report. All these simulations were conducted in a $200 \times 200(49 \times 49nm^2)$ supercell and took 30s to stabilize these topological spin textures at a parallelization of $20\%$ conducted on a V100-SXM2 processor.
+Second we simulate skyrmions in {MnBr2}[@doi:10.1021/acs.nanolett.1c04803] as shown in Fig 3; {MnBr2} is a square lattice and for this simulation, we have considered up to the second nearest neighbour. The uniqueness of this material is that it exhibits anisotropic DMI with an anti-ferromagnetic ground state. Such an anti-ferromagnetic skyrmion spin texture is accurately reproduced in our simulation. Anti-ferromagnetic skyrmions are technologically important since they do not exhibit skyrmion Hall effect. We further study the material {CrInSe3} [@du_spontaneous_2022] which has a hexagonal lattice. This simulation was conducted considering only the nearest neighbours and the formation of skyrmions is shown in Fig 3. Once again our results are in agreement with the original report. All these simulations were conducted in a $200 \times 200(49 \times 49nm^2)$ supercell and took 30s to stabilize these topological spin textures at a parallelization of $20\%$ conducted on a V100-SXM2 processor.
 
 In Fig 4 we demonstrate the skyrmion neucleation process for the material {MnSTe} [@kulish_single-layer_2017], which has a hexagonal lattice. While we first observe observe several skyrmions, with evolving MCS, they disappear and the whole lattice eventually becomes uniformly ferromagnetic,which happens to be the direction of the applied magnetic field. This has not been reported in the original literature[@liang_very_2020], possibly because of the high computational time required for a traditional single spin update algorithm. In Fig 5, we further show a similar life cycle evolution for a giant skyrmion of diameter $21nm$ hosted in the material {VZr3C3II} [@kabiraj_realizing_2023]. To host such a large skyrmion, the simulation was conducted in a supercell of size $750\times 750$ with a parallelization ratio of $1\%$ utilizing $70\%$ VRAM of an A100-SXM4 GPU. As mentioned before, our parallelization is limited by the number of CUDA cores and so we cannot go more than $1\%$ parallelization for this simulation. However, even with this low parallelization ratio, we can still access 8000 lattice points simultaneously and by careful tuning of our parameter $B$, we can observe the ground state of a $750\times750$ supercell in $9$ hours using an A100-SXM4 GPU. The formation of the skyrmion roughly takes $100$ mins.
 
@@ -69,7 +64,7 @@ In Fig 4 we demonstrate the skyrmion neucleation process for the material {MnSTe
 Fig 1: Discrepancy between simulation and reference[@Kartsev2020] results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.
 
 ![Figure 2](figures/Figure_2.png)
-Fig 2: Presence of Skyrmions and Merons in {CrCl3}. The material parameters are taken from `[@augustin_properties_2021]`. The color bar represents normalized spin vectors in the z direction.
+Fig 2: Presence of Skyrmions and Merons in {CrCl3}. The material parameters are taken from [@augustin_properties_2021]. The color bar represents normalized spin vectors in the z direction.
 
 ![Figure 3](figures/Figure_3.png)
 Fig 3: Presence of anti-skyrmions in {MnBr2} and skyrmions in {CrInSe3}. The color bar represents normalized spin vectors in the z direction. Note that the spins of {MnBr2} appear purple because there are "red-blue" spin pairs for the vast majority.
