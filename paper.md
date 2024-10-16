@@ -17,6 +17,7 @@ header-includes:
  - \usepackage[utf8]{inputenc}
  - \usepackage[T1]{fontenc}
  - \usepackage{lmodern}
+ - \usepackage{amsmath,amssymb} 
 date: 30 September 2024
 bibliography: references.bib
 
@@ -72,7 +73,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
                 \State \texttt{Wait for all BLOCKS to finish}
               \EndFor
             \State \texttt{Update all $P$ spins to state}
-            \State \texttt{$\Omega_{i+1} \leftarrow \Omega_{i}$}
+            \State \texttt{ $\Omega_{i+1} \leftarrow $\Omega_{i}$ }
             \EndFor
         \EndProcedure
     \end{algorithmic}
