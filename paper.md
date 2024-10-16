@@ -8,7 +8,7 @@ tags:
   -  2D
 authors:
   - name: Arkavo Hait
-    orcid: 0000-0000-0000-0000
+    orcid: 0009-0006-6741-9377
     equal-contrib: true
     affiliation: 1
   - name: Santanu Mahapatra
@@ -20,9 +20,12 @@ affiliations:
     index: 1
     ror: [04dese585](https://ror.org/04dese585)
   - name: Indian Institute of Science, India
+header-includes:
+  - \usepackage{algorithmic}
+  - \usepackage[noend]{algpseudocode}
+  - \usepackage{chemformula}
 date: 30 Sept 2024
 bibliography: references.bib
-
 ---
 
 # Statement of need
