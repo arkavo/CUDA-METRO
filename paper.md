@@ -39,13 +39,50 @@ Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exch
 Starting from a random spin configuration, in this many-body problem, our objective is to find the orientation of spin vectors for every atom so that the energy of the entire lattice reaches to its minimum for a given magnetic field and temperature.
 Traditionally single spin update (SSU) scheme is employed to solve this problem, which satisfies the detailed balance condition. In the SSU method of updating the state, a single atomic spin is chosen at random and changed, while noting down the energy shift. This new state is then accepted or rejected using the Metropolis criteria as shown in Algorithm 1`[@algorithm:MS]`. It is imperative that SSU becomes extremely inefficient as the dimensionality increases. We propose the following parallel algorithm to find the ground state, which is inaccessible by SSU scheme.
 
-Algo1
+\begin{algorithm}[H]
+    \caption{Metropolis Selection}
+    \label{algorithm:MS}
+    \begin{algorithmic}[0]
+        \Procedure{M}{$H_f,H_i$}
+            \If {$\Delta H < 0$}
+            \State \texttt{Return 1 (ACCEPT)}
+            \ElsIf {$e^{\beta \Delta H} < R$}\Comment{$R$ is uniformly random}
+            \State \texttt{Return 1 (ACCEPT)}
+            \Else
+            \State \texttt{Return 0 (REJECT)}
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
 
 Here $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the temperature.
 
 In our method, as depicted in `[@algorithm:step]`, we select multiple atomic spins at the same time and change them all at once, treating them as independent events. For any individual spin, they do not feel the effects of the other changed spins. In each of these points, we use the Metropolis criteria to accept or reject the changed spin vectors. This becomes our new state.
 
-Algo2
+\begin{algorithm}[t]
+    \caption{Parallel Monte Carlo}
+    \label{algorithm:step}
+    \begin{algorithmic}[0]
+        \Procedure{Step}
+        \hspace*{4.5em}
+        \State \hspace*{4.5em}{Read State $\Omega_i$}
+        \State \hspace*{4.5em}{Create 4 $P\times B$ length uniform random arrays}
+        \State \hspace*{4.5em}{Process 4 arrays into $N,\theta, \phi, R$}
+        \For{\hspace*{4.5em}{$i<B$}}
+            \State \hspace*{4.5em}{Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
+            \State \hspace*{4.5em}{Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)[j]$}\Comment{$j\in [P\times i,P\times (i+1)]$}
+            \For{In each BLOCK}
+                \State \hspace*{4.5em}{Evaluate $H$ before(T0) and after(T1) spin change}\Comment{Multithreading}
+                \State \hspace*{4.5em}{Select spins according to $S_{new} = S_f(M(H_f,H_i)) + S_i(1-M(H_f,H_i))$}
+                \State \hspace*{4.5em}{Wait for all BLOCKS to finish}
+            \EndFor
+            \State \hspace*{4.5em}{Update all $P$ spins to state}
+            \State \hspace*{4.5em}{$\Omega_{i+1} \leftarrow \Omega_{i}$}
+        \EndFor
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}[t]
+
 
 At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category `[@kabiraj_massive_2022]`, and for neighbour mapping, we use analytical relations `[@Koziol2020-cp]`.
 
