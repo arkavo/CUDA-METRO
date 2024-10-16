@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build draft PDF
+      - name: Open Journals PDF Generator
         uses: openjournals/openjournals-draft-action@master
         with:
           journal: joss
