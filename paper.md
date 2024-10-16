@@ -73,7 +73,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
                 \State \texttt{Wait for all BLOCKS to finish then increment i}
               \EndFor
             \State \texttt{Update all P spins to next state}
-            \State \texttt{ Final State <- Initial State }
+            \State \texttt{This state is now our next state}
             \EndFor
         \EndProcedure
     \end{algorithmic}
