@@ -14,6 +14,7 @@ affiliations:
 header-includes:
  - \usepackage{algorithm}
  - \usepackage[noend]{algpseudocode}
+ - \DeclareUnicodeCharacter{2212}{-}
 date: 30 September 2024
 bibliography: references.bib
 
