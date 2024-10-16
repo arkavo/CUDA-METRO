@@ -62,18 +62,18 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
     \label{algorithm:MS}
     \begin{algorithmic}[0]
         \Procedure{Step}{Run}
-            \State \texttt{Read Initial state}
-            \State \texttt{Create 4 PxB length uniform random arrays}
-            \State \texttt{Process the 4 uniform random number arrays}
+            \State Read Initial state
+            \State Create 4 PxB length uniform random arrays
+            \State Process the 4 uniform random number arrays
             \For{$i<B$}
-              \State \texttt{Slice 4 sub-arrays with range [Pxi:Px(i+1)-1]}
-              \State \texttt{Execute P parallel BLOCKS with sub arrays}\Comment{$j\in (P\times i,P \times (i+1))$}
+              \State Slice 4 sub-arrays with range [Pxi:Px(i+1)-1]
+              \State Execute P parallel BLOCKS with sub arrays\Comment{$j\in (P\times i,P \times (i+1))$}
               \For{In each BLOCK}
-                \State \texttt{Evaluate H before(T0) and after(T1) spin change}\Comment{Multithreading}
-                \State \texttt{Wait for all BLOCKS to finish then increment i}
+                \State Evaluate H before(T0) and after(T1) spin change \Comment{Multithreading}
+                \State Wait for all BLOCKS to finish then increment i
               \EndFor
-            \State \texttt{Update all P spins to next state}
-            \State \texttt{This state is now our next state}
+            \State Update all P spins to next state
+            \State This state is now our next state
             \EndFor
         \EndProcedure
     \end{algorithmic}
