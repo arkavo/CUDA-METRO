@@ -62,18 +62,18 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
     \label{algorithm:MS}
     \begin{algorithmic}[0]
         \Procedure{Step}{Run}
-            \State \texttt{Read initial state $\O_i$}
-            \State \texttt{Create 4 $P\times B$ length uniform random arrays}
-            \State \texttt{Process 4 arrays into $N,\theta, \phi, R$}
+            \State Read initial state $\O_i$
+            \State Create 4 $P\times B$ length uniform random arrays
+            \State Process 4 arrays into $N,\theta, \phi, R$
             \For{$i<B$}
-              \State \texttt{Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
-              \State \texttt{Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)(j)$}\Comment{$j\in (P\times i,P \times (i+1))$}
+              \State Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$
+              \State Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)(j)$}\Comment{$j\in (P\times i,P \times (i+1))$
               \For{In each BLOCK}
-                \State \texttt{Evaluate $H$ before(T0) and after(T1) spin change}\Comment{Multithreading}
-                \State \texttt{Wait for all BLOCKS to finish}
+                \State Evaluate $H$ before(T0) and after(T1) spin change \Comment{Multithreading}
+                \State Wait for all BLOCKS to finish
               \EndFor
-            \State \texttt{Update all $P$ spins to state}
-            \State \texttt{ $\O_{i+1} \leftarrow $\O_{i}$ }
+            \State Update all $P$ spins to state
+            \State $\O_{i+1} \leftarrow $\O_{i}$
             \EndFor
         \EndProcedure
     \end{algorithmic}
