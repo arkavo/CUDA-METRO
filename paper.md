@@ -59,10 +59,10 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
     \label{algorithm:step}
     \begin{algorithmic}[0]
         \Procedure{Step}
-        \State{Read State $\Omega_i$}
-        \State{Create 4 $P\times B$ length uniform random arrays}
-        \State{Process 4 arrays into $N,\theta, \phi, R$}
-        \For{ {$i<B$}}
+        \State \texttt{Read State $\Omega_i$}
+        \State \texttt{Create 4 $P\times B$ length uniform random arrays}
+        \State \texttt{Process 4 arrays into $N,\theta, \phi, R$}
+        \For{$i<B$}
             \State  \texttt{Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
             \State  \texttt{Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)[j]$}\Comment{$j\in [P\times i,P \times (i+1)]$}
             \For{In each BLOCK}
