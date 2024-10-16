@@ -164,3 +164,20 @@ This work is supported by the Core Research Grant (CRG) scheme of the Science an
 Board (SERB), Government of India, under Grant No. CRG/2020/000758.
 
 # References
+
+\Procedure{Step}
+        \State \texttt{Read State $\Omega_i$}
+        \State \texttt{Create 4 $P\times B$ length uniform random arrays}
+        \State \texttt{Process 4 arrays into $N,\theta, \phi, R$}
+        \For{$i<B$}
+            \State  \texttt{Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
+            \State  \texttt{Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)[j]$}\Comment{$j\in [P\times i,P \times (i+1)]$}
+            \For{In each BLOCK}
+                \State \texttt{Evaluate $H$ before(T0) and after(T1) spin change}\Comment{Multithreading}
+                \State \texttt{Select spins according to $S_{new} = S_f(M(H_f,H_i)) + S_i(1-M(H_f,H_i))$}
+                \State \texttt{Wait for all BLOCKS to finish}
+            \EndFor
+            \State  \texttt{Update all $P$ spins to state}
+            \State  \texttt{$\Omega_{i+1} \leftarrow \Omega_{i}$}
+        \EndFor
+        \EndProcedure
