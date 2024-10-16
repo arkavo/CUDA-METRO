@@ -33,3 +33,19 @@ Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exch
 
 Starting from a random spin configuration, in this many-body problem, our objective is to find the orientation of spin vectors for every atom so that the energy of the entire lattice reaches to its minimum for a given magnetic field and temperature.
 Traditionally single spin update(SSU) scheme is employed to solve this problem, which satisfies the detailed balance condition. In the SSU method of updating the state, a single atomic spin is chosen at random and changed, while noting down the energy shift. This new state is then accepted or rejected using the Metropolis criteria as shown in Algorithm 1. It is imperative that SSU becomes extremely inefficient as the dimensionality increases. We propose the following parallel algorithm to find the ground state, which is inaccessible by SSU scheme.
+
+\begin{algorithm}[t]
+    \caption{Algorithm 1: Metropolis Selection}
+    \label{algorithm:MS}
+    \begin{algorithmic}[0]
+        \Procedure{M}{$H_f,H_i$}
+            \If {$\Delta H < 0$}
+            \State \texttt{Return 1 (ACCEPT)}
+            \ElsIf {$e^{\beta \Delta H} < R$}\Comment{$R$ is uniformly random}
+            \State \texttt{Return 1 (ACCEPT)}
+            \Else
+            \State \texttt{Return 0 (REJECT)}
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
