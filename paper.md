@@ -69,7 +69,7 @@ In our method, as depicted in [@algorithm:step], we select multiple atomic spins
         \State {Read State $\Omega_i$}
         \State {Create 4 $P\times B$ length uniform random arrays}
         \State {Process 4 arrays into $N,\theta, \phi, R$}
-        \For{{$i<B$}}
+        \For{$i<B$}
             \State {Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
             \State {Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)[j]$}\Comment{$j\in [P\times i,P\times (i+1)]$}
             \For{In each BLOCK}
