@@ -54,28 +54,29 @@ Here $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the t
 
 In our method, as depicted in Algorithm 2, we select multiple atomic spins at the same time and change them all at once, treating them as independent events. For any individual spin, they do not feel the effects of the other changed spins. In each of these points, we use the Metropolis criteria to accept or reject the changed spin vectors. This becomes our new state.
 
-\begin{algorithm}
+\begin{algorithm}[t]
     \caption{Parallel Monte Carlo}
     \label{algorithm:step}
     \begin{algorithmic}[0]
         \Procedure{Step}
-        \State \texttt{Read State $\Omega_i$}
-        \State \texttt{Create 4 $P\times B$ length uniform random arrays}
-        \State \texttt{Process 4 arrays into $N,\theta, \phi, R$}
-        \For{\texttt{$i<B$}}
-            \State \texttt{Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
-            \State \texttt{Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)[j]$}\Comment{$j\in [P\times i,P\times (i+1)]$}
+        \hspace*{4.5em}
+        \State \hspace*{4.5em}{Read State $\Omega_i$}
+        \State \hspace*{4.5em}{Create 4 $P\times B$ length uniform random arrays}
+        \State \hspace*{4.5em}{Process 4 arrays into $N,\theta, \phi, R$}
+        \For{\hspace*{4.5em}{$i<B$}}
+            \State \hspace*{4.5em}{Create 4 sub-arrays as $(N,\theta,\phi,R)[P\times i:P\times (i+1)-1]$}
+            \State \hspace*{4.5em}{Execute $P$ parallel BLOCKS with sub array $(N,\theta,\phi,R)[j]$}\Comment{$j\in [P\times i,P\times (i+1)]$}
             \For{In each BLOCK}
-                \State \texttt{Evaluate $H$ before(T0) and after(T1) spin change}\Comment{Multithreading}
-                \State \texttt{Select spins according to $S_{new} = S_f(M(H_f,H_i)) + S_i(1-M(H_f,H_i))$}
-                \State \texttt{Wait for all BLOCKS to finish}
+                \State \hspace*{4.5em}{Evaluate $H$ before(T0) and after(T1) spin change}\Comment{Multithreading}
+                \State \hspace*{4.5em}{Select spins according to $S_{new} = S_f(M(H_f,H_i)) + S_i(1-M(H_f,H_i))$}
+                \State \hspace*{4.5em}{Wait for all BLOCKS to finish}
             \EndFor
-            \State \texttt{Update all $P$ spins to state}
-            \State \texttt{$\Omega_{i+1} \leftarrow \Omega_{i}$}
+            \State \hspace*{4.5em}{Update all $P$ spins to state}
+            \State \hspace*{4.5em}{$\Omega_{i+1} \leftarrow \Omega_{i}$}
         \EndFor
         \EndProcedure
     \end{algorithmic}
-\end{algorithm}
+\end{algorithm}[t]
 
 
 At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category [@kabiraj_massive_2022], and for neighbour mapping, we use analytical relations [@Koziol2020-cp].
