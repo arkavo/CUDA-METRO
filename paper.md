@@ -21,7 +21,7 @@ affiliations:
     ror: [04dese585](https://ror.org/04dese585)
   - name: Indian Institute of Science, India
 header-includes: |
-  - \usepackage{algorithmic}
+  - \usepackage{algorithm}
   - \usepackage[noend]{algpseudocode}
   - \usepackage{chemformula}
 date: 30 Sept 2024
@@ -90,7 +90,7 @@ In our method, as depicted in `[@algorithm:step]`, we select multiple atomic spi
     \end{algorithmic}
 \end{algorithm}[t]
 
-At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category [@kabiraj_massive_2022], and for neighbour mapping, we use analytical relations `[@Koziol2020-cp]`.
+At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category `[@kabiraj_massive_2022]`, and for neighbour mapping, we use analytical relations `[@Koziol2020-cp]`.
 
 For a lattice of size $N\times N$, $100\%$ parallelization would correspond to selecting $N^2$ spins at random. Since each spin selection and its consequent Metropolis criterion is evaluated on a separate CUDA core, it becomes apparent that we would need $N^2$ CUDA cores to achieve this $100\%$ parallelization.Since the proposed algorithm may not adhere to the detailed balance conditions, it yields approximate results, and there is a trade-off between parallelization/acceleration and accuracy. It is found that if the parallelization is limited to $10\%$ of the lattice size, we obtain very accurate results with significant acceleration.
 
@@ -98,7 +98,7 @@ We define our Monte Carlo Step(MCS) to be a collection of many atomic steps. The
 
 We validate our postulate by accurately reproducing temperature-dependent magnetic phase transitions and intricate topological spin textures already reported in the literature, either by single spin update based Monte Carlo or by Landau Lifshitz Gilbert(LLG)`[@gilbert_classics_2004]` spin dynamics, for diverse crystal structures.
 
-It was once thought that long-range magnetic order could not exist `[@PhysRevLett.17.1133]` in two or one-dimensional materials. In 2005, $CrI_3$ was one of the first 2D materials [@Huang2017] where ferromagnetism was demonstrated. Consequently, further studies have shown the existence of long-range magnetic order in several other 2D materials. Using CUDA-METRO, we first simulate the magnetic phase transition of $CrI_3$ from ferromagnetic to paramagnetic with increasing temperature. The rise of temperature causes the atomic spins not to be locked into a ferromagnetic position but rather gives them enough energy to orient themselves in any direction. The average direction of all the spins would then lead to a null vector, which gives rise to paramagnetism. In Fig 1, we reproduce magnetic phase transition from `[@augustin_npj]`, and show the effect of parallelization with respect to the reference data. As mentioned before, we can obtain very accurate results with respect to SSU methods by limiting the parallelization at $10\%$ or below of $N^2$. The ferromagnetic to paramagnetic transition point is known as Critical temperature and is extracted from the peak of the susceptibility versus temperature plot.
+It was once thought that long-range magnetic order could not exist `[@PhysRevLett.17.1133]` in two or one-dimensional materials. In 2005, $CrI_3$ was one of the first 2D materials `[@Huang2017]` where ferromagnetism was demonstrated. Consequently, further studies have shown the existence of long-range magnetic order in several other 2D materials. Using CUDA-METRO, we first simulate the magnetic phase transition of $CrI_3$ from ferromagnetic to paramagnetic with increasing temperature. The rise of temperature causes the atomic spins not to be locked into a ferromagnetic position but rather gives them enough energy to orient themselves in any direction. The average direction of all the spins would then lead to a null vector, which gives rise to paramagnetism. In Fig 1, we reproduce magnetic phase transition from `[@augustin_npj]`, and show the effect of parallelization with respect to the reference data. As mentioned before, we can obtain very accurate results with respect to SSU methods by limiting the parallelization at $10\%$ or below of $N^2$. The ferromagnetic to paramagnetic transition point is known as Critical temperature and is extracted from the peak of the susceptibility versus temperature plot.
 
 Next, we demonstrate the nucleation of topological spin textures which are emergent phenomena in condensed matter physics which are rapidly having importance in information technology`[@psaroudaki_skyrmion_2021;@luo_skyrmion_2021;@bessarab_lifetime_2018]`. While MC simulations of medium-sized supercells (64 × 64) yield quite accurate results for Critical temperature calculation, observing topological spin textures, once needs much larger supercells.
 
@@ -112,7 +112,7 @@ In Fig 4 we demonstrate the skyrmion neucleation process for the material \ch{Mn
 Fig 1: Discrepancy between reference and reference`[@Kartsev-2020]` results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.
 
 ![Figure 2](figures/Figure_2.png)
-Fig 2: Presence of Skyrmions and Merons in \ch{CrCl3}. The material parameters are taken from [@augustin_properties_2021]. The color bar represents normalized spin vectors in the z direction.
+Fig 2: Presence of Skyrmions and Merons in \ch{CrCl3}. The material parameters are taken from `[@augustin_properties_2021]`. The color bar represents normalized spin vectors in the z direction.
 
 ![Figure 3](figures/Figure_3.png)
 Fig 3: Presence of anti-skyrmions in \ch{MnBr2} and skyrmions in \ch{CrInSe3}. The color bar represents normalized spin vectors in the z direction. Note that the spins of \ch{MnBr2} appear purple because there are "red-blue" spin pairs for the vast majority.
