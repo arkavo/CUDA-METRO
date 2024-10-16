@@ -58,7 +58,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
     \caption{Parallel Monte Carlo}
     \label{algorithm:step}
     \begin{algorithmic}[0]
-        
+        \Procedure{Step}
     \end{algorithmic}
 \end{algorithm}
 
