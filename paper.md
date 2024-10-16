@@ -54,14 +54,14 @@ Here $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the t
 
 In our method, as depicted in Algorithm 2, we select multiple atomic spins at the same time and change them all at once, treating them as independent events. For any individual spin, they do not feel the effects of the other changed spins. In each of these points, we use the Metropolis criteria to accept or reject the changed spin vectors. This becomes our new state.
 
-\begin{algorithm}[t]
+\begin{algorithm}
     \caption{Parallel Monte Carlo}
     \label{algorithm:step}
     \begin{algorithmic}[0]
         \Procedure{Step}
+        \EndProcedure
     \end{algorithmic}
 \end{algorithm}
-
 
 At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category [@kabiraj_massive_2022], and for neighbour mapping, we use analytical relations [@Koziol2020-cp].
 
