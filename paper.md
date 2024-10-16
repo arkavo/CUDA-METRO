@@ -61,7 +61,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
     \label{algorithm:MS}
     \begin{algorithmic}[0]
         \Procedure{Step}{Run}
-            \State \texttt{Read initial state}
+            \State \texttt{Read initial state $\Omega_i$}
             \State \texttt{Create 4 $P\times B$ length uniform random arrays}
             \State \texttt{Process 4 arrays into $N,\theta, \phi, R$}
             \For{$i<B$}
@@ -72,7 +72,7 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
                 \State \texttt{Wait for all BLOCKS to finish}
               \EndFor
             \State \texttt{Update all $P$ spins to state}
-            \State \texttt{Final state <- Initial State}
+            \State \texttt{$\Omega_{i+1} \leftarrow \Omega_{i}$}
             \EndFor
         \EndProcedure
     \end{algorithmic}
