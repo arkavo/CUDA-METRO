@@ -20,7 +20,7 @@ affiliations:
     index: 1
     ror: [04dese585](https://ror.org/04dese585)
   - name: Indian Institute of Science, India
-header-includes:
+header-includes: |
   - \usepackage{algorithmic}
   - \usepackage[noend]{algpseudocode}
   - \usepackage{chemformula}
