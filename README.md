@@ -52,7 +52,7 @@ If one wants to create their own input file from scratch, just copy this json te
 ```
 > **_NOTE 1:_** The simulator can work in *either* Critical Temperature or DMI mode, because of the different Hamiltonians, while it is easy to see its an OR condition, please do not attempt to use 1 on both.
 >  
-> **_NOTE 2:_** The total number of raw MC steps will be ```Blocks x (MC Phase 1 runs x MC Phase 1 size + MC Phase 1 runs x MC Phase 1 size)```. We typically divide the phases to study the Critical temperature, since that typically gives the simulation time to settle down in ```Phase 1``` and then find out the statistical properties in ```Phase 2```(which is our data collection phase). For any raw simulation, where the evolution of states are required from start to finish, one may keep any one phase and omit the other.
+> **_NOTE 2:_** The total number of raw MC steps will be ```Blocks x (MC Phase 1 runs x MC Phase 1 size + MC Phase 2 runs x MC Phase 2 size)```. We typically divide the phases to study the Critical temperature, since that typically gives the simulation time to settle down in ```Phase 1``` and then find out the statistical properties in ```Phase 2```(which is our data collection phase). For any raw simulation, where the evolution of states are required from start to finish, one may keep any one phase and omit the other.
 
 # Functions
 
@@ -96,21 +96,30 @@ The template file to run a visual analyzer is given in ```visualize.py```, this 
 We consider a lattice system with a periodic arrangement of atoms, where each atom is represented by a 3D spin vector.  This atomistic spin model is founded on the spin Hamiltonian, which delineates the essential spin-dependent interactions at the atomic scale, excluding the influences of potential and kinetic energy and electron correlations. The spin Hamiltonian is conventionally articulated as
 
 $$
-H=-\sum Js_i\cdot s_j - \sum K_x s_i \cdot s_j-\sum K_y s_i \cdot s_j-\sum K_z s_i \cdot s_j-\sum A s_i \cdot s_i-\sum\lambda(s_i\cdot s_j)^2 -\sum D_{ij}\cdot (s_i \times s_j) -\mu B \cdot \sum s_i
+H_i=  -\sum_j J_1s_i\cdot s_j - \sum_j K^x_1 s^x_i s^x_j-\sum_j K^y_1 s^y_i s^y_j-\sum_j K^z_1 s^z_i s^z_j-\sum_k J_2 s_i\cdot s_k - \sum_k K^x_2 s^x_i s^x_k
+$$
+$$
+-\sum_k K^y_2 s^y_i s^y_k -\sum_k K^z_2 s^z_i s^z_k -\sum_l J_3s_i\cdot s_l - \sum_l K^x_3 s^x_i s^x_l-\sum_l K^y_3 s^y_i s^y_l-\sum_l K^z_3 s^z_i s^z_l 
+$$
+$$
+\\-\sum_m J_4s_i\cdot s_m - \sum_m K^x_4 s^x_i s^x_m-\sum_m K^y_4 s^y_i s^y_m -\sum_m K^z_4 s^z_i s^z_m - A s_i \cdot s_i-\sum_j \lambda(s_i\cdot s_j)^2  
+$$
+$$
+-\sum_j D_{ij}\cdot (s_i \times s_j) -\mu B \cdot s_i
 $$
 
-Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exchange parameters, $A$ is the single ion exchange parameter, $\lambda$ is the biquadratic parameter, $D$ is the Dyzaloshinskii-Moriya Interaction(DMI) parameter. $\mu$ is the dipole moment of a single atom and $B$ is the external magnetic field. $s_i,s_j$ are individual atomic spin vectors. $s_j$ are the first set of neighbours. From this equation, we see that energy of an atom depends on its interactions with the neighbours. In our code, we have limited the number of neighbour sets to be 4 since it is expected for 2D materials that the interaction energy dies down beyond that.
+Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exchange parameters, with the superscript denoting the spin direction, $A$ is the single ion exchange parameter, $\lambda$ is the biquadratic parameter, $D$ is the Dyzaloshinskii-Moriya Interaction(DMI) parameter. $\mu$ is the dipole moment of a single atom and $B$ is the external magnetic field. $s_i,s_j$ are individual atomic spin vectors. $\{s_j\}$ are the first set of neighbours, $\{s_k\}$ are the second set of neighbours and so on. The subscripts below all $J$s and $K$s denote the neighbour set, $J_1$ denotes the first neighbours, $J_2$ the second and so on. From this equation, we see that energy of an atom depends on its interactions with the neighbours. In our code, we have limited the number of neighbour sets to be 4 since it is expected for 2D materials that the interaction energy dies down beyond that. All these above parameters except $B$ are material specific parameters that are the inputs to our MC code.
 
 # Brief results
 
 ![Figure 1](figures/Figure_1.png)
-Fig 1: Discrepancy between reference and simuation results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data. 
+Fig 1:  Discrepancy between simulation and [reference](http://dx.doi.org/10.1038/s41524-020-00416-1) results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.
 
 ![Figure 2](figures/Figure_2.png)
-Fig 2: Presence of Skyrmions and Merons in $CrCl_3$. The material parameters are taken from [@augustin_properties_2021]. The color bar represents normalized spin vectors in the z direction.
+Fig 2: Presence of anti-merons and merons in $CrCl_3$. The color bar represents normalized spin vectors in the z direction.
 
 ![Figure 3](figures/Figure_3.png)
-Fig 3: Presence of anti-skyrmions in $MnBr_2$ and skyrmions in $CrInSe_3$. The color bar represents normalized spin vectors in the z direction. Note that the spins of $MnBr_2$ appear purple because there are "red-blue" spin pairs for the vast majority.
+Fig 3: Presence of skyrmions in $MnBr_2$ and $CrInSe_3$. The color bar represents normalized spin vectors in the z direction. Note that the spins of $MnBr_2$ appear purple because there are "red-blue" spin pairs for the vast majority.
 
 ![Figure 4](figures/Figure_4.png)
 Fig 4: Lifetime of a skyrmion in $MnSTe$, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: $30s$.
@@ -139,6 +148,3 @@ To run a Critical temperature analysis, execute ```python tc_sims.py``` after co
 
 After the run, a graph of temperature vs magnetization and temperature vs susceptibility will be auto generated. If the graph is not desired, please comment out everything from line 21.
 
-
-
-# Citation

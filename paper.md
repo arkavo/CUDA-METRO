@@ -3,7 +3,15 @@ title: 'CUDA-METRO: Parallel Metropolis Monte-Carlo for 2D Atomistic Spin Textur
 tags:
   - Python
   - Monte Carlo
-  - 2D
+  - 2D Material
+  - CUDA
+  - pyCUDA
+  - Metropolis
+  - Skyrmion
+  - Meron
+  - Curie Temperature
+  - Simulation
+  - Magnetism
 authors:
   - name: Arkavo Hait
     orcid: 0009-0006-6741-9377
@@ -120,7 +128,7 @@ Fig 1: Discrepancy between simulation and reference[@Kartsev2020] results at dif
 Fig 2: Presence of anti-merons and merons in $CrCl_3$. The material parameters are taken from [@augustin_properties_2021]. The color bar represents normalized spin vectors in the z direction.
 
 ![Figure 3](figures/Figure_3.png)
-Fig 3: Presence of skyrmions in $MnBr_2$ and $CrInSe_3$. The material parameters are taken from[@acs_nanolett],[@du_spontaneous_2022] respectively. The color bar represents normalized spin vectors in the z direction. Note that the spins of $MnBr_2$ appear purple because there are "red-blue" spin pairs for the vast majority.
+Fig 3: Presence of skyrmions in $MnBr_2$ and $CrInSe_3$. The material parameters are taken from[@acs_nanolett] and [@du_spontaneous_2022] respectively. The color bar represents normalized spin vectors in the z direction. Note that the spins of $MnBr_2$ appear purple because there are "red-blue" spin pairs for the vast majority.
 
 ![Figure 4](figures/Figure_4.png)
 Fig 4: Lifetime of a skyrmion in $MnSTe$, from its creation to annihilation. The material parameters are taken from [@liang_very_2020]. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: $30s$.
