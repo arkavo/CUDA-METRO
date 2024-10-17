@@ -1,4 +1,4 @@
----
+﻿---
 title: 'CUDA-METRO: Parallel Metropolis Monte-Carlo for 2D Atomistic Spin Texture Simulation'
 tags:
   - Python
@@ -14,7 +14,7 @@ authors:
     affiliation: 1
     email: "santanu@iisc.ac.in"
 affiliations:
- - name: Indian Institute of Science
+ - name: Nano-Scale Device Research Laboratory, Department of Electronic Systems Engineering, Indian Institute of Science (IISc) Bangalore, Bengaluru 560012, India.
    index: 1
 header-includes:
  - \usepackage{algorithm}
@@ -81,16 +81,16 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
     \begin{algorithmic}[0]
         \Procedure{Step}{Run}
             \State Read Initial state
-            \State Create 4 PxB length uniform random arrays
+            \State Create 4 $P\times B$ length uniform random arrays
             \State Process the 4 uniform random number arrays
             \For{$i<B$}
-              \State Slice 4 sub-arrays with range [Pxi:Px(i+1)-1]
+              \State Slice the 4 arrays into sub-arrays with range $[P\times i:P\times (i+1)-1]$
               \State Execute P parallel BLOCKS with sub arrays\Comment{$j\in (P\times i,P \times (i+1))$}
               \For{In each BLOCK}
-                \State Evaluate H before(T0) and after(T1) spin change \Comment{Multithreading}
-                \State Wait for all BLOCKS to finish then increment i
+                \State Evaluate $H$ before$(T0)$ and after$(T1)$ spin change \Comment{Multithreading}
+                \State Wait for all BLOCKS to finish then increment $i$
               \EndFor
-            \State Update all P spins to next state
+            \State Update all $P$ spins to next state
             \State This state is now our next state
             \EndFor
         \EndProcedure
