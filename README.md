@@ -102,7 +102,7 @@ $$
 -\sum_k K^y_2 s^y_i s^y_k -\sum_k K^z_2 s^z_i s^z_k -\sum_l J_3s_i\cdot s_l - \sum_l K^x_3 s^x_i s^x_l-\sum_l K^y_3 s^y_i s^y_l-\sum_l K^z_3 s^z_i s^z_l 
 $$
 $$
-\\-\sum_m J_4s_i\cdot s_m - \sum_m K^x_4 s^x_i s^x_m-\sum_m K^y_4 s^y_i s^y_m -\sum_m K^z_4 s^z_i s^z_m - A s_i \cdot s_i-\sum_j \lambda(s_i\cdot s_j)^2  
+-\sum_m J_4s_i\cdot s_m - \sum_m K^x_4 s^x_i s^x_m-\sum_m K^y_4 s^y_i s^y_m -\sum_m K^z_4 s^z_i s^z_m - A s_i \cdot s_i-\sum_j \lambda(s_i\cdot s_j)^2  
 $$
 $$
 -\sum_j D_{ij}\cdot (s_i \times s_j) -\mu B \cdot s_i
@@ -148,3 +148,11 @@ To run a Critical temperature analysis, execute ```python tc_sims.py``` after co
 
 After the run, a graph of temperature vs magnetization and temperature vs susceptibility will be auto generated. If the graph is not desired, please comment out everything from line 21.
 
+# Contributions
+
+Contributions to this project are always welcome and greatly appreciated. To find out how you can contribute to this project, please read our [contribution guidelines](https://github.com/arkavo/CUDA-METRO/blob/main/CONTRIBUTING.md)
+
+
+# Code of Conduct
+
+To read our code of conduct, please visit [CUDA-METRO Code of Conduct](https://github.com/arkavo/CUDA-METRO/blob/main/CODE_OF_CONDUCT.md).
