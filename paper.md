@@ -27,8 +27,6 @@ affiliations:
 header-includes:
  - \usepackage{algorithm}
  - \usepackage[noend]{algpseudocode}
- - \usepackage[utf8]{inputenc}
- - \usepackage{lmodern}
  - \usepackage{amsmath,amssymb}
 date: 30 September 2024
 bibliography: references.bib
