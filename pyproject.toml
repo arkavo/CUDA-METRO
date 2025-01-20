@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cuda_metro"
+name = "cudametro"
 version = "1.0.0"
 authors = [
   { name="Arkavo Hait", email="arkavohait@iisc.ac.in" },
