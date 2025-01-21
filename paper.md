@@ -64,17 +64,15 @@ Traditionally single spin update(SSU) scheme is employed to solve this problem, 
 \begin{algorithm}[t]
     \caption{Metropolis Selection}
     \label{algorithm:MS}
-    \begin{algorithmic}[0]
-        \Procedure{M}{$H_f,H_i$}
-            \If {$\Delta H < 0$}
-            \State \texttt{Return 1 (ACCEPT)}
-            \ElsIf {$e^{\beta \Delta H} < R$}\Comment{$R$ is uniformly random}
-            \State \texttt{Return 1 (ACCEPT)}
-            \Else
-            \State \texttt{Return 0 (REJECT)}
-            \EndIf
-        \EndProcedure
-    \end{algorithmic}
+      \Procedure{M}{$H_f,H_i$}
+          \If {$\Delta H < 0$}
+          \State \texttt{Return 1 (ACCEPT)}
+          \ElsIf {$e^{\beta \Delta H} < R$}\Comment{$R$ is uniformly random}
+          \State \texttt{Return 1 (ACCEPT)}
+          \Else
+          \State \texttt{Return 0 (REJECT)}
+          \EndIf
+      \EndProcedure
 \end{algorithm}
 
 In our method, as depicted in Algorithm 2, we select multiple atomic spins at the same time and change them all at once, treating them as independent events. For any individual spin, they do not feel the effects of the other changed spins. In each of these points, we use the Metropolis criteria to accept or reject the changed spin vectors. This becomes our new state. Here $P$ denotes the number of lattice points we are evaluating at the same time for any given state, while $\Gamma$ is the batch size. Tuning $\Gamma$ ensures that we can fill up our VRAM with pre-generated random numbers instead of generating $4\times P$ numbers per step. These 4 random number arrays are further processed into $n$, our site selection, $(\theta,\phi)$, which become the angle coordinates for a new random spin vector and $r$ which is a conditional uniform random number used to evaluate the Metropolis criteria.
