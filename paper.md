@@ -26,7 +26,6 @@ affiliations:
    index: 1
 header-includes:
  - \usepackage{algorithm}
- - \usepackage{algorithmic}
  - \usepackage[noend]{algpseudocode}
  - \usepackage{amsmath,amssymb}
 date: 30 September 2024
