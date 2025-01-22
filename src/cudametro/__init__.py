@@ -1,1 +1,1 @@
-from construct import construct
+from construct import construct as cm
