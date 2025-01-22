@@ -42,6 +42,7 @@ jobs:
       - release-build
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
+      contents: read
       id-token: write
 
     # Dedicated environments with protections for publishing are strongly recommended.
