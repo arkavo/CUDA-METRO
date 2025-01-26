@@ -1,0 +1,113 @@
+Metadata-Version: 2.2
+Name: cudametro
+Version: 1.1.1
+Summary: pyCUDA Metropolis Monte Carlo 2D Heisenberg Model Simulation
+Author-email: Arkavo Hait <arkavohait@iisc.ac.in>, Santanu Mahapatra <santanu@iisc.ac.in>
+Project-URL: Homepage, https://github.com/arkavo/CUDA-METRO
+Project-URL: Issues, https://github.com/arkavo/CUDA-METRO/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# CUDA METRO
+
+# Description/Installation
+
+A pyCUDA based Metropolis Monte Carlo simulator for 2D-magnetism systems. This code uses NVIDIA CUDA architecture wrapped by a simple python wrapper to work.
+
+To use, clone the repository using
+
+```
+
+git clone https://github.com/arkavo/CUDA-METRO.git
+
+```
+
+into a directory of choice. Creating a new python3 environment is recommended to run the code.
+
+
+Some template codes have already been provided under folder ```/src``` along with sample input files in ```/inputs``` and running configurations in ```/configs```
+
+There are 4 seperate files to design your simulations. To run a simple simulation, use ```python main.py <input_file_name>```.
+
+# Custom input files
+
+If one wants to create their own input file from scratch, just copy this json template at your convenience:
+```
+{
+    "Single_Mat_Flag" : 1 if single material 0 otherwise (int),
+    "Animation_Flags" : DEPRECATED,
+    "DMI_Flag"        : 1 if simulation in DMI mode 0 otherwise (int),
+    "TC_Flag"         : 1 if simulation is in Critical Temperature mode 0 otherwise (int),
+    "Static_T_Flag"   : 1 if simulation has a single temperature 0 otherwise (int),
+    "FM_Flag"         : 1 if starting state is FM 0 otherwise,
+    "Input_flag"      : 1 if starting from a specified <input.npy> state 0 otherwise,
+    "Input_File"      : String value(use quotes please) for starting state file name (if applicable),
+    "Temps"           : Array form of temperatures used for simulation (only in Critical Temperature mode),
+    "Material"        : Material name (omit the ".csv"),
+    "Multiple_Materials" : File name with multiple materials (omit the ".csv"),
+    "SIZE"    :  Lattice size (int),
+    "Box"       : DEPRECATED,
+    "Blocks"    : How much to parallelize (int),
+    "Threads"   : 2 (dont change this),
+    "B"         : external magnetic field (use quotes, double),
+    "stability_runs"    : MC Phase 1 batch runs,
+    "calculation_runs"  : MC Phase 2 batch runs,
+    "stability_wrap"    : MC Phase 1 batch size,
+    "calculation_wrap"  : MC Phase 2 batch size,
+    "Cmpl_Flag"         : DEPRECATED,
+    "Prefix"            : String value to appear in FRONT of output folder
+}
+```
+> **_NOTE 1:_** The simulator can work in *either* Critical Temperature or DMI mode, because of the different Hamiltonians, while it is easy to see its an OR condition, please do not attempt to use 1 on both.
+>  
+> **_NOTE 2:_** The total number of raw MC steps will be ```Blocks x (MC Phase 1 runs x MC Phase 1 size + MC Phase 2 runs x MC Phase 2 size)```. We typically divide the phases to study the Critical temperature, since that typically gives the simulation time to settle down in ```Phase 1``` and then find out the statistical properties in ```Phase 2```(which is our data collection phase). For any raw simulation, where the evolution of states are required from start to finish, one may keep any one phase and omit the other.
+
+# Functions
+
+A template file is given as ```main.py```, import the requisite 2 libraries to work as ```construct``` and ```montecarlo```. 
+
+MonteCarlo is a class object which is defined in ```construct.py``` as the Main code with ```montecarlo.py``` having all the Hamiltonian constructs as the GPU kernel (written in CUDA cpp). 
+
+## Construct MonteCarlo
+
+```construct.MonteCarlo``` is the MonteCarlo class construct.
+
+```construct.MonteCarlo.mc_init()``` initializes the simulation (but does not run it yet).
+
+```construct.MonteCarlo.display_material()``` prints out the current material properties.
+
+```construct.MonteCarlo.grid_reset()``` resets the grid to ALL $(0,0,1)$ if ```FM_Flag=1``` else randomizes all spins.
+
+```construct.MonteCarlo.generate_random_numbers(int size)``` creates 4 GPU processed arrays of size ```size``` using the pyCUDA XORWOW random number generator.
+
+```construct.MonteCarlo.generate_ising_numbers(int size)``` creates 4 GPU processed arrays of size ```size``` using the pyCUDA XORWOW random number generator but the spin vectors are either $(0,0,1)$ or $(0,0,-1)$.
+
+```construct.MonteCarlo.run_mc_dmi_66612(double T)``` runs a single ```Phase 1``` batch size run, with the output as a ```np.array(NxNx3)``` individual spin directions as raw output. This can be saved using the ```np.save``` command.
+
+Other variations of ```run_mc_dmi_66612(T)``` are ```run_mc_<tc/dmi>_<mode>(T)```
+
+```tc``` and ```dmi``` mode both contain modes for ```66612```,```4448```,```3636```,```2424``` and ```2242```, which are the primary lattice types explored in this code. ```dmi``` can only be invoked by the configs ```66612,4448,3636```, for the rest, if you wish to open a running simulation, use ```tc``` mode with single temperature.
+
+## Construct Analyze
+
+The template file to run a visual analyzer is given in ```visualize.py```, this will compile images for all given state ```*.npy``` files in a given folder.
+
+```construct.Analyze(<Folder name>, reverse=False)``` to create the Analyzer instance with an option to start from the opposite end (in case you only want end results)
+
+```construct.Analyze.spin_view()``` creates a subfolder in the main folder called "spins" with the spin vector images inside. They are split into components as $z = s(x,y)$ as the functional form.
+
+```construct.Ananlyze.quiver_view()``` creates a subfolder in the main folder called "quiver" with the spin vector images inside. They show only the planar(xy) part of the spins on a flat surface. This is useful for finding patterns in results.
+
+
+# Contributions
+
+Contributions to this project are always welcome and greatly appreciated. To find out how you can contribute to this project, please read our [contribution guidelines](https://github.com/arkavo/CUDA-METRO/blob/main/CONTRIBUTING.md)
+
+
+# Code of Conduct
+
+To read our code of conduct, please visit [CUDA-METRO Code of Conduct](https://github.com/arkavo/CUDA-METRO/blob/main/CODE_OF_CONDUCT.md).

@@ -18,13 +18,28 @@ from matplotlib.colors import Normalize
 
 import os 
 import sys 
-import Material_Reader as rm 
+import re
+#import Material_Reader as rm
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, script_dir)
 import montecarlo as mc
-from tqdm import tqdm 
+from tqdm import tqdm
 
 import csv
 import json
 import datetime
+
+def read_2dmat(filename):
+    namelist = []
+    params_list = np.array([])
+    with open(filename, 'r') as f:
+        data = f.readlines()
+        for item in data:
+            subdata = re.split(r'[,|+]', item)
+            subdata[-1] = subdata[-1].strip("\n")
+            namelist.append(subdata[0])
+            params_list = np.append(params_list, np.float32(subdata[1:]))
+    return namelist, np.array(params_list, dtype=np.float32)
 
 class MonteCarlo:
     def __init__(self, config):
@@ -65,16 +80,16 @@ class MonteCarlo:
         self.B_GPU = drv.mem_alloc(self.b.nbytes)
         drv.memcpy_htod(self.GSIZE, size_int)
         drv.memcpy_htod(self.B_GPU, self.b)
-        self.dmi_3 = np.load("dmi_3.npy")
-        self.dmi_4 = np.load("dmi_4.npy")
-        self.dmi_6 = np.load("dmi_6.npy")
+        self.dmi_3 = np.load(script_dir+"/dmi_3.npy")
+        self.dmi_4 = np.load(script_dir+"/dmi_4.npy")
+        self.dmi_6 = np.load(script_dir+"/dmi_6.npy")
         self.GPU_DMI_3 = drv.mem_alloc(self.dmi_3.nbytes)
         self.GPU_DMI_4 = drv.mem_alloc(self.dmi_4.nbytes)
         self.GPU_DMI_6 = drv.mem_alloc(self.dmi_6.nbytes)
         drv.memcpy_htod(self.GPU_DMI_3, self.dmi_3)
         drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
         drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
-        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../../"+self.Input_Folder+"TC_"+self.Material+".csv")
+        self.MAT_NAME, self.MAT_PARAMS = read_2dmat("../../"+self.Input_Folder+"TC_"+self.Material+".csv")
         self.spin = self.MAT_PARAMS[0]
         spin_gpu = np.array([self.spin]).astype(np.float32)
         self.SGPU = drv.mem_alloc(spin_gpu.nbytes)
@@ -473,7 +488,7 @@ class Analyze():
         self.spin = np.float32(self.metadata["spin"])
         self.Blocks = self.metadata["Blocks"]
         Mat = self.metadata["Material"]
-        self.MAT_NAME, self.MAT_PARAMS = rm.read_2dmat("../../inputs/"+"TC_"+Mat+".csv")
+        self.MAT_NAME, self.MAT_PARAMS = read_2dmat("../../inputs/"+"TC_"+Mat+".csv")
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         self.B_GPU = drv.mem_alloc(self.MAT_PARAMS[0].nbytes)

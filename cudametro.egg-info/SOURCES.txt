@@ -1,0 +1,8 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+cudametro.egg-info/PKG-INFO
+cudametro.egg-info/SOURCES.txt
+cudametro.egg-info/dependency_links.txt
+cudametro.egg-info/top_level.txt
