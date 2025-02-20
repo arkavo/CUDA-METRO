@@ -28,7 +28,6 @@ header-includes:
  - \usepackage{algorithm}
  - \usepackage[noend]{algpseudocode}
  - \usepackage{amsmath,amssymb}
- - \usepackage[version=4]{mchem}
 date: 30 September 2024
 bibliography: references.bib
 
