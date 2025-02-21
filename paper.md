@@ -59,10 +59,9 @@ Where $J$ is the isotropic exchange parameter, the $K$s are the anisotropic exch
 
 Starting from a random spin configuration, in this many-body problem, our objective is to find the orientation of spin vectors for every atom so that the energy of the entire lattice reaches to its minimum for a given magnetic field and temperature.
 Traditionally single spin update(SSU) scheme is employed to solve this problem, which satisfies the detailed balance condition. In the SSU method of updating the state, a single atomic spin is chosen at random and changed, while noting down the energy shift. This new state is then accepted or rejected using the Metropolis criteria as shown in Algorithm 1, where $\beta=(k_bT)^{-1}$, $k_b$ being the Boltzmann constant and $T$ being the temperature. It is imperative that SSU becomes extremely inefficient as the dimensionality increases.
-
 \begin{algorithm}[t]
     \caption{Metropolis Selection}
-    \label{algorithm:MS}
+    \label{algorithm:MS1}
     \begin{algorithmic}[0]
         \Procedure{M}{$H_f,H_i$}
             \If {$\Delta H < 0$}
@@ -75,12 +74,10 @@ Traditionally single spin update(SSU) scheme is employed to solve this problem, 
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
-
 In our method, as depicted in Algorithm 2, we select multiple atomic spins at the same time and change them all at once, treating them as independent events. For any individual spin, they do not feel the effects of the other changed spins. In each of these points, we use the Metropolis criteria to accept or reject the changed spin vectors. This becomes our new state. Here $P$ denotes the number of lattice points we are evaluating at the same time for any given state, while $\Gamma$ is the batch size. Tuning $\Gamma$ ensures that we can fill up our VRAM with pre-generated random numbers instead of generating $4\times P$ numbers per step. These 4 random number arrays are further processed into $n$, our site selection, $(\theta,\phi)$, which become the angle coordinates for a new random spin vector and $r$ which is a conditional uniform random number used to evaluate the Metropolis criteria.
-
 \begin{algorithm}[t]
     \caption{Parallel Monte Carlo}
-    \label{algorithm:MS}
+    \label{algorithm:MS2}
     \begin{algorithmic}[0]
         \Procedure{Step}{Run}
             \State Read Initial state
@@ -99,7 +96,6 @@ In our method, as depicted in Algorithm 2, we select multiple atomic spins at th
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
-
 At present, five different lattice types  (square, rectangular, centred-rectangular, hexagonal and honeycomb) are implemented in our code since most of the 2D magnetic materials fall into this category [@kabiraj_massive_2022], and for neighbour mapping, we use analytical relations [@Koziol2020-cp].
 
 For a lattice of size $N\times N$, $100\%$ parallelization would correspond to selecting $N^2$ spins at random. Since each spin selection and its consequent Metropolis criterion is evaluated on a separate CUDA core, it becomes apparent that we would need $N^2$ CUDA cores to achieve this $100\%$ parallelization.Since the proposed algorithm may not adhere to the detailed balance conditions, it yields approximate results, and there is a trade-off between parallelization/acceleration and accuracy. It is found that if the parallelization is limited to $10\%$ of the lattice size, we obtain very accurate results with significant acceleration.
