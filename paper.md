@@ -115,7 +115,7 @@ First, we simulate skyrmions in $\text{MnBr}_\text{2}$[@acs_nanolett] as shown i
 
 In Fig 3 we demonstrate the skyrmion neucleation process for the material $\text{MnSTe}$ [@liang_very_2020], which has a hexagonal lattice. While we first observe several skyrmions, with evolving MCS, they disappear and the whole lattice eventually becomes uniformly ferromagnetic,which happens to be the direction of the applied magnetic field. This has not been reported in the original literature[@liang_very_2020], possibly because of the high computational time required for a traditional SSU scheme.
 
-In the main page [here](https://github.com/arkavo/CUDA-METRO/blob/main/figures/Figure_5.PNG) we further show a similar life cycle evolution for a giant skyrmion of diameter 21nm hosted in the material VZr3C3II (ref). To host such a large skyrmion, the simulation was conducted in a supercell of size $750\times750$ and the ground state was achieved in  9 hours using an A100-SXM4 GPU.
+In the main page [here](https://github.com/arkavo/CUDA-METRO/blob/main/figures/Figure_5.PNG) we further show a similar life cycle evolution for a giant skyrmion of diameter 21nm hosted in the material VZr3C3II[@kabiraj_realizing_2023]. To host such a large skyrmion, the simulation was conducted in a supercell of size $750\times750$ and the ground state was achieved in  9 hours using an A100-SXM4 GPU.
 
 ![Figure 1](figures/Figure_1.png)
 Fig 1: Discrepancy between simulation and reference[@Kartsev2020] results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.
