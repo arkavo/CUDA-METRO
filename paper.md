@@ -124,7 +124,7 @@ Fig 2: Presence of skyrmions in $\text{MnBr}_\text{2}$ and $\text{CrInSe}_\text{
 ![Figure 3](figures/Figure_4.png)
 Fig 3: Lifetime of a skyrmion in $\text{MnSTe}$, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: $30s$.
 
-A similar result is shown on the main page [here](https://github.com/arkavo/CUDA-METRO/blob/main/figures/Figure_5.PNG) which demonstrates the code's ability to perform under higher supercell sizes $750\times 750$.
+A similar result is shown on the main page [here](https://github.com/arkavo/CUDA-METRO/blob/main/figures/Figure_5.PNG) which demonstrates the code's ability to perform under higher supercell sizes $(750\times 750)$.
 
 # Acknowledgements
 This work is supported by the Core Research Grant (CRG) scheme of the Science and Engineering Research
