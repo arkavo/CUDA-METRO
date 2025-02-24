@@ -57,7 +57,7 @@ To run a Critical temperature analysis, execute ```python tc_sims.py``` after co
 
 # Custom input files
 
-##Config
+## Config
 
 If one wants to create their own ```config``` file from scratch, please copy this json template:
 ```
