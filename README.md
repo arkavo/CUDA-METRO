@@ -7,12 +7,10 @@ A pyCUDA based Metropolis Monte Carlo simulator for 2D-magnetism systems. This c
 To use, clone the repository using
 
 ```
-
 git clone https://github.com/arkavo/CUDA-METRO.git
-
 ```
 
-into a directory of choice. Creating a new python3 environment is recommended to run the code.
+into a directory of choice. Creating a new python3(>=3.8) environment is recommended to run the code.
 
 To setup the environment after creation, simply run 
 				```pip install -r requirements.pip```
@@ -21,9 +19,47 @@ Some template codes have already been provided under folder ```/src``` along wit
 
 There are 4 seperate files to design your simulations. To run a simple simulation, use ```python main.py <input_file_name>```.
 
+# Executing a simulation
+This is a standalone code with ```pyCuda``` backend. An "Input" to this code's kernel would be a matrix which has 3D spins of lattices as an array with the structure ```[site1_spin_x site1_spin_y site1_spin_z site2_spin_x ..... siteN_spin_z]```. Executing the simulation will then access this array and perform a Metropolis Monte Carlo simulation which will then give an output which will be automatically saved in the save directory with the same array structure in a ```.npy``` format.
+
+## Setup
+To execute a simulation, you will need 3 files.
+<list>
+<li>Config file (examples in /configs/test_config.json)
+<li>Material parameters (examples in /inputs)
+<li>Script file (examples in /src/cudametro)
+</list>
+
+The ```Config file``` determines the parameters for the simulation, including the amount of VRAM used by your GPU if you are facing crashes or out of memory issues.
+
+The ```Material parameters``` file contains all the properties of the material(interaction parameters) as a vector. The crystal configuration is also stored in this file.
+<details>
+<summary>Vector</summary>
+<br>
+[name, spin, J1, J2, J3, J4, K1x, K1y, K1z, K2x, K2y, K2z, K3x, K3y, K3z, K4x, K4y, K4z, Ax, Ay, Az, Tc(experimental), structure, DMI]
+</details>
+
+## Execution
+
+To execute a fresh simulation
+
+run the ```script file``` with an ```input file```. The script file must have the construct library bindings as defined in [Construct MonteCarlo](#construct-montecarlo). This will also generate an output folder which contains the lattice of spins in the format ```[site1_spin_x site1_spin_y site1_spin_z site2_spin_x ..... siteN_spin_z]``` with $N=n^2$, the last spin. The contents of this folder can be easily visualized by using the bindings of the provided [Construct Analyze](#construct-analyze) library. Note that a seperate script has to be wrtitten. A simple sample of such a script is given in ```/src/visualize.py``` which is ready to run and can analyze any given folder.
+
+To execute a simulation, run
+```python <script> <input>```
+
+To visualize a simulation, run
+```python <visual> <folder_path>```
+if you are running a custom job but simply running
+```python visualize.py <folder_path>``` will work for most cases.
+
+To run a Critical temperature analysis, execute ```python tc_sims.py``` after configuring the appropriate config file in ```/configs/tc_config.json```. The script will create its own graph at runtime, no additional script needed. If facing out of memory error, please consider lowering "Block" count in the config file.
+
 # Custom input files
 
-If one wants to create their own input file from scratch, just copy this json template at your convenience:
+##Config
+
+If one wants to create their own ```config``` file from scratch, please copy this json template:
 ```
 {
     "Single_Mat_Flag" : 1 if single material 0 otherwise (int),
@@ -54,44 +90,52 @@ If one wants to create their own input file from scratch, just copy this json te
 >  
 > **_NOTE 2:_** The total number of raw MC steps will be ```Blocks x (MC Phase 1 runs x MC Phase 1 size + MC Phase 2 runs x MC Phase 2 size)```. We typically divide the phases to study the Critical temperature, since that typically gives the simulation time to settle down in ```Phase 1``` and then find out the statistical properties in ```Phase 2```(which is our data collection phase). For any raw simulation, where the evolution of states are required from start to finish, one may keep any one phase and omit the other.
 
+## Script
+
+A main ```script.py``` is also required to actually "run" the simulation. This file will contain the simulaiton initializer (with parameters drawn from the config file) and the material in question (with parameters drawn from the corresponding file in ```/inputs```). A sample file is given at ```/src/cudametro/main.py``` which contains a template with basic functionality. Additional functionality is given below in [functions](#functions).
+
+Similarly, for visualization, a file in ```/src/cudametro/visualize.py``` is supplied as a template. Additional functionality is given below in [analyze](#construct-analyze). Note that this does not require a ```config file``` to run but rather a ```folder_path```.
+
+
 # Functions
 
 A template file is given as ```main.py```, import the requisite 2 libraries to work as ```construct``` and ```montecarlo```. 
 
-MonteCarlo is a class object which is defined in ```construct.py``` as the Main code with ```montecarlo.py``` having all the Hamiltonian constructs as the GPU kernel (written in CUDA cpp). 
+MonteCarlo is a class object which is defined in ```construct.py``` as the Main code with ```montecarlo.py``` having all the Hamiltonian constructs as the GPU kernel (written in CUDA cpp).
+
 
 ## Construct MonteCarlo
 
-```construct.MonteCarlo``` is the MonteCarlo class construct.
+```construct.MonteCarlo``` is the MonteCarlo class construct. The base class.
 
-```construct.MonteCarlo.mc_init()``` initializes the simulation (but does not run it yet).
+```construct.MonteCarlo.mc_init()``` initializes the simulation with the parameter file(but does not run it yet).
 
 ```construct.MonteCarlo.display_material()``` prints out the current material properties.
 
-```construct.MonteCarlo.grid_reset()``` resets the grid to ALL $(0,0,1)$ if ```FM_Flag=1``` else randomizes all spins.
+```construct.MonteCarlo.grid_reset()``` resets the grid to ALL $(0,0,1)$ if ```FM_Flag=1``` else randomizes all spins to an diamagnetic state.
 
-```construct.MonteCarlo.generate_random_numbers(int size)``` creates 4 GPU processed arrays of size ```size``` using the pyCUDA XORWOW random number generator.
+```construct.MonteCarlo.generate_random_numbers(int size)``` creates 4 GPU allocated arrays of size ```size``` using the pyCUDA XORWOW random number generator.
 
-```construct.MonteCarlo.generate_ising_numbers(int size)``` creates 4 GPU processed arrays of size ```size``` using the pyCUDA XORWOW random number generator but the spin vectors are either $(0,0,1)$ or $(0,0,-1)$.
+```construct.MonteCarlo.generate_ising_numbers(int size)``` creates 4 GPU allocated arrays of size ```size``` using the pyCUDA XORWOW random number generator but the spin vectors are either $(0,0,1)$ or $(0,0,-1)$.
 
 ```construct.MonteCarlo.run_mc_dmi_66612(double T)``` runs a single ```Phase 1``` batch size run, with the output as a ```np.array(NxNx3)``` individual spin directions as raw output. This can be saved using the ```np.save``` command.
 
 Other variations of ```run_mc_dmi_66612(T)``` are ```run_mc_<tc/dmi>_<mode>(T)```
 
-```tc``` and ```dmi``` mode both contain modes for ```66612```,```4448```,```3636```,```2424``` and ```2242```, which are the primary lattice types explored in this code. ```dmi``` can only be invoked by the configs ```66612,4448,3636```, for the rest, if you wish to open a running simulation, use ```tc``` mode with single temperature.
+```tc``` and ```dmi``` mode both contain modes for ```66612```, ```4448```, ```3636```, ```2424``` and ```2242```, which are the primary lattice types explored in this code. ```dmi``` can only be invoked by the configs ```66612, 4448, 3636```, for the rest, if you wish to open a running simulation, use ```tc``` mode with single temperature.
 
 ## Construct Analyze
 
 The template file to run a visual analyzer is given in ```visualize.py```, this will compile images for all given state ```*.npy``` files in a given folder.
 
-```construct.Analyze(<Folder name>, reverse=False)``` to create the Analyzer instance with an option to start from the opposite end (in case you only want end results)
+```construct.Analyze(<folder_path>, reverse=False)``` to create the Analyzer instance with an option to start from the opposite end (in case you want end results first)
 
 ```construct.Analyze.spin_view()``` creates a subfolder in the main folder called "spins" with the spin vector images inside. They are split into components as $z = s(x,y)$ as the functional form.
 
 ```construct.Ananlyze.quiver_view()``` creates a subfolder in the main folder called "quiver" with the spin vector images inside. They show only the planar(xy) part of the spins on a flat surface. This is useful for finding patterns in results.
 
 
-# Working Principle
+# Theory
 
 We consider a lattice system with a periodic arrangement of atoms, where each atom is represented by a 3D spin vector.  This atomistic spin model is founded on the spin Hamiltonian, which delineates the essential spin-dependent interactions at the atomic scale, excluding the influences of potential and kinetic energy and electron correlations. The spin Hamiltonian is conventionally articulated as
 
@@ -120,41 +164,28 @@ In Fig 4 we demonstrate the skyrmion neucleation process for the material MnSTe 
 
 In Fig 5, we further show a similar life cycle evolution for a giant skyrmion of diameter $21nm$ hosted in the material VZr<sub>3</sub>C<sub>3</sub>II [@kabiraj_realizing_2023]. To host such a large skyrmion, the simulation was conducted in a supercell of size $750\times 750$ with a parallelization ratio of $1\%$ utilizing $70\%$ VRAM of an A100-SXM4 GPU. As mentioned before, our parallelization is limited by the number of CUDA cores and so we cannot go more than $1\%$ parallelization for this simulation. However, even with this low parallelization ratio, we can still access 8000 lattice points simultaneously and by careful tuning of our parameter $\Gamma$, we can observe the ground state of a $750\times750$ supercell in $9$ hours using an A100-SXM4 GPU. The formation of the skyrmion roughly takes $100$ mins.
 
-![Figure 1](figures/Figure_1.png)
-Fig 1:  Discrepancy between simulation and [reference](http://dx.doi.org/10.1038/s41524-020-00416-1) results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.
+|![Figure 1](figures/Figure_1.png)|
+|:--:|
+| *Fig 1:  Discrepancy between simulation and [reference](http://dx.doi.org/10.1038/s41524-020-00416-1) results at differing levels of parallelization. At $10\%$, the simulation results are almost indistinguishable from the reference data.* |
 
-![Figure 2](figures/Figure_2.png)
-Fig 2: Presence of anti-merons and merons in CrCl<sub>3. The color bar represents normalized spin vectors in the z direction.
+|![Figure 2](figures/Figure_2.png)|
+|:--:|
+| *Fig 2: Presence of anti-merons and merons in CrCl<sub>3. The color bar represents normalized spin vectors in the z direction.* |
 
-![Figure 3](figures/Figure_3.png)
-Fig 3: Presence of skyrmions in MnBr<sub>2</sub> and CrInSe<sub>3</sub>. The color bar represents normalized spin vectors in the z direction. Note that the spins of MnBr<sub>2</sub> appear purple because there are "red-blue" spin pairs for the vast majority.
+|![Figure 3](figures/Figure_3.png)|
+|:--:|
+| *Fig 3: Presence of skyrmions in MnBr<sub>2</sub> and CrInSe<sub>3</sub>. The color bar represents normalized spin vectors in the z direction. Note that the spins of MnBr<sub>2</sub> appear purple because there are "red-blue" spin pairs for the vast majority.* |
 
-![Figure 4](figures/Figure_4.png)
-Fig 4: Lifetime of a skyrmion in MnSTe, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: $30s$ on a V100-SXM2.
+|![Figure 4](figures/Figure_4.png)|
+|:--:|
+| *Fig 4: Lifetime of a skyrmion in MnSTe, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: $30s$ on a V100-SXM2.* |
 
-![Figure 5](figures/Figure_5.PNG)
-Fig 5: Lifetime of a skyrmion in VZr<sub>3</sub>C<sub>3</sub>II, from its creation to annihilation. The graph denotes the average energy per atom. Note how the entire field is now blue (as opposed to red as in Fig 4), this is because unlike the simulation in Fig 4, there is no external magnetic field applied, this means that the ground state would either be all spins up(red) or all spins down(blue) with a $50\%$ probability for either. Total time: $9$ hrs on an A100-SXM4.
+|![Figure 5](figures/Figure_5.PNG)|
+|:--:|
+| *Fig 5: Lifetime of a skyrmion in VZr<sub>3</sub>C<sub>3</sub>II, from its creation to annihilation. The graph denotes the average energy per atom. Note how the entire field is now blue (as opposed to red as in Fig 4), this is because unlike the simulation in Fig 4, there is no external magnetic field applied, this means that the ground state would either be all spins up(red) or all spins down(blue) with a $50\%$ probability for either. Total time: $9$ hrs on an A100-SXM4.* |
 
 
 All these results and more are explored more in the attached ```JOSS Paper.md``` file, which forms the cover for the project.
-
-# Tools
-If one does not wish to use this purely for observation of microstructures in material, they can alternatively make use of its other modes like
-## 1. Vector analysis/visualization
-
-To run a vector analysis, simple execute ```python test_main.py <config file name>``` (main config file is ```/configs/test_config.json```)
-
-After execution, an output folder will be created with name ```<prefix>_<material>_<date>_<time>``` with ```.npy``` files in them containing spin data in 1D array form as [s<sub>1</sub><sup>x</sup> s<sub>1</sub><sup>y</sup> s<sub>1</sub><sup>z</sup> s<sub>2</sub><sup>x</sup> s<sub>2</sub><sup>y</sup>.........s<sub>n</sub><sup>y</sup> s<sub>n</sub><sup>z</sup>] and an additional ```metadata.json``` file containing the details of the run.
-
-For casual viewing, it is advised to use the in-built viewer as ```python test_view.py <folder name>``` to provide visuals of the spin magnitudes in 3 directions as well as a top-down vector map of the spins.
-
-## 2. Critical temperature analysis
-
-To run a Critical temperature analysis, execute ```python tc_sims.py``` after configuring the appropriate config file in ```/configs/tc_config.json```.
-
-  
-
-After the run, a graph of temperature vs magnetization and temperature vs susceptibility will be auto generated. If the graph is not desired, please comment out everything from line 21.
 
 # Contributions
 

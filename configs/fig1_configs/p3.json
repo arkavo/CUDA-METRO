@@ -12,7 +12,7 @@
     "Multiple_Materials" : "TCS",
     "SIZE"    : 64,
     "Box"       : 16,
-    "Blocks"    : 2048,
+    "Blocks"    : 512,
     "Threads"   : 2,
     "B"         : "0.0",
     "stability_runs"    : 14400,
