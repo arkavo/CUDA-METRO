@@ -140,7 +140,7 @@ We consider a lattice system with a periodic arrangement of atoms, where each at
 
 ### $$H_i=  -\sum_j J_1s_i\cdot s_j - \sum_j K^x_1 s^x_i s^x_j-\sum_j K^y_1 s^y_i s^y_j-\sum_j K^z_1 s^z_i s^z_j-\sum_k J_2 s_i\cdot s_k $$ 
 
-### $$ -\sum_k K^x_2 s^x_i s^x_k -\sum_k K^y_2 s^y_i s^y_k -\sum_k K^z_2 s^z_i s^z_k -\sum_l J_3s_i\cdot s_l  - \sum_l K^x_3 s^x_i s^x_l $$
+### $$-\sum_k K^x_2 s^x_i s^x_k -\sum_k K^y_2 s^y_i s^y_k -\sum_k K^z_2 s^z_i s^z_k -\sum_l J_3s_i\cdot s_l  - \sum_l K^x_3 s^x_i s^x_l $$
 
 ### $$-\sum_l K^y_3 s^y_i s^y_l-\sum_l K^z_3 s^z_i s^z_l -\sum_m J_4s_i\cdot s_m - \sum_m K^x_4 s^x_i s^x_m-\sum_m K^y_4 s^y_i s^y_m  $$ 
 
