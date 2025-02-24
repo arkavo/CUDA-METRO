@@ -137,17 +137,20 @@ The template file to run a visual analyzer is given in ```visualize.py```, this 
 
 # Theory
 
-We consider a lattice system with a periodic arrangement of atoms, where each atom is represented by a 3D spin vector.  This atomistic spin model is founded on the spin Hamiltonian, which delineates the essential spin-dependent interactions at the atomic scale, excluding the influences of potential and kinetic energy and electron correlations. The spin Hamiltonian is conventionally articulated as
+We consider a lattice system with a periodic arrangement of atoms, where each atom is represented by a 3D spin vector.  This atomistic spin model is founded on the spin Hamiltonian, which delineates the essential spin-dependent interactions at the atomic scale, excluding the influences of potential and kinetic energy and electron correlations. The spin Hamiltonian is conventionally articulated as:
 
 $$
 H_i=  -\sum_j J_1s_i\cdot s_j - \sum_j K^x_1 s^x_i s^x_j-\sum_j K^y_1 s^y_i s^y_j-\sum_j K^z_1 s^z_i s^z_j-\sum_k J_2 s_i\cdot s_k - \sum_k K^x_2 s^x_i s^x_k
 $$
+
 $$
 -\sum_k K^y_2 s^y_i s^y_k -\sum_k K^z_2 s^z_i s^z_k -\sum_l J_3s_i\cdot s_l - \sum_l K^x_3 s^x_i s^x_l-\sum_l K^y_3 s^y_i s^y_l-\sum_l K^z_3 s^z_i s^z_l 
 $$
+
 $$
 -\sum_m J_4s_i\cdot s_m - \sum_m K^x_4 s^x_i s^x_m-\sum_m K^y_4 s^y_i s^y_m -\sum_m K^z_4 s^z_i s^z_m - A s_i \cdot s_i-\sum_j \lambda(s_i\cdot s_j)^2  
 $$
+
 $$
 -\sum_j D_{ij}\cdot (s_i \times s_j) -\mu B \cdot s_i
 $$
@@ -178,11 +181,11 @@ In Fig 5, we further show a similar life cycle evolution for a giant skyrmion of
 
 |![Figure 4](figures/Figure_4.png)|
 |:--:|
-| *Fig 4: Lifetime of a skyrmion in MnSTe, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: $30s$ on a V100-SXM2.* |
+| *Fig 4: Lifetime of a skyrmion in MnSTe, from its creation to annihilation. The graph denotes the average energy per atom. As we approach the global minima, the entire field becomes aligned to the magnetic field as expected. Total time: 30s on a V100-SXM2.* |
 
 |![Figure 5](figures/Figure_5.PNG)|
 |:--:|
-| *Fig 5: Lifetime of a skyrmion in VZr<sub>3</sub>C<sub>3</sub>II, from its creation to annihilation. The graph denotes the average energy per atom. Note how the entire field is now blue (as opposed to red as in Fig 4), this is because unlike the simulation in Fig 4, there is no external magnetic field applied, this means that the ground state would either be all spins up(red) or all spins down(blue) with a $50\%$ probability for either. Total time: $9$ hrs on an A100-SXM4.* |
+| *Fig 5: Lifetime of a skyrmion in VZr<sub>3</sub>C<sub>3</sub>II, from its creation to annihilation. The graph denotes the average energy per atom. Note how the entire field is now blue (as opposed to red as in Fig 4), this is because unlike the simulation in Fig 4, there is no external magnetic field applied, this means that the ground state would either be all spins up(red) or all spins down(blue) with a 50\% probability for either. Total time: 9 hrs on an A100-SXM4.* |
 
 
 All these results and more are explored more in the attached ```JOSS Paper.md``` file, which forms the cover for the project.
