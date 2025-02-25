@@ -32,30 +32,39 @@ To execute a simulation, you will need 3 files.
 
 The ```Config file``` determines the parameters for the simulation, including the amount of VRAM used by your GPU if you are facing crashes or out of memory issues.
 
-The ```Material parameters``` file contains all the properties of the material(interaction parameters) as a vector. The crystal configuration is also stored in this file.
+The ```Material parameters``` file contains all the properties of the material(interaction parameters) as a vector. The crystal configuration is also stored in this file. Note that this file has to be referenced in the input.
+
 <details>
-<summary>Vector</summary>
+<summary>Vector structure</summary>
 <br>
 [name, spin, J1, J2, J3, J4, K1x, K1y, K1z, K2x, K2y, K2z, K3x, K3y, K3z, K4x, K4y, K4z, Ax, Ay, Az, Tc(experimental), structure, DMI]
 </details>
 
-## Execution
+## Usage
 
-To execute a fresh simulation
-
-run the ```script file``` with an ```input file```. The script file must have the construct library bindings as defined in [Construct MonteCarlo](#construct-montecarlo). This will also generate an output folder which contains the lattice of spins in the format ```[site1_spin_x site1_spin_y site1_spin_z site2_spin_x ..... siteN_spin_z]``` with $N=n^2$, the last spin. The contents of this folder can be easily visualized by using the bindings of the provided [Construct Analyze](#construct-analyze) library. Note that a seperate script has to be wrtitten. A simple sample of such a script is given in ```/src/visualize.py``` which is ready to run and can analyze any given folder.
+To execute a fresh simulation, run the ```script file``` with an ```input file```. The script file must have the construct library bindings as defined in [Construct MonteCarlo](#construct-montecarlo). This will also generate an output folder which contains the lattice of spins in the format ```[site1_spin_x site1_spin_y site1_spin_z site2_spin_x ..... siteN_spin_z]``` with $N=n^2$, the last spin. The contents of this folder can be easily visualized by using the bindings of the provided [Construct Analyze](#construct-analyze) library. Note that a seperate script has to be wrtitten. A simple sample of such a script is given in ```/src/visualize.py``` which is ready to run and can analyze any given folder.
 
 To execute a simulation, run
-```python <script> <input>```
+
+```python <script>```
 
 To visualize a simulation, run
-```python <visual> <folder_path>```
+
+```python <visual_script> <folder_path>```
+
 if you are running a custom job but simply running
 ```python visualize.py <folder_path>``` will work for most cases.
 
-To run a Critical temperature analysis, execute ```python tc_sims.py``` after configuring the appropriate config file in ```/configs/tc_config.json```. The script will create its own graph at runtime, no additional script needed. If facing out of memory error, please consider lowering "Block" count in the config file.
+To run a Critical temperature analysis, execute ```python tc_sims.py``` after tweaking the appropriate config file in ```/configs/tc_config.json```. The script will create its own graph at runtime, no additional script needed. If facing out of memory error, please consider lowering "Block" count in the config file.
+
+### A basic example for MnSeTe is given in ```/src/cudametro/sample.py```.
+
+This example is a simple script that initializes the simulation and runs it for a single temperature. The output is saved in the ```Output``` folder, created in the same directory.
+
 
 # Custom input files
+
+You can also create your custom input and script files. Instructions below.
 
 ## Config
 
@@ -106,7 +115,7 @@ MonteCarlo is a class object which is defined in ```construct.py``` as the Main 
 
 ## Construct MonteCarlo
 
-```construct.MonteCarlo``` is the MonteCarlo class construct. The base class.
+```construct.MonteCarlo(config_file)``` is the MonteCarlo class construct. The base class.
 
 ```construct.MonteCarlo.mc_init()``` initializes the simulation with the parameter file(but does not run it yet).
 
@@ -118,7 +127,7 @@ MonteCarlo is a class object which is defined in ```construct.py``` as the Main 
 
 ```construct.MonteCarlo.generate_ising_numbers(int size)``` creates 4 GPU allocated arrays of size ```size``` using the pyCUDA XORWOW random number generator but the spin vectors are either $(0,0,1)$ or $(0,0,-1)$.
 
-```construct.MonteCarlo.run_mc_dmi_66612(double T)``` runs a single ```Phase 1``` batch size run, with the output as a ```np.array(NxNx3)``` individual spin directions as raw output. This can be saved using the ```np.save``` command.
+```construct.MonteCarlo.run_mc_dmi_66612(double T)``` runs a single ```Phase 1``` batch size run, with the return as a ```np.array(NxNx3)``` individual spin directions as raw output. This can be saved using the ```np.save``` command.
 
 Other variations of ```run_mc_dmi_66612(T)``` are ```run_mc_<tc/dmi>_<mode>(T)```
 

@@ -89,14 +89,16 @@ class MonteCarlo:
         drv.memcpy_htod(self.GPU_DMI_3, self.dmi_3)
         drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
         drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
+        print("Inputs Folder default path: ", self.Input_Folder)
         self.MAT_NAME, self.MAT_PARAMS = read_2dmat("../../"+self.Input_Folder+"TC_"+self.Material+".csv")
         self.spin = self.MAT_PARAMS[0]
         spin_gpu = np.array([self.spin]).astype(np.float32)
         self.SGPU = drv.mem_alloc(spin_gpu.nbytes)
         drv.memcpy_htod(self.SGPU, spin_gpu)
-        self.save_direcotry = "../../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
+        #self.save_directory = "../../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
+        self.save_directory = "Output_"+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
         self.NBS = int(self.MAT_PARAMS[20]), int(self.MAT_PARAMS[21]), int(self.MAT_PARAMS[22]), int(self.MAT_PARAMS[23])
-
+        print("Output Folder default path: ", self.save_directory)
         self.metadata = {
             "Material": self.Material,
             "Size": self.size,
@@ -119,9 +121,9 @@ class MonteCarlo:
             "Input_File": self.Input_File
         }
         metadata_file = json.dumps(self.metadata, indent=4)
-        os.mkdir(self.save_direcotry)
+        os.mkdir(self.save_directory)
         
-        self.metadata_file = self.save_direcotry+"/metadata.json"
+        self.metadata_file = self.save_directory+"/metadata.json"
         with open(self.metadata_file, 'w+') as f:
             f.write(metadata_file)
         
@@ -394,7 +396,7 @@ class MonteCarlo:
             M[i] = np.abs(np.linalg.norm(mag))
             E[i] = np.mean(ET_S)
         Mt, Xt, Et = np.mean(M), np.std(M)/T, np.std(E[-10:])/T**2
-        np.save(f"{self.save_direcotry}/En_{T:.3f}", E)
+        np.save(f"{self.save_directory}/En_{T:.3f}", E)
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         print(f"Mean Specific Heat at {T:.3f} = {Et:.3f}")
@@ -427,7 +429,7 @@ class MonteCarlo:
             M[i] = np.abs(np.linalg.norm(mag))
             E[i] = np.mean(ET_S)
         Mt, Xt, Et = np.mean(M), np.std(M)/T, np.std(E[-10:])/T**2
-        np.save(f"{self.save_direcotry}/En_{T:.3f}", E)
+        np.save(f"{self.save_directory}/En_{T:.3f}", E)
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         print(f"Mean Specific Heat at {T:.3f} = {Et:.3f}")
@@ -482,7 +484,7 @@ class Analyze():
             os.mkdir(self.directory+"/spin")
         if not os.path.exists(self.directory+"/quiver"):
             os.mkdir(self.directory+"/quiver")
-        print(self.flist)
+        print(f"{len(self.flist)} files found.....Analyzing")
         self.metadata = json.load(open(self.directory+"/metadata.json", 'r'))
         self.size = self.metadata["Size"]
         self.spin = np.float32(self.metadata["spin"])
