@@ -10,7 +10,7 @@
     "Temps"           : ["32.50"],
     "Material"        : "SQ-CrI3",
     "Multiple_Materials" : "TCS",
-    "SIZE"    : 64,
+    "SIZE"    : 32,
     "Box"       : 16,
     "Blocks"    : 512,
     "Threads"   : 2,
