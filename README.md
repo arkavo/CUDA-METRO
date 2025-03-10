@@ -1,5 +1,7 @@
 # CUDA METRO
 
+[![PyPI version](https://badge.fury.io/py/cudametro.svg)](https://badge.fury.io/py/cudametro)
+
 # Description/Installation
 
 A pyCUDA based Metropolis Monte Carlo simulator for 2D-magnetism systems. This code uses NVIDIA CUDA architecture wrapped by a simple python wrapper to work.
