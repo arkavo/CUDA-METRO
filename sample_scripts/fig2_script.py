@@ -1,17 +1,19 @@
-from cudametro.montecarlo import construct as cst
+from cudametro import construct as cst
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm as tqdm
 
-# Use fig2a for MnBr2 and fig2b for CrInSe3
-config_name = "fig2a.json"
-config_path = "../../configs/fig2_configs/"
-# Run once for each configuration
+# =============================================================================
+# Edit the following lines to change the parameters of the simulation
+# =============================================================================
+fname = "fig2_configs/fig2b.json"          # Configuration file [options fig2a.json, fig2b.json]
+in_dir = "input_parameters/"               # Input directory
+# =============================================================================
 
 # Set your config file here
-test_mc0 = cst.MonteCarlo(config=config_path+config_name)
+test_mc0 = cst.MonteCarlo(config=fname, input_folder=in_dir)
 
-if config_name == "fig2a.json":
+if fname == "fig2a.json":
 
     # Initialize the Monte Carlo simulation
     test_mc0.mc_init()
@@ -19,9 +21,8 @@ if config_name == "fig2a.json":
     for i in tqdm.tqdm(range(test_mc0.S_Wrap), desc="Stability Runs", unit="runs", colour="green"):
         test_mc0.generate_random_numbers(test_mc0.stability_runs)
         np.save(f"{test_mc0.save_directory}/grid_{i:04d}", test_mc0.run_mc_dmi_4448(test_mc0.T[0]))
-else:
+if fname == "fig2b.json":
     # Initialize the Monte Carlo simulation
-    # NOTE: PLEASE EDIT THE MODE OF EXECUTION WITH THE CORRECT CRYSTAL CLASS SIMULATOR
     test_mc0.mc_init()
     test_mc0.display_material()
     for i in tqdm.tqdm(range(test_mc0.S_Wrap), desc="Stability Runs", unit="runs", colour="green"):
@@ -29,6 +30,8 @@ else:
         np.save(f"{test_mc0.save_directory}/grid_{i:04d}", test_mc0.run_mc_dmi_66612(test_mc0.T[0]))
 # Save the final state of the simulation 
 # To visualize the final state, use the "visualize.py" script with appropriate directory
+else:
+    print("Invalid config file, options are fig2a.json and fig2b.json")
 
 output_folder_name = test_mc0.save_directory
 

@@ -1,13 +1,18 @@
-from cudametro.montecarlo import construct as cst
+from cudametro import construct as cst
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm as tqdm
 
-config_name = "fig3.json"
-config_path = "../../configs/fig3_configs/"
+
+# =============================================================================
+# Edit the following lines to change the parameters of the simulation
+# =============================================================================
+fname = "fig3_configs/fig3.json"          # Configuration file [options fig2a.json, fig2b.json]
+in_dir = "input_parameters/"               # Input directory
+# =============================================================================
 
 # Set your config file here
-test_mc0 = cst.MonteCarlo(config=config_path+config_name)
+test_mc0 = cst.MonteCarlo(config=fname, input_folder=in_dir)
 
 # Initialize the Monte Carlo simulation
 test_mc0.mc_init()

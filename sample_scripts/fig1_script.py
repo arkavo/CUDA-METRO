@@ -1,13 +1,17 @@
-import cudametro.montecarlo as montecarlo
 from cudametro import construct as cst
 import numpy as np
 import matplotlib.pyplot as plt
+import tqdm as tqdm
 
-fpath = "../configs/fig1_configs/"
-fname = "p1.json"
+# =============================================================================
+# Edit the following lines to change the parameters of the simulation
+# =============================================================================
+fname = "fig1_configs/p2.json"          # Configuration file [options p1.json, p2.json, p3.json, p4.json]
+in_dir = "input_parameters/"                             # Input directory
+# =============================================================================
 
 
-test_mc0 = cst.MonteCarlo(config=fname)
+test_mc0 = cst.MonteCarlo(config=fname, input_folder=in_dir)
 test_mc0.mc_init()
 test_mc0.display_material()
 M, X = np.array([]), np.array([])
