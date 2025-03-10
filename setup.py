@@ -14,7 +14,7 @@ setup(
 	# Name of the package 
 	name='CUDA-METRO',
 	packages=find_packages(),
-	version='1.1.3',
+	version='1.2.0',
 	# Short description of your library 
 	description='pyCUDA Metropolis Monte Carlo 2D Heisenberg Model Simulation',
 	# Long description of your library 
