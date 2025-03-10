@@ -22,7 +22,7 @@ import re
 #import Material_Reader as rm
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir)
-import montecarlo as mc
+import cudametro.montecarlo as mc
 from tqdm import tqdm
 
 import csv
@@ -42,7 +42,7 @@ def read_2dmat(filename):
     return namelist, np.array(params_list, dtype=np.float32)
 
 class MonteCarlo:
-    def __init__(self, config):
+    def __init__(self, config, input_folder="../../inputs/", output_folder="outputs/"):
         with open(config, 'r') as f:
             CONFIG = json.load(f)
         # FLAGS
@@ -56,8 +56,8 @@ class MonteCarlo:
         # CONSTANTS AND PATHS
         self.Material = CONFIG["Material"]
         self.Multiple_Materials = CONFIG["Multiple_Materials"]
-        self.Input_Folder = "inputs/"
-        self.Output_Folder = "outputs/"
+        self.Input_Folder = input_folder
+        self.Output_Folder = output_folder
         self.B_C = np.float32(CONFIG["B"])
         self.size = CONFIG["SIZE"]
         self.Box = CONFIG["Box"]
@@ -90,7 +90,7 @@ class MonteCarlo:
         drv.memcpy_htod(self.GPU_DMI_4, self.dmi_4)
         drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
         print("Inputs Folder default path: ", self.Input_Folder)
-        self.MAT_NAME, self.MAT_PARAMS = read_2dmat("../../"+self.Input_Folder+"TC_"+self.Material+".csv")
+        self.MAT_NAME, self.MAT_PARAMS = read_2dmat(self.Input_Folder+"TC_"+self.Material+".csv")
         self.spin = self.MAT_PARAMS[0]
         spin_gpu = np.array([self.spin]).astype(np.float32)
         self.SGPU = drv.mem_alloc(spin_gpu.nbytes)

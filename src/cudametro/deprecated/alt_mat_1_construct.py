@@ -14,7 +14,7 @@ import os
 import sys 
 sys.path.append("../utilities/")
 import Material_Reader as rm 
-import montecarlo as mc
+import cudametro.montecarlo as mc
 from tqdm import tqdm 
 
 import csv

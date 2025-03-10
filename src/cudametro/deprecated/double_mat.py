@@ -1,5 +1,5 @@
 import alt_mat_1_construct as cst
-import montecarlo as mc
+import cudametro.montecarlo as mc
 import numpy as np
 import tqdm as tqdm
 import matplotlib.pyplot as plt
