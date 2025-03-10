@@ -6,14 +6,14 @@ import tqdm as tqdm
 # =============================================================================
 # Edit the following lines to change the parameters of the simulation
 # =============================================================================
-fname = "fig2_configs/fig2b.json"          # Configuration file [options fig2a.json, fig2b.json]
+fname = "fig2_configs/fig2a.json"          # Configuration file [options fig2a.json, fig2b.json]
 in_dir = "input_parameters/"               # Input directory
 # =============================================================================
 
 # Set your config file here
 test_mc0 = cst.MonteCarlo(config=fname, input_folder=in_dir)
 
-if fname == "fig2a.json":
+if fname.split('/')[-1] == "fig2a.json":
 
     # Initialize the Monte Carlo simulation
     test_mc0.mc_init()
@@ -37,7 +37,7 @@ output_folder_name = test_mc0.save_directory
 
 folder = output_folder_name
 
-viewer = cst.Analyze(folder, reverse=False)
+viewer = cst.Analyze(folder, reverse=False, input_folder=in_dir)
 
 # Visualize the results
 # Spin configuration at the end of the simulation

@@ -28,7 +28,7 @@ output_folder_name = test_mc0.save_directory
 
 folder = output_folder_name
 
-viewer = cst.Analyze(folder, reverse=False)
+viewer = cst.Analyze(folder, reverse=False, input_folder=in_dir)
 
 # Visualize the results
 # Spin configuration at the end of the simulation

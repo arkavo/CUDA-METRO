@@ -1,8 +1,7 @@
 # Main file to run the Monte Carlo simulation 
 #--------------------------------------------
 
-import construct as cst
-import cudametro.montecarlo as mc
+from cudametro import construct as cst
 import numpy as np
 import tqdm as tqdm
 
@@ -23,7 +22,7 @@ print(f"Final state saved in {test_mc0.save_directory}")
 # To visualize the final state, use the "visualize.py" script with appropriate directory
 print("To visualize the final state, use the visualize.py script with appropriate directory")
 print(f"Example: python visualize.py {test_mc0.save_directory}")
-inp = input("Press Y/N to continue to analysis mode")
+inp = input("Press Y/N to continue to analysis mode: ")
 #--------------------------------------------
 
 if inp == "Y" or "y" or "yes" or "Yes":

@@ -230,7 +230,7 @@ class MonteCarlo:
             mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
         return self.grid
-    
+
     #DMI SECTOR END
 
     # TC SECTOR
@@ -474,8 +474,11 @@ class MonteCarlo:
     def dump_state():
         pass
 
+    def cleanup(self):
+        self.GRID_GPU.free()
+
 class Analyze():
-    def __init__(self, directory, reverse=False):
+    def __init__(self, directory, reverse=False, input_folder="../../inputs/"):
         self.flist = os.listdir(directory)
         self.flist = [file for file in self.flist if file.endswith(".npy") and file.startswith("grid")]
         self.flist.sort(reverse=reverse)
@@ -489,26 +492,26 @@ class Analyze():
         self.size = self.metadata["Size"]
         self.spin = np.float32(self.metadata["spin"])
         self.Blocks = self.metadata["Blocks"]
-        Mat = self.metadata["Material"]
-        self.MAT_NAME, self.MAT_PARAMS = read_2dmat("../../inputs/"+"TC_"+Mat+".csv")
+        self.Material = self.metadata["Material"]
+        self.Input_Folder = input_folder
+        self.MAT_NAME, self.MAT_PARAMS = read_2dmat(self.Input_Folder+"TC_"+self.Material+".csv")
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         self.B_GPU = drv.mem_alloc(self.MAT_PARAMS[0].nbytes)
         drv.memcpy_htod(self.B_GPU, np.array([self.metadata["B"]]).astype(np.float32))
         self.GSIZE = drv.mem_alloc(np.array([self.size]).astype(np.int32).nbytes)
         drv.memcpy_htod(self.GSIZE, np.array([self.size]).astype(np.int32))
-        DMI_6 = np.load("dmi_6.npy")
-        self.GPU_DMI_6 = drv.mem_alloc(DMI_6.nbytes)
-        drv.memcpy_htod(self.GPU_DMI_6, DMI_6)
+        #DMI_6 = np.load("dmi_6.npy")
+        #self.GPU_DMI_6 = drv.mem_alloc(DMI_6.nbytes)
+        #drv.memcpy_htod(self.GPU_DMI_6, DMI_6)
 
 
     def spin_view(self):
         ctr = 0
         for file in self.flist:
-            print(file)
+            print(f"Processing {file}", end="\r")
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
-            print(shape)
             with open(self.directory+"/metadata.json", 'r') as f:
                 metadata = json.load(f)
             self.spin = np.float32(metadata["spin"])
@@ -533,7 +536,7 @@ class Analyze():
     def quiver_view(self):
         ctr = 0
         for file in self.flist:
-            print(file)
+            print(f"Processing {file}", end="\r")
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
             grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
@@ -556,7 +559,7 @@ class Analyze():
         ctr = 0
         E_f = np.zeros(len(self.flist))
         for file in self.flist:
-            print(file)
+            print(f"Processing {file}", end="\r")
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
             grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))

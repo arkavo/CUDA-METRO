@@ -61,6 +61,7 @@ To run a Critical temperature analysis, execute ```python tc_sims.py``` after tw
 
 This example is a simple script that initializes the simulation and runs it for a single temperature. The output is saved in the ```Output``` folder, created in the same directory.
 
+There are more scripts inside the ```sample_scripts``` directory which can be used to run simulations for different materials as given in the accompanying paper. These are portable scripts and can be run from anywhere.
 
 # Custom input files
 
@@ -115,7 +116,15 @@ MonteCarlo is a class object which is defined in ```construct.py``` as the Main 
 
 ## Construct MonteCarlo
 
-```construct.MonteCarlo(config_file)``` is the MonteCarlo class construct. The base class.
+```construct.MonteCarlo(config_file, input_folder, output_folder)``` is the MonteCarlo class construct. The base class for working. The ```input_folder``` and ```output_folder``` flags are defaulted to work if you run ```sample.py``` from inside its own directory. These can be set to any folder of choice.
+
+```construct.MonteCarlo.load_material()``` loads the material parameters from the input file.
+
+```construct.MonteCarlo.load_config()``` loads the config file.
+
+```construct.MonteCarlo.load_materials()``` loads the multiple materials file.
+
+```construct.MonteCarlo.load_config()``` loads the config
 
 ```construct.MonteCarlo.mc_init()``` initializes the simulation with the parameter file(but does not run it yet).
 
