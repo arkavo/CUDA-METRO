@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 namespaces=false
 [project]
 name = "cudametro"
-version = "1.2.0"
+version = "1.2.1"
 authors = [
   { name="Arkavo Hait", email="arkavohait@iisc.ac.in" },
   { name="Santanu Mahapatra", email="santanu@iisc.ac.in"}
@@ -18,7 +18,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-
 [project.urls]
 Homepage = "https://github.com/arkavo/CUDA-METRO"
 Issues = "https://github.com/arkavo/CUDA-METRO/issues"

@@ -19,7 +19,6 @@ from matplotlib.colors import Normalize
 import os 
 import sys 
 import re
-#import Material_Reader as rm
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir)
 import cudametro.montecarlo as mc
@@ -30,6 +29,9 @@ import json
 import datetime
 
 def read_2dmat(filename):
+    '''
+    Reads the 2D material file from the ../../Inputs folder
+    '''
     namelist = []
     params_list = np.array([])
     with open(filename, 'r') as f:
@@ -42,6 +44,9 @@ def read_2dmat(filename):
     return namelist, np.array(params_list, dtype=np.float32)
 
 class MonteCarlo:
+    '''
+    Default MC class, use this to instantiate the Simulation object
+    '''
     def __init__(self, config, input_folder="../../inputs/", output_folder="outputs/"):
         with open(config, 'r') as f:
             CONFIG = json.load(f)
@@ -95,7 +100,6 @@ class MonteCarlo:
         spin_gpu = np.array([self.spin]).astype(np.float32)
         self.SGPU = drv.mem_alloc(spin_gpu.nbytes)
         drv.memcpy_htod(self.SGPU, spin_gpu)
-        #self.save_directory = "../../"+self.Output_Folder+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
         self.save_directory = "Output_"+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
         self.NBS = int(self.MAT_PARAMS[20]), int(self.MAT_PARAMS[21]), int(self.MAT_PARAMS[22]), int(self.MAT_PARAMS[23])
         print("Output Folder default path: ", self.save_directory)
@@ -128,6 +132,9 @@ class MonteCarlo:
             f.write(metadata_file)
         
     def display_material(self):
+        '''
+        Print material properties
+        '''
         print(f"\tMaterial: {self.Material}")
         print(f"\tSize: {self.size}")
         print(f"\tSpin: {self.spin}")
@@ -141,7 +148,10 @@ class MonteCarlo:
         print(f"\tFile TC/NC: {self.MAT_PARAMS[24]}")
         print(f"\tConfig Temps: {self.Temps}")
         
-    def generate_random_numbers(self, mult):
+    def generate_random_numbers(self):
+        '''
+        Generate 4 uniform random number arrays for the simulation and copies them to the GPU
+        '''
         self.NLIST = rg.gen_uniform((self.C1), np.float32)
         self.ULIST = rg.gen_uniform((self.C1), np.float32)
         self.VLIST = rg.gen_uniform((self.C1), np.float32)
@@ -155,7 +165,10 @@ class MonteCarlo:
         mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
         mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
 
-    def generate_ising_numbers(self, mult):
+    def generate_ising_numbers(self):
+        '''
+        Generate 4 uniform random number arrays for the simulation and copies them to the GPU
+        '''
         self.NLIST = rg.gen_uniform((self.C1), np.float32)
         self.ULIST = rg.gen_uniform((self.C1), np.float32)
         self.VLIST = rg.gen_uniform((self.C1), np.float32)
@@ -175,6 +188,9 @@ class MonteCarlo:
         mc.NPREC(self.N_SAMPLE, self.GPU_N_SAMPLE, self.GSIZE, block=(1,1,1), grid=(self.Blocks,1,1))
 
     def mc_init(self):
+        '''
+        Initialize the simulation
+        '''
         self.grid = np.zeros((self.size*self.size*3)).astype(np.float32)
         self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
         self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
@@ -203,7 +219,14 @@ class MonteCarlo:
             mc.AFM_N(self.grid, self.size)
         self.grid *= self.spin
         drv.memcpy_htod(self.GRID_GPU, self.grid)
-    # DMI SECTOR
+    '''
+    DMI SECTOR
+    This section has the MC simulation algorithms for materials that use a DMI term
+    In order, this contains the following functions:
+    run_mc_dmi_66612: Runs the MC simulation for a 6 6 6 12 crystal structure material
+    run_mc_dmi_4448: Runs the MC simulation for a 4 4 4 8 crystal structure material
+    run_mc_dmi_3636: Runs the MC simulation for a 3 6 3 6 crystal structure material
+    '''
     def run_mc_dmi_66612(self, T):
         beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
@@ -230,11 +253,17 @@ class MonteCarlo:
             mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
         return self.grid
-
-    #DMI SECTOR END
-
+    
+    
+    # DMI SECTOR END
+    
     # TC SECTOR
+    # This section has the MC simulation algorithms for finding the TC of a material
+    
     def run_mc_tc_4448(self, T):
+        '''
+        Run the MC simulation for a 4 4 4 8 crystal structure material
+        '''
         Mt, Xt = 0.0, 0.0
         ct = 0
         M, X = np.zeros(self.S_Wrap), np.zeros(self.S_Wrap)
@@ -257,6 +286,9 @@ class MonteCarlo:
         return Mt, Xt
     
     def run_mc_tc_66612(self, T):
+        '''
+        Run the MC simulation for a 6 6 6 12 crystal structure material
+        '''
         Mt, Xt = 0.0, 0.0
         ct = 0
         M, X = np.zeros(self.S_Wrap), np.zeros(self.S_Wrap)
@@ -277,8 +309,11 @@ class MonteCarlo:
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         
         return Mt, Xt
-
+    
     def run_mc_tc_3636(self, T):
+        '''
+        Run the MC simulation for a 3 6 3 6 crystal structure material
+        '''
         Mt, Xt = 0.0, 0.0
         ct = 0
         M = np.zeros(self.S_Wrap)
@@ -300,6 +335,8 @@ class MonteCarlo:
         
         return Mt, Xt
     
+    '''
+    # Deprecated function
     def run_mc_tc_3636_2(self, T):
         Mt, Xt = 0.0, 0.0
         ct = 0
@@ -321,8 +358,12 @@ class MonteCarlo:
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         
         return Mt, Xt
+    '''
 
     def run_mc_tc_2242(self, T):
+        '''
+        Run the MC simulation for a 2 2 4 2 crystal structure material
+        '''
         Mt, Xt = 0.0, 0.0
         ct = 0
         M = np.zeros(self.S_Wrap)
@@ -345,6 +386,9 @@ class MonteCarlo:
         return Mt, Xt
     
     def run_mc_tc_2424(self, T):
+        '''
+        Run the MC simulation for a 2 4 2 4 crystal structure material
+        '''
         Mt, Xt = 0.0, 0.0
         ct = 0
         M = np.zeros(self.S_Wrap)
@@ -367,9 +411,15 @@ class MonteCarlo:
         return Mt, Xt
 
     # TC SECTOR END
-
+    
     # TC EN SECTOR
+    # This section has the MC simulation algorithms for finding the Energy/atom of a material while simulating.
+    # In order, this contains the following functions:
+
     def run_mc_tc_en_3636(self, T):
+        '''
+        Run the MC simulation for a 3 6 3 6 crystal structure material while calculating the Energy/atom
+        '''
         Mt, Xt = 0.0, 0.0
         ct = 0
         M = np.zeros(self.S_Wrap)
@@ -401,7 +451,7 @@ class MonteCarlo:
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         print(f"Mean Specific Heat at {T:.3f} = {Et:.3f}")
         return Mt, Xt, Et
-
+    '''
     def run_mc_tc_en_3636_2(self, T):
         Mt, Xt = 0.0, 0.0
         ct = 0
@@ -434,34 +484,43 @@ class MonteCarlo:
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         print(f"Mean Specific Heat at {T:.3f} = {Et:.3f}")
         return Mt, Xt, Et
-
+    '''
     def en_3636(self, T):
+        '''
+        Calculate the Energy/atom for a 3 6 3 6 crystal structure material
+        '''
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
         mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
-        #E = np.mean(Et)/(self.Blocks*T**2)
+
         return Et
     
+    '''
     def en_3636_2(self, T):
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
         mc.EN_CALC_3_6_3_6_2(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
-        #E = np.mean(Et)/(self.Blocks*T**2)
+        
         return Et
-
+    '''
     def run_mc_tc_en_66612(self, T):
+        '''
+        Calculate the Energy/atom for a 6 6 6 12 crystal structure material
+        '''
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
         mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
-        #E = np.mean(Et)/(self.Blocks*T**2)
+        
         return Et
         
-    # TC EN SECTOR 
+    # TC EN SECTOR END
     
     # MISC SECTOR
+    
+    '''
     def run_mc_dmi_36362(self, T):
         beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
@@ -473,12 +532,19 @@ class MonteCarlo:
     
     def dump_state():
         pass
-
+    '''
+    
     def cleanup(self):
+        '''
+        Clean up the GPU GRID memory
+        '''
         self.GRID_GPU.free()
 
 class Analyze():
     def __init__(self, directory, reverse=False, input_folder="../../inputs/"):
+        '''
+        Initialize the Analyze class, used to analyze the output of the MC simulation
+        '''
         self.flist = os.listdir(directory)
         self.flist = [file for file in self.flist if file.endswith(".npy") and file.startswith("grid")]
         self.flist.sort(reverse=reverse)
@@ -507,6 +573,9 @@ class Analyze():
 
 
     def spin_view(self):
+        '''
+        Generate a heatmap of the spin configuration at each time step
+        '''
         ctr = 0
         for file in self.flist:
             print(f"Processing {file}", end="\r")
@@ -534,6 +603,9 @@ class Analyze():
             ctr += 1
     
     def quiver_view(self):
+        '''
+        Generate a quiver plot of the spin configuration at each time step
+        '''
         ctr = 0
         for file in self.flist:
             print(f"Processing {file}", end="\r")
@@ -556,6 +628,9 @@ class Analyze():
             ctr += 1
         
     def en_66612(self):
+        '''
+        Visualize the Energy/atom for a 6 6 6 12 crystal structure material
+        '''
         ctr = 0
         E_f = np.zeros(len(self.flist))
         for file in self.flist:

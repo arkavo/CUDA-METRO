@@ -9,6 +9,9 @@ from pycuda.compiler import SourceModule
 
 #PREPROCESSORS
 def PREC_N(n,box,size):
+    '''
+    Returns the list of neighbours for a given site in the lattice
+    '''
     NLIST = np.zeros(size)
     for i in range(4):
         for j in range(4):
@@ -45,6 +48,11 @@ def alt_AFM_N(grid, s1, s2, size):
         grid[i*4+2] = np.cos(phi)*(s1*(grid[i*4+3]) + s2*(1-grid[i*4+3]))
 
 #KERNEL CODE
+'''
+The kernel code is written in CUDA C and is compiled using the SourceModule class from the pycuda.compiler module.
+The functions are called seperately from below the kernel code.
+'''
+# =============================================================================
 dev_hamiltonian = SourceModule("""
 //cuda
 #include <curand.h>
@@ -1153,8 +1161,15 @@ __global__ void encalc_2242(float_t* mat, float_t* sheet, float_t* B, int* size,
 //!cuda
 """)
 #KERNEL CODE END
+# =============================================================================
 
 
+# =============================================================================
+# CUDA KERNEL FUNCTION DEFINITIONS
+# In case of any additions to the CUDA kernel code, the functions need to be
+# defined here.
+# =============================================================================
+#CUDA KERNEL FUNCTION DEFINITIONS
 GRID_COPY = dev_hamiltonian.get_function("cp_grid")
 ALT_GRID_COPY = dev_hamiltonian.get_function("alt_cp_grid")
 
