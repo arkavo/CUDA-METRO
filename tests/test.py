@@ -1,5 +1,5 @@
 # Testing script for the CUDAMETRO package
-# Currently in version 1.2.0
+# Currently in version 1.2.1
 
 
 # Importing the necessary packages

@@ -148,7 +148,7 @@ class MonteCarlo:
         print(f"\tFile TC/NC: {self.MAT_PARAMS[24]}")
         print(f"\tConfig Temps: {self.Temps}")
         
-    def generate_random_numbers(self):
+    def generate_random_numbers(self, deprecate):
         '''
         Generate 4 uniform random number arrays for the simulation and copies them to the GPU
         '''
@@ -165,7 +165,7 @@ class MonteCarlo:
         mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
         mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
 
-    def generate_ising_numbers(self):
+    def generate_ising_numbers(self, deprecate):
         '''
         Generate 4 uniform random number arrays for the simulation and copies them to the GPU
         '''
@@ -567,10 +567,8 @@ class Analyze():
         drv.memcpy_htod(self.B_GPU, np.array([self.metadata["B"]]).astype(np.float32))
         self.GSIZE = drv.mem_alloc(np.array([self.size]).astype(np.int32).nbytes)
         drv.memcpy_htod(self.GSIZE, np.array([self.size]).astype(np.int32))
-        #DMI_6 = np.load("dmi_6.npy")
-        #self.GPU_DMI_6 = drv.mem_alloc(DMI_6.nbytes)
-        #drv.memcpy_htod(self.GPU_DMI_6, DMI_6)
-
+        # To fix energy plot issue
+        self.GPU_DMI_6 = np.ones((3,3)).astype(np.float32)
 
     def spin_view(self):
         '''
@@ -578,7 +576,7 @@ class Analyze():
         '''
         ctr = 0
         for file in self.flist:
-            print(f"Processing {file}", end="\r")
+            print(f"Processing {file} mode: spin heatmap", end="\r")
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
             with open(self.directory+"/metadata.json", 'r') as f:
@@ -601,14 +599,15 @@ class Analyze():
             plt.savefig(self.directory+"/spin/spin_"+str(ctr)+".png")
             plt.close()
             ctr += 1
-    
+        print("\n")
+        print("Exiting spin view mode")
     def quiver_view(self):
         '''
         Generate a quiver plot of the spin configuration at each time step
         '''
         ctr = 0
         for file in self.flist:
-            print(f"Processing {file}", end="\r")
+            print(f"Processing {file} mode: quiver", end="\r")
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
             grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
@@ -626,7 +625,8 @@ class Analyze():
             plt.savefig(self.directory+"/quiver/quiver_"+str(ctr)+".png")
             plt.close()
             ctr += 1
-        
+        print("\n")
+        print("Exiting quiver view mode")
     def en_66612(self):
         '''
         Visualize the Energy/atom for a 6 6 6 12 crystal structure material

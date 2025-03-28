@@ -14,6 +14,8 @@ git clone https://github.com/arkavo/CUDA-METRO.git
 
 into a directory of choice. Creating a new python3(>=3.8) environment is recommended to run the code.
 
+To test your installation, please go to the ```/tests``` folder and run the test files. The test files are designed to run on a GPU. If you have installed the code correctly, the tests should pass without any errors.
+
 To setup the environment after creation, simply run 
 				```pip install -r requirements.pip```
 
