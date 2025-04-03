@@ -162,8 +162,8 @@ class MonteCarlo:
         self.S2FULL = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
         self.S3FULL = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
 
-        mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
-        mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
+        mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(2,1,1), grid=(self.C1,1,1))
+        mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(2,1,1), grid=(self.C1,1,1))
 
     def generate_ising_numbers(self, deprecate):
         '''
@@ -179,13 +179,13 @@ class MonteCarlo:
         self.S2FULL = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
         self.S3FULL = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
 
-        mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
-        mc.ISING(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
+        mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(2,1,1), grid=(self.C1,1,1))
+        mc.ISING(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(2,1,1), grid=(self.C1,1,1))
     
     def sampler(self):
         self.N_SAMPLE = rg.gen_uniform((self.Blocks), np.float32)
         self.GPU_N_SAMPLE = drv.mem_alloc(self.N_SAMPLE.nbytes)
-        mc.NPREC(self.N_SAMPLE, self.GPU_N_SAMPLE, self.GSIZE, block=(1,1,1), grid=(self.Blocks,1,1))
+        mc.NPREC(self.N_SAMPLE, self.GPU_N_SAMPLE, self.GSIZE, block=(2,1,1), grid=(self.Blocks,1,1))
 
     def mc_init(self):
         '''
@@ -238,24 +238,28 @@ class MonteCarlo:
             mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
             mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        drv.Context.synchronize()
         return self.grid
+
 
     def run_mc_dmi_4448(self, T):
         beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
-            mc.METROPOLIS_MC_DM1_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            mc.METROPOLIS_MC_DM1_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        drv.Context.synchronize()
         return self.grid
     
     def run_mc_dmi_3636(self, T):
         beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
-            mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_3, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.GPU_DMI_3, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        drv.Context.synchronize()
         return self.grid
     
     
@@ -276,8 +280,8 @@ class MonteCarlo:
             beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM0_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM0_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             self.grid = self.grid.reshape((self.size, self.size, 3))
             magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
@@ -286,7 +290,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        
+        drv.Context.synchronize()
         return Mt, Xt
     
     def run_mc_tc_66612(self, T):
@@ -301,8 +305,8 @@ class MonteCarlo:
             beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM0_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM0_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             self.grid = self.grid.reshape((self.size, self.size, 3))
             magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
@@ -311,7 +315,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        
+        drv.Context.synchronize()
         return Mt, Xt
     
     def run_mc_tc_3636(self, T):
@@ -326,8 +330,8 @@ class MonteCarlo:
             beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             self.grid = self.grid.reshape((self.size, self.size, 3))
             magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
@@ -336,7 +340,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        
+        drv.Context.synchronize()
         return Mt, Xt
     
     '''
@@ -350,8 +354,8 @@ class MonteCarlo:
             beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM2_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM2_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             self.grid = self.grid.reshape((self.size, self.size, 3))
             magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
@@ -376,8 +380,8 @@ class MonteCarlo:
             beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM0_2_2_4_2(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM0_2_2_4_2(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             self.grid = self.grid.reshape((self.size, self.size, 3))
             magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
@@ -386,7 +390,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        
+        drv.Context.synchronize()
         return Mt, Xt
     
     def run_mc_tc_2424(self, T):
@@ -401,8 +405,8 @@ class MonteCarlo:
             beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM0_2_4_2_4(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM0_2_4_2_4(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
             self.grid = self.grid.reshape((self.size, self.size, 3))
             magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
@@ -411,7 +415,7 @@ class MonteCarlo:
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
-        
+        drv.Context.synchronize()
         return Mt, Xt
 
     # TC SECTOR END
@@ -437,10 +441,10 @@ class MonteCarlo:
             drv.memcpy_htod(self.BJ, beta)
             ET_S = np.zeros(self.stability_runs)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
                 self.sampler()
-                mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.GPU_N_SAMPLE, GPU_ET, self.B_GPU, self.GSIZE, block=(1,1,1), grid=(self.size*self.size,1,1))
+                mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.GPU_N_SAMPLE, GPU_ET, self.B_GPU, self.GSIZE, block=(2,1,1), grid=(self.size*self.size,1,1))
                 drv.memcpy_dtoh(Et, GPU_ET)
                 ET_S[j] = np.mean(Et)
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
@@ -454,6 +458,7 @@ class MonteCarlo:
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         print(f"Mean Specific Heat at {T:.3f} = {Et:.3f}")
+        drv.Context.synchronize()
         return Mt, Xt, Et
     '''
     def run_mc_tc_en_3636_2(self, T):
@@ -470,10 +475,10 @@ class MonteCarlo:
             drv.memcpy_htod(self.BJ, beta)
             ET_S = np.zeros(self.stability_runs)
             for j in range(self.stability_runs):
-                mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+                mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+                mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
                 self.sampler()
-                mc.EN_CALC_3_6_3_6_2(self.GPU_MAT, self.GRID_GPU, self.GPU_N_SAMPLE, GPU_ET, self.B_GPU, self.GSIZE, block=(1,1,1), grid=(self.size*self.size,1,1))
+                mc.EN_CALC_3_6_3_6_2(self.GPU_MAT, self.GRID_GPU, self.GPU_N_SAMPLE, GPU_ET, self.B_GPU, self.GSIZE, block=(2,1,1), grid=(self.size*self.size,1,1))
                 drv.memcpy_dtoh(Et, GPU_ET)
                 ET_S[j] = np.mean(Et)
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
@@ -495,18 +500,18 @@ class MonteCarlo:
         '''
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
-        mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
+        mc.EN_CALC_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
-
+        drv.Context.synchronize()
         return Et
     
     '''
     def en_3636_2(self, T):
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
-        mc.EN_CALC_3_6_3_6_2(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
+        mc.EN_CALC_3_6_3_6_2(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
-        
+        drv.Context.synchronize()
         return Et
     '''
     def run_mc_tc_en_66612(self, T):
@@ -515,9 +520,9 @@ class MonteCarlo:
         '''
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
-        mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
+        mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
-        
+        drv.Context.synchronize()
         return Et
         
     # TC EN SECTOR END
@@ -529,8 +534,8 @@ class MonteCarlo:
         beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
-            mc.METROPOLIS_MC_DM2_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            mc.METROPOLIS_MC_DM2_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
         return self.grid
     
@@ -646,7 +651,7 @@ class Analyze():
             self.GRID_GPU = drv.mem_alloc(grid.nbytes)
             drv.memcpy_htod(self.GRID_GPU, grid)
             GPU_ET = drv.mem_alloc(Et.nbytes)
-            mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GSIZE, GPU_ET, self.GPU_DMI_6, block=(1,1,1), grid=(self.Blocks,1,1))
+            mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GSIZE, GPU_ET, self.GPU_DMI_6, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(Et, GPU_ET)
             print(np.mean(-Et))
             E_f[ctr] = -np.mean(Et)
