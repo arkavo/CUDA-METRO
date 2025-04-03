@@ -103,7 +103,7 @@ __global__ void alt_uvec_ising(float_t* u, float_t* v, float_t* s1, float_t* s2,
 __global__ void NList_processor(float_t* nlist, int* res, int* __SIZE)
 {
     int Idx = blockIdx.x;
-    res[Idx] = __float2uint_ru(__SIZE[0]*__SIZE[0]*nlist[Idx]);
+    res[Idx] = __float2uint_rz(__SIZE[0]*__SIZE[0]*nlist[Idx]);
 }
 
 //Neighbour mapping

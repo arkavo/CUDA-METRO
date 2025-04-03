@@ -192,25 +192,29 @@ class MonteCarlo:
         Initialize the simulation
         '''
         self.grid = np.zeros((self.size*self.size*3)).astype(np.float32)
+
         self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
         self.TMATRIX = np.zeros((self.Blocks, 4)).astype(np.float32)
+
         self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
+        
         if self.FM_Flag:
             mc.FM_N(self.grid, self.size)
         else:
             mc.AFM_N(self.grid, self.size)
         self.grid *= self.spin
+
         self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
         
-        print(self.GRID_GPU)
         if self.Static_T_Flag:
             self.T = self.Temps
         else:
             self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), 11)
+
         self.BJ = drv.mem_alloc(self.T[0].nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         drv.memcpy_htod(self.GRID_GPU, self.grid)
-    
+ 
     def grid_reset(self):
         self.grid = np.zeros((self.size*self.size*3)).astype(np.float32)
         if self.FM_Flag:
@@ -231,8 +235,8 @@ class MonteCarlo:
         beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
-            mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks-1], self.RLIST[j*self.Blocks:(j+1)*self.Blocks-1], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
-            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(1,1,1), grid=(self.Blocks,1,1))
+            mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(self.grid, self.GRID_GPU)
         return self.grid
 
