@@ -58,6 +58,7 @@ dev_hamiltonian = SourceModule("""
 #include <curand.h>
 #include <cuda_runtime.h>
 //Lattice Utility
+
 __global__ void cp_grid(float_t* grid, float_t* tf)
 {
     int idx = blockIdx.x;
@@ -1159,7 +1160,7 @@ __global__ void encalc_2242(float_t* mat, float_t* sheet, float_t* B, int* size,
 }
 
 //!cuda
-""")
+""", options=["-std=c++17", "-O1"])
 #KERNEL CODE END
 # =============================================================================
 
