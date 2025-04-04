@@ -1160,7 +1160,7 @@ __global__ void encalc_2242(float_t* mat, float_t* sheet, float_t* B, int* size,
 }
 
 //!cuda
-""", options=["-std=c++17", "-O1"])
+""", options=["-std=c++17", "-O0"])
 #KERNEL CODE END
 # =============================================================================
 
