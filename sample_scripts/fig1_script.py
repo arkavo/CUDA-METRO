@@ -16,7 +16,7 @@ save_dir_flag = False
 T_arr = None
 spin = 1.0
 mat = None
-size = 32
+size = 64
 
 for i in range(4):
     fs_name = f"fig1_configs/p{i+1}.json"
@@ -55,10 +55,10 @@ for i in range(4):
     plt.close()
     test_mc0 = None
 
-M_1, X_1 = np.load(f"{unified_save_dir}/BQM_32_128.npy"), np.load(f"{unified_save_dir}/BQX_32_128.npy")
-M_2, X_2 = np.load(f"{unified_save_dir}/BQM_32_256.npy"), np.load(f"{unified_save_dir}/BQX_32_256.npy")
-M_3, X_3 = np.load(f"{unified_save_dir}/BQM_32_512.npy"), np.load(f"{unified_save_dir}/BQX_32_512.npy")
-M_4, X_4 = np.load(f"{unified_save_dir}/BQM_32_1024.npy"), np.load(f"{unified_save_dir}/BQX_32_1024.npy")
+M_1, X_1 = np.load(f"{unified_save_dir}/BQM_64_512.npy"), np.load(f"{unified_save_dir}/BQX_64_512.npy")
+M_2, X_2 = np.load(f"{unified_save_dir}/BQM_64_1024.npy"), np.load(f"{unified_save_dir}/BQX_64_1024.npy")
+M_3, X_3 = np.load(f"{unified_save_dir}/BQM_64_2048.npy"), np.load(f"{unified_save_dir}/BQX_64_2048.npy")
+M_4, X_4 = np.load(f"{unified_save_dir}/BQM_64_4096.npy"), np.load(f"{unified_save_dir}/BQX_64_4096.npy")
 
 Figure = plt.figure()
 plt.plot(T_arr, M_1/spin, label="M_12.5")
@@ -71,10 +71,10 @@ plt.savefig(f"{unified_save_dir}/M_{size}_all.png")
 plt.close()
 
 Figure = plt.figure()
-plt.plot(T_arr[1:], X_1[1:]/X_1.max(), label="X_12.5")
-plt.plot(T_arr[1:], X_2[1:]/X_2.max(), label="X_25")
-plt.plot(T_arr[1:], X_3[1:]/X_3.max(), label="X_50")
-plt.plot(T_arr[1:], X_4[1:]/X_4.max(), label="X_100")
+plt.plot(T_arr[1:], X_1[1:]/X_1[1:].max(), label="X_12.5")
+plt.plot(T_arr[1:], X_2[1:]/X_2[1:].max(), label="X_25")
+plt.plot(T_arr[1:], X_3[1:]/X_3[1:].max(), label="X_50")
+plt.plot(T_arr[1:], X_4[1:]/X_4[1:].max(), label="X_100")
 plt.title(f"Susceptibility vs Temperature of {mat} at size {size}x{size}")
 plt.legend()
 plt.savefig(f"{unified_save_dir}/X_{size}_all.png")

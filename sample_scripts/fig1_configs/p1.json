@@ -17,7 +17,7 @@
     "B"         : "0.0",
     "stability_runs"    : 57600,
     "calculation_runs"  : 50,
-    "stability_wrap"    : 10,
+    "stability_wrap"    : 20,
     "calculation_wrap"  : 35,
     "Cmpl_Flag"         : 1,
     "Prefix"            : "0"
