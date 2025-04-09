@@ -130,19 +130,19 @@ MonteCarlo is a class object which is defined in ```construct.py``` as the Main 
 
 ```construct.MonteCarlo.load_config()``` loads the config
 
-```construct.MonteCarlo.mc_init()``` initializes the simulation with the parameter file(but does not run it yet).
+```construct.MonteCarlo.mc_init(tc_points: int)``` initializes the simulation with the parameter file(but does not run it yet). ```tc_points``` allows the user to set the number of temperature points in the range (```default=11```)
 
 ```construct.MonteCarlo.display_material()``` prints out the current material properties.
 
 ```construct.MonteCarlo.grid_reset()``` resets the grid to ALL $(0,0,1)$ if ```FM_Flag=1``` else randomizes all spins to an diamagnetic state.
 
-```construct.MonteCarlo.generate_random_numbers(int size)``` creates 4 GPU allocated arrays of size ```size``` using the pyCUDA XORWOW random number generator.
+```construct.MonteCarlo.generate_random_numbers(size: int)``` creates 4 GPU allocated arrays of size ```size``` using the pyCUDA XORWOW random number generator.
 
-```construct.MonteCarlo.generate_ising_numbers(int size)``` creates 4 GPU allocated arrays of size ```size``` using the pyCUDA XORWOW random number generator but the spin vectors are either $(0,0,1)$ or $(0,0,-1)$.
+```construct.MonteCarlo.generate_ising_numbers(size: int)``` creates 4 GPU allocated arrays of size ```size``` using the pyCUDA XORWOW random number generator but the spin vectors are either $(0,0,1)$ or $(0,0,-1)$.
 
-```construct.MonteCarlo.run_mc_dmi_66612(double T)``` runs a single ```Phase 1``` batch size run, with the return as a ```np.array(NxNx3)``` individual spin directions as raw output. This can be saved using the ```np.save``` command.
+```construct.MonteCarlo.run_mc_dmi_66612(T: double)-> numpy.ndarray``` runs a single ```Phase 1``` batch size run, with the return as a ```np.array(NxNx3)``` individual spin directions as raw output. This can be saved using the ```np.save``` command.
 
-Other variations of ```run_mc_dmi_66612(T)``` are ```run_mc_<tc/dmi>_<mode>(T)```
+Other variations of ```run_mc_dmi_66612(T: double)``` are ```run_mc_<tc/dmi>_<mode>(T: double)```
 
 ```tc``` and ```dmi``` mode both contain modes for ```66612```, ```4448```, ```3636```, ```2424``` and ```2242```, which are the primary lattice types explored in this code. ```dmi``` can only be invoked by the configs ```66612, 4448, 3636```, for the rest, if you wish to open a running simulation, use ```tc``` mode with single temperature.
 
@@ -150,7 +150,7 @@ Other variations of ```run_mc_dmi_66612(T)``` are ```run_mc_<tc/dmi>_<mode>(T)``
 
 The template file to run a visual analyzer is given in ```visualize.py```, this will compile images for all given state ```*.npy``` files in a given folder.
 
-```construct.Analyze(<folder_path>, reverse=False)``` to create the Analyzer instance with an option to start from the opposite end (in case you want end results first)
+```construct.Analyze(<folder_path>: string, reverse=False)``` to create the Analyzer instance with an option to start from the opposite end (in case you want end results first)
 
 ```construct.Analyze.spin_view()``` creates a subfolder in the main folder called "spins" with the spin vector images inside. They are split into components as $z = s(x,y)$ as the functional form.
 

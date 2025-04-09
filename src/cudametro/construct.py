@@ -187,7 +187,7 @@ class MonteCarlo:
         self.GPU_N_SAMPLE = drv.mem_alloc(self.N_SAMPLE.nbytes)
         mc.NPREC(self.N_SAMPLE, self.GPU_N_SAMPLE, self.GSIZE, block=(2,1,1), grid=(self.Blocks,1,1))
 
-    def mc_init(self):
+    def mc_init(self, tc_points=11):
         '''
         Initialize the simulation
         '''
@@ -209,7 +209,7 @@ class MonteCarlo:
         if self.Static_T_Flag:
             self.T = self.Temps
         else:
-            self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), 11)
+            self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), tc_points)
 
         self.BJ = drv.mem_alloc(self.T[0].nbytes)
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)

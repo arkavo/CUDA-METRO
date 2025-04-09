@@ -22,7 +22,7 @@ for i in range(4):
     fs_name = f"fig1_configs/p{i+1}.json"
     print(f"Running {fs_name}")
     test_mc0 = cst.MonteCarlo(config=fs_name, input_folder=in_dir)
-    test_mc0.mc_init()
+    test_mc0.mc_init(tc_points=31)
     test_mc0.display_material()
     M, X = np.array([]), np.array([])
     for t in test_mc0.T:
