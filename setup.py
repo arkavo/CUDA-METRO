@@ -13,7 +13,7 @@ except Exception:
 setup(
 	# Name of the package 
 	name='CUDA-METRO',
-	version="1.2.1",
+	version="1.2.7",
 	packages=find_packages(),
 	# Short description of your library 
 	description='pyCUDA Metropolis Monte Carlo 2D Heisenberg Model Simulation',

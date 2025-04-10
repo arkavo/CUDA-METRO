@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 namespaces=false
 [project]
 name = "cudametro"
-version = "1.2.6"
+version = "1.2.7"
 authors = [
   { name="Arkavo Hait", email="arkavohait@iisc.ac.in" },
   { name="Santanu Mahapatra", email="santanu@iisc.ac.in"}

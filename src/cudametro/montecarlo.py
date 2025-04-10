@@ -63,10 +63,12 @@ __global__ void cp_grid(float_t* grid, float_t* tf)
 {
     int idx = blockIdx.x;
     int threadID = idx;
-    grid[int(tf[threadID*4])*3] = tf[threadID*4+1];
-    grid[int(tf[threadID*4])*3+1] = tf[threadID*4+2];
-    grid[int(tf[threadID*4])*3+2] = tf[threadID*4+3];
+    int site = __float2uint_rz(tf[threadID*4]);
+    grid[site*3] = tf[threadID*4+1];
+    grid[site*3+1] = tf[threadID*4+2];
+    grid[site*3+2] = tf[threadID*4+3];
 }
+/*
 __global__ void alt_cp_grid(float_t* grid, float_t* tf)
 {
     int idx = blockIdx.x;
@@ -75,6 +77,7 @@ __global__ void alt_cp_grid(float_t* grid, float_t* tf)
     grid[int(tf[threadID*4])*4+1] = tf[threadID*4+2];
     grid[int(tf[threadID*4])*4+2] = tf[threadID*4+3];
 }
+*/
 //Vector preprocessing
 __global__ void uvec_processor(float_t* u, float_t* v, float_t* s1, float_t* s2, float_t* s3, float_t* spin)
 {
@@ -674,14 +677,14 @@ __global__ void metropolis_mc_dm1_6_6_6_12(float_t *mat, float_t *sheet, float_t
     
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -711,14 +714,14 @@ __global__ void metropolis_mc_dm0_6_6_6_12(float_t *mat, float_t *sheet, float_t
     
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -748,14 +751,14 @@ __global__ void metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, float_t 
 
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -785,14 +788,14 @@ __global__ void metropolis_mc_dm1_3_6_3_6(float_t *mat, float_t *sheet, float_t 
 
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -822,14 +825,14 @@ __global__ void metropolis_mc_dm2_3_6_3_6(float_t *mat, float_t *sheet, float_t 
 
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -859,14 +862,14 @@ __global__ void metropolis_mc_dm1_4_4_4_8(float_t *mat, float_t *sheet, float_t 
     
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -896,14 +899,14 @@ __global__ void metropolis_mc_dm0_4_4_4_8(float_t *mat, float_t *sheet, float_t 
     
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -934,14 +937,14 @@ __global__ void metropolis_mc_dm0_2_2_4_2(float_t *mat, float_t *sheet, float_t 
 
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -974,19 +977,20 @@ __global__ void metropolis_mc_dm0_2_4_2_4(float_t *mat, float_t *sheet, float_t 
 
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
     }
 }
+/*
 //Double Material Study
 __device__ int alt_populate(float_t* sheet, int pt, int size)
 {
@@ -1046,7 +1050,7 @@ __global__ void alt_grid(int* size, float_t* sheet, int* debug, float_t* spins)
         }
     }
 }
-
+*/
 //Energy Calculators
 __global__ void energy_metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, float_t *T, int* N, float_t* S1, float_t* S2,float_t* S3, float_t* R, float_t* tf, float_t* B, int* size, float_t* en)
 {
@@ -1071,7 +1075,7 @@ __global__ void energy_metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, f
 
     if (dE < 0)
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -1079,7 +1083,7 @@ __global__ void energy_metropolis_mc_dm0_3_6_3_6(float_t *mat, float_t *sheet, f
     }
     else if (expf(-1.0*dE*T[0]) > R[threadID])
     {
-        tf[threadID*4] = pt_thread;
+        tf[threadID*4] = (float_t)pt_thread;
         tf[threadID*4+1] = S1[threadID];
         tf[threadID*4+2] = S2[threadID];
         tf[threadID*4+3] = S3[threadID];
@@ -1172,12 +1176,12 @@ __global__ void encalc_2242(float_t* mat, float_t* sheet, float_t* B, int* size,
 # =============================================================================
 #CUDA KERNEL FUNCTION DEFINITIONS
 GRID_COPY = dev_hamiltonian.get_function("cp_grid")
-ALT_GRID_COPY = dev_hamiltonian.get_function("alt_cp_grid")
+#ALT_GRID_COPY = dev_hamiltonian.get_function("alt_cp_grid")
 
 NPREC = dev_hamiltonian.get_function("NList_processor")
 VPREC = dev_hamiltonian.get_function("uvec_processor")
 ISING = dev_hamiltonian.get_function("alt_uvec_ising")
-ALT_GRID = dev_hamiltonian.get_function("alt_grid")
+#ALT_GRID = dev_hamiltonian.get_function("alt_grid")
 
 METROPOLIS_MC_DM0_2_2_4_2 = dev_hamiltonian.get_function("metropolis_mc_dm0_2_2_4_2")
 METROPOLIS_MC_DM0_2_4_2_4 = dev_hamiltonian.get_function("metropolis_mc_dm0_2_4_2_4")
