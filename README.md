@@ -6,15 +6,18 @@
 
 A pyCUDA based Metropolis Monte Carlo simulator for 2D-magnetism systems. This code uses NVIDIA CUDA architecture wrapped by a simple python wrapper to work.
 
-To use, clone the repository using
+To use the package, please install the latest version either by installing it from pypi using ```pip install cudametro``` or by installing it from source. To install from source, please clone the repository and run the following command in the root directory of the repository: ```pip install ./```
 
-```
-git clone https://github.com/arkavo/CUDA-METRO.git
+
+To clone the source code please use
+
+```bash
+git clone git@github.com:arkavo/CUDA-METRO.git
 ```
 
 into a directory of choice. Creating a new python3(>=3.8) environment is recommended to run the code.
 
-To test your installation, please go to the ```/tests``` folder and run the test files. The test files are designed to run on a GPU. If you have installed the code correctly, the tests should pass without any errors.
+To test your installation, please go to the ```/tests``` folder and run the test files. The test files are designed to run on a GPU. If you have installed the code correctly, the tests should pass without any errors. Please note that the tests will not run unless the ```cudametro``` and its dependencies are installed.
 
 To setup the environment after creation, simply run 
 				```pip install -r requirements.pip```

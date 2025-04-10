@@ -3,7 +3,7 @@
 
 
 # Importing the necessary packages
-
+pkg_count = 0
 print("=== Testing the CUDAMETRO package ===")
 print("=== Testing the import of the necessary packages ===")
 print(" Searching for CUDAMETRO")
@@ -13,6 +13,7 @@ except ImportError:
     print("Please install the package using the following command: pip install cudametro")
 
 if "cm" in globals():
+    pkg_count += 1
     print(f"CUDA METRO package is installed. Version: {cm.__version__}")
 
 print(" Searching for numpy")
@@ -21,6 +22,7 @@ try:
 except ImportError:
     print("Please install the package using the following command: pip install numpy")
 if "np" in globals():
+    pkg_count += 1
     print(f"NumPy package is installed. Version: {np.__version__}")
 
 print(" Searching for matplotlib")
@@ -29,6 +31,7 @@ try:
 except ImportError:
     print("Please install the package using the following command: pip install matplotlib")
 if "plt" in globals():
+    pkg_count += 1
     print(f"Matplotlib package is installed. Version: {plt.__version__}")
 
 print(" Searching for tqdm")
@@ -37,6 +40,7 @@ try:
 except ImportError:
     print("Please install the package using the following command: pip install tqdm")
 if "tqdm" in globals():
+    pkg_count += 1
     print(f"TQDM package is installed. Version: {tqdm.__version__}")
 
 print(" Searching for seaborn")
@@ -45,6 +49,7 @@ try:
 except ImportError:
     print("Please install the package using the following command: pip install seaborn")
 if "seaborn" in globals():
+    pkg_count += 1
     print(f"Seaborn package is installed. Version: {seaborn.__version__}")
 
 print(" Searching for pyCUDA")    
@@ -54,10 +59,13 @@ except ImportError:
     print("Please install the package using the following command: pip install pycuda")
     print("Please refer to the following link for installation instructions: https://wiki.tiker.net/PyCuda/Installation/")
 if "pycuda" in globals():
+    pkg_count += 1
     print(f"PyCUDA package is installed. Version: {pycuda.VERSION_TEXT}")
 
-print("=== All packages are installed ===")
-
+if pkg_count < 6:
+    print("Please ensure that all the required packages are installed.")
+else:
+    print("All required packages are installed.")
 # Testing GPU availability
 print("=== Testing GPU availability ===")
 print(" Searching for GPU")
