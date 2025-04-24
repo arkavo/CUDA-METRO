@@ -521,7 +521,7 @@ class MonteCarlo:
         '''
         Et = np.zeros(self.Blocks).astype(np.float32)
         GPU_ET = drv.mem_alloc(Et.nbytes)
-        mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(2,1,1), grid=(self.Blocks,1,1))
+        mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GPU_N_SAMPLE, self.GSIZE, GPU_ET, block=(1,1,1), grid=(self.Blocks,1,1))
         drv.memcpy_dtoh(Et, GPU_ET)
         drv.Context.synchronize()
         return Et
@@ -578,7 +578,9 @@ class Analyze():
         self.GSIZE = drv.mem_alloc(np.array([self.size]).astype(np.int32).nbytes)
         drv.memcpy_htod(self.GSIZE, np.array([self.size]).astype(np.int32))
         # To fix energy plot issue
-        self.GPU_DMI_6 = np.ones((3,3)).astype(np.float32)
+        self.dmi_6 = np.load(script_dir+"/dmi_6.npy")
+        self.GPU_DMI_6 = drv.mem_alloc(self.dmi_6.nbytes)
+        drv.memcpy_htod(self.GPU_DMI_6, self.dmi_6)
 
     def spin_view(self):
         '''
@@ -648,11 +650,13 @@ class Analyze():
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
             grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
-            Et = np.zeros(self.Blocks).astype(np.float32)
+            Et = np.zeros(self.size**2).astype(np.float32)
             self.GRID_GPU = drv.mem_alloc(grid.nbytes)
             drv.memcpy_htod(self.GRID_GPU, grid)
             GPU_ET = drv.mem_alloc(Et.nbytes)
-            mc.EN_CALC_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GSIZE, GPU_ET, self.GPU_DMI_6, block=(2,1,1), grid=(self.Blocks,1,1))
+            drv.memcpy_htod(GPU_ET, Et)
+            mc.EN_CALC_6_6_6_12_2(self.GPU_MAT, self.GRID_GPU, self.B_GPU, self.GSIZE, GPU_ET, self.GPU_DMI_6, block=(1,1,1), grid=(self.size**2,1,1))
+            drv.Context.synchronize()
             drv.memcpy_dtoh(Et, GPU_ET)
             print(np.mean(-Et))
             E_f[ctr] = -np.mean(Et)
