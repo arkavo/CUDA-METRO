@@ -1,0 +1,38 @@
+cff-version: "1.2.0"
+authors:
+- email: arkavohait@iisc.ac.in
+  family-names: Hait
+  given-names: Arkavo
+  orcid: "https://orcid.org/0009-0006-6741-9377"
+- email: santanu@iisc.ac.in
+  family-names: Mahapatra
+  given-names: Santanu
+  orcid: "https://orcid.org/0000-0003-1112-8109"
+doi: 10.5281/zenodo.15275575
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - email: arkavohait@iisc.ac.in
+    family-names: Hait
+    given-names: Arkavo
+    orcid: "https://orcid.org/0009-0006-6741-9377"
+  - email: santanu@iisc.ac.in
+    family-names: Mahapatra
+    given-names: Santanu
+    orcid: "https://orcid.org/0000-0003-1112-8109"
+  date-published: 2025-05-19
+  doi: 10.21105/joss.07589
+  issn: 2475-9066
+  issue: 109
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 7589
+  title: "CUDA-METRO: Parallel Metropolis Monte Carlo for 2D Atomistic
+    Spin Texture Simulation"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.07589"
+  volume: 10
+title: "CUDA-METRO: Parallel Metropolis Monte Carlo for 2D Atomistic
+  Spin Texture Simulation"
