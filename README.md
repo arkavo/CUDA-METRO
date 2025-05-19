@@ -1,9 +1,7 @@
 # CUDA METRO
 
 [![PyPI version](https://badge.fury.io/py/cudametro.svg)](https://badge.fury.io/py/cudametro)
-
-HTML: <a href="https://joss.theoj.org/papers/a7010c1182f894d9a781ff2d44036783"><img src="https://joss.theoj.org/papers/a7010c1182f894d9a781ff2d44036783/status.svg"></a>
-Markdown: [![status](https://joss.theoj.org/papers/a7010c1182f894d9a781ff2d44036783/status.svg)](https://joss.theoj.org/papers/a7010c1182f894d9a781ff2d44036783)
+[![status](https://joss.theoj.org/papers/a7010c1182f894d9a781ff2d44036783/status.svg)](https://joss.theoj.org/papers/a7010c1182f894d9a781ff2d44036783)
 
 # Description/Installation
 
