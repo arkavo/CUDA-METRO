@@ -1,7 +1,7 @@
 # Main file to run the Monte Carlo simulation 
 #--------------------------------------------
 
-from cudametro import construct as cst
+import construct as cst
 import numpy as np
 import tqdm as tqdm
 
@@ -25,12 +25,12 @@ print(f"Example: python visualize.py {test_mc0.save_directory}")
 inp = input("Press Y/N to continue to analysis mode: ")
 #--------------------------------------------
 
-if inp == "Y" or "y" or "yes" or "Yes":
+if inp == "Y" or inp == "y" or inp == "yes" or inp == "Yes":
     viewer = cst.Analyze(test_mc0.save_directory, reverse=False)
     viewer.spin_view()
 
 #--------------------------------------------
 
-if inp == "N" or "n" or "no" or "No":
+if inp == "N" or inp == "n" or inp == "no" or inp == "No":
     print("Exiting")
     exit(0)

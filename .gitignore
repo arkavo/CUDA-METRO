@@ -1,2 +1,22 @@
 outputs/*
 !outputs/placeholder
+
+Output*
+Hysteresis_*/
+src/cudametro/Hysteresis_*/
+
+__pycache__/
+*.pyc
+*.pyo
+
+# LaTeX build artifacts
+guide.aux
+guide.log
+guide.out
+guide.toc
+
+# Misc
+log.txt
+test_plan.md
+CLAUDE.md
+dumps/

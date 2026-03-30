@@ -1,0 +1,1290 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────────────────
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{fontenc}
+\usepackage{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{mdframed}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+
+% ── Colors ───────────────────────────────────────────────────────────────────
+\definecolor{codebg}{RGB}{245,245,250}
+\definecolor{codecomment}{RGB}{100,100,100}
+\definecolor{codestring}{RGB}{30,120,30}
+\definecolor{codekeyword}{RGB}{0,80,180}
+\definecolor{codenumber}{RGB}{150,50,150}
+\definecolor{noteblue}{RGB}{220,235,255}
+\definecolor{noteborder}{RGB}{70,130,200}
+\definecolor{warnbg}{RGB}{255,245,220}
+\definecolor{warnborder}{RGB}{200,140,0}
+\definecolor{titlecolor}{RGB}{30,60,120}
+\definecolor{sectioncolor}{RGB}{0,80,160}
+
+% ── Listings (code style) ─────────────────────────────────────────────────────
+\lstdefinestyle{python}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  numberstyle=\tiny\color{codenumber},
+  numbers=left,
+  numbersep=8pt,
+  stepnumber=1,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{gray!40},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  xleftmargin=1.5em,
+}
+
+\lstdefinestyle{json}{
+  language={},
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  stringstyle=\color{codestring},
+  keywordstyle=\color{codekeyword},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{gray!40},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2,
+  xleftmargin=1.5em,
+}
+
+\lstdefinestyle{bash}{
+  language=bash,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekeyword},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{gray!40},
+  breaklines=true,
+  showstringspaces=false,
+  xleftmargin=1.5em,
+}
+
+% ── Note/Warning boxes ────────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=noteblue,
+  linecolor=noteborder,
+  linewidth=2pt,
+  leftline=true, rightline=false, topline=false, bottomline=false,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=\baselineskip,
+  skipbelow=\baselineskip,
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=warnbg,
+  linecolor=warnborder,
+  linewidth=2pt,
+  leftline=true, rightline=false, topline=false, bottomline=false,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=\baselineskip,
+  skipbelow=\baselineskip,
+]{warnbox}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{sectioncolor}}{{\thesection}}{1em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sectioncolor!80}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% ── Header / footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{gray}{CUDA-METRO User Guide}}
+\fancyhead[R]{\small\textcolor{gray}{\leftmark}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Hyperlinks ────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=sectioncolor,
+  urlcolor=sectioncolor!80,
+  citecolor=sectioncolor,
+}
+
+% ── Macros ────────────────────────────────────────────────────────────────────
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\textit{#1}}}
+\newcommand{\param}[1]{\texttt{#1}}
+
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{document}
+
+% ── Title page ───────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries\color{titlecolor} CUDA-METRO}\\[0.5em]
+  {\large\color{gray} GPU-Accelerated Metropolis Monte Carlo\\for 2D Magnetic Materials}\\[2.5cm]
+
+  {\Large\bfseries User Guide}\\[0.5em]
+  {\normalsize A practical introduction for Python programmers}\\[3cm]
+
+  \begin{mdframed}[
+    backgroundcolor=noteblue,
+    linecolor=noteborder,
+    linewidth=1pt,
+    innerleftmargin=20pt,
+    innerrightmargin=20pt,
+    innertopmargin=15pt,
+    innerbottommargin=15pt,
+  ]
+  \centering
+  \textbf{About this guide}\\[0.5em]
+  \begin{flushleft}
+  This guide assumes you are comfortable writing Python scripts, using
+  \code{numpy} arrays, and running programs from the terminal.
+  It does \emph{not} assume prior knowledge of GPU programming, CUDA, or
+  condensed matter physics. Physics concepts are explained as needed.
+  \end{flushleft}
+  \end{mdframed}
+
+  \vfill
+  {\small Based on: Hait \& Mahapatra (2025), \textit{Journal of Open Source Software}, 10(109), 7589}\\[0.5em]
+  {\small\color{gray} CUDA-METRO --- \url{https://github.com/arkavo/CUDA-METRO}}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{What Is CUDA-METRO?}
+% ─────────────────────────────────────────────────────────────────────────────
+
+CUDA-METRO is a Python library for simulating the magnetic behaviour of
+thin 2D materials on an NVIDIA GPU. It answers questions like:
+
+\begin{itemize}
+  \item At what temperature does a magnet lose its ordering (Curie temperature)?
+  \item What spin texture forms when a material is cooled slowly?
+  \item How does the magnetisation respond when you sweep an external field?
+\end{itemize}
+
+The simulation runs a \textbf{Metropolis Monte Carlo} algorithm: spins are
+proposed random moves and accepted or rejected based on energy. Running
+millions of such steps lets the system relax to a physically realistic state.
+Doing this on a GPU instead of a CPU makes it 100--1000$\times$ faster.
+
+\subsection{High-level architecture}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{File} & \textbf{Language} & \textbf{Role} \\
+\midrule
+\file{construct.py} & Python & User-facing API; orchestrates the simulation \\
+\file{montecarlo.py} & Python + CUDA C & GPU kernels compiled at import time \\
+\file{hysteresis.py} & Python & $M_z$--$H$ hysteresis experiment \\
+\file{multilayer.py} & Python & Multilayer equilibration with field zones \\
+\file{visualize.py} & Python & Post-run spin visualisation \\
+\file{inputs/TC\_*.csv} & CSV & Material parameter database ($>$60 materials) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The two classes you will use are:
+\begin{itemize}
+  \item \code{MonteCarlo} --- creates and runs a simulation.
+  \item \code{Analyze} --- loads saved results and generates plots.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Physics Background (Short Version)}
+% ─────────────────────────────────────────────────────────────────────────────
+
+You do not need to be a physicist to use this software, but a little
+background helps you understand what the parameters mean.
+
+\subsection{Spins on a lattice}
+
+A magnetic material is modelled as a 2D grid of atoms. Each atom carries a
+\textbf{spin} --- a tiny magnetic moment pointing in some direction in 3D
+space. We represent it as a 3-component vector:
+$\mathbf{S}_i = (S_x, S_y, S_z)$.
+
+The magnitude $|\mathbf{S}_i|$ equals the \textbf{spin quantum number} $S$
+(e.g.\ $S = 3/2$ for Cr$^{3+}$ ions in CrPS$_4$). At each MC step we
+propose a new random direction for one spin and decide whether to accept it.
+
+\subsection{The Hamiltonian (energy function)}
+
+The energy of spin $i$ interacting with its neighbours is:
+
+\begin{equation}
+  H_i = -\sum_j J_j\, \mathbf{S}_i \cdot \mathbf{S}_j
+        - \sum_{j,\alpha} K_j^\alpha S_i^\alpha S_j^\alpha
+        - A \, S_{iz}^2
+        - \sum_j \mathbf{D}_{ij} \cdot (\mathbf{S}_i \times \mathbf{S}_j)
+        - \mu\, B \cdot S_{iz}
+  \label{eq:hamiltonian}
+\end{equation}
+
+\begin{center}
+\begin{tabular}{clp{8cm}}
+\toprule
+\textbf{Term} & \textbf{Symbol} & \textbf{Physical meaning} \\
+\midrule
+Exchange & $J_j$ & Tendency for neighbours to align ($J>0$: ferromagnetic,
+                    all spins point the same way; $J<0$: antiferromagnetic,
+                    alternating) \\
+Anisotropic exchange & $K_j^\alpha$ & Direction-dependent version of exchange \\
+Single-ion anisotropy & $A$ & Preference for spins to point along a particular
+                              axis (easy-axis if $A<0$, easy-plane if $A>0$) \\
+DMI & $\mathbf{D}_{ij}$ & Dzyaloshinskii-Moriya interaction; causes spins to
+                           twist at an angle, stabilising skyrmions \\
+External field & $B$ & Applied magnetic field; pulls $S_z$ toward alignment \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Metropolis Monte Carlo}
+
+Monte Carlo simulation generates a sequence of spin configurations whose
+statistics match thermodynamic equilibrium at temperature $T$. The
+\textbf{Metropolis algorithm} achieves this with one simple rule per
+proposed move:
+
+\begin{enumerate}
+  \item Pick a spin $i$ at random.
+  \item Generate a trial spin direction $\mathbf{S}'_i$ uniformly on the unit sphere.
+  \item Compute the energy change $\Delta E = H(\text{trial}) - H(\text{current})$.
+  \item Accept the trial if $\Delta E < 0$ (lower energy is always better), \emph{or} with probability $e^{-\Delta E / k_B T}$ even if $\Delta E > 0$ (thermal fluctuations can push the system uphill).
+\end{enumerate}
+
+Repeating this millions of times lets the system find low-energy spin
+configurations. At high temperature, thermal energy is large so many uphill
+moves are accepted and the spins are disordered. At low temperature, almost
+only downhill moves are accepted and order builds up.
+
+\begin{notebox}
+\textbf{Why GPU?} --- Each proposed move only touches a small neighbourhood of
+spins, so many proposals can be evaluated \emph{simultaneously} on different
+parts of the lattice. An NVIDIA GPU can run thousands of such threads in
+parallel, making the simulation orders of magnitude faster than CPU code.
+\end{notebox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Installation and Dependencies}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Requirements}
+
+\begin{itemize}
+  \item NVIDIA GPU with CUDA support (any compute capability $\geq 5.0$).
+  \item CUDA Toolkit installed (version 11 or newer recommended).
+  \item Python 3.9+.
+  \item The following Python packages:
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Purpose} \\
+\midrule
+\code{pycuda} & Python bindings for CUDA; compiles and runs GPU kernels \\
+\code{numpy} & Array operations on the CPU side \\
+\code{matplotlib} & Plotting \\
+\code{seaborn} & Heatmap visualisation \\
+\code{tqdm} & Progress bars \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Installing packages}
+
+\begin{lstlisting}[style=bash]
+pip install pycuda numpy matplotlib seaborn tqdm
+\end{lstlisting}
+
+\begin{warnbox}
+\textbf{pyCUDA requires a working CUDA installation.} If \code{pip install pycuda}
+fails, check that \code{nvcc --version} works in your terminal. You may need to
+set \code{CUDA\_ROOT} or install the CUDA toolkit from NVIDIA's website first.
+\end{warnbox}
+
+\subsection{Running scripts}
+
+All scripts are run from inside the \file{src/cudametro/} directory:
+
+\begin{lstlisting}[style=bash]
+cd src/cudametro
+python sample.py
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Configuration File}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Every simulation is controlled by a \textbf{JSON configuration file}. Here is
+a fully annotated example:
+
+\begin{lstlisting}[style=json, caption={Annotated configuration file}]
+{
+    "Single_Mat_Flag" : 1,      // 1 = use a single material (default)
+    "Animation_Flags" : 0,      // 0 = do not save animation frames
+    "DMI_Flag"        : 1,      // 1 = include Dzyaloshinskii-Moriya term
+    "TC_Flag"         : 0,      // 1 = sweep temperature to find Tc
+    "Static_T_Flag"   : 1,      // 1 = fixed temperature; 0 = temperature sweep
+    "FM_Flag"         : 0,      // 1 = start all spins pointing up (+z)
+                                //     0 = start with random spin directions
+    "Input_flag"      : 0,      // 1 = load a saved spin state as starting point
+    "Input_File"      : "Starting_States/state.npy",
+
+    "Temps"           : ["2.0"],     // temperature(s) in Kelvin
+    "Material"        : "CrPS4",     // material name (must match inputs/TC_*.csv)
+
+    "SIZE"    : 200,            // lattice side length; grid is SIZE x SIZE
+    "Box"     : 16,             // internal tiling parameter
+    "Blocks"  : 2048,           // parallel MC proposals per inner loop step
+    "Threads" : 2,              // threads per block (always 2; do not change)
+
+    "B"       : "0.0",          // initial external magnetic field (normalised)
+
+    "stability_runs"   : 300000,  // inner loop length: sweeps per wrap pass
+    "calculation_runs" : 50,      // sweeps used for measurement averaging
+    "stability_wrap"   : 30,      // outer loop: how many wrap passes to run
+    "calculation_wrap" : 35,
+
+    "Cmpl_Flag" : 1,            // 1 = complex (full anisotropic) Hamiltonian
+    "Prefix"    : "CrPS4"       // prefix for the output directory name
+}
+\end{lstlisting}
+
+\subsection{The most important parameters}
+
+\subsubsection{SIZE}
+The lattice is a \param{SIZE}~$\times$~\param{SIZE} grid. A 200$\times$200
+grid has 40\,000 sites. Larger lattices capture long-range structures (e.g.\
+large skyrmions) but use more GPU memory and take longer.
+
+\subsubsection{Blocks}
+\param{Blocks} is the number of independent spin proposals evaluated
+\emph{simultaneously} on the GPU per inner-loop iteration. Larger values
+speed up each iteration but consume more GPU memory (the pre-allocated
+random number arrays scale as \code{Blocks} $\times$ \code{stability\_runs}).
+
+A good rule of thumb is $\texttt{Blocks} \approx 0.1 \times
+\texttt{SIZE}^2$ (10\% of all sites).
+
+\subsubsection{stability\_runs and stability\_wrap}
+The outer loop runs \param{stability\_wrap} times. Each outer iteration runs
+\param{stability\_runs} inner Metropolis sweeps and saves one grid snapshot.
+Total sweeps = \param{stability\_wrap}~$\times$~\param{stability\_runs}.
+
+\subsubsection{FM\_Flag}
+\begin{itemize}
+  \item \param{FM\_Flag = 1}: All spins start pointing along $+z$. Good for
+        studying ferromagnets at low field.
+  \item \param{FM\_Flag = 0}: Spins start in random directions. Required when
+        applying field zones (§\ref{sec:fieldzones}) to avoid the system being
+        so stable that no moves are accepted.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Material Parameters}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Material properties are stored in CSV files in the \file{inputs/} folder. The
+filename convention is \file{TC\_MaterialName.csv}. The config field
+\code{"Material": "CrPS4"} instructs the code to load
+\file{inputs/TC\_CrPS4.csv}.
+
+\subsection{CSV column order}
+
+\begin{center}
+\begin{tabular}{cclr}
+\toprule
+\textbf{Array index} & \textbf{Symbol} & \textbf{Description} & \textbf{Unit} \\
+\midrule
+0  & $S$         & Spin quantum number               & --- \\
+1  & $J_1$       & 1st-neighbour exchange            & meV \\
+2  & $J_2$       & 2nd-neighbour exchange            & meV \\
+3  & $J_3$       & 3rd-neighbour exchange            & meV \\
+4  & $J_4$       & 4th-neighbour exchange            & meV \\
+5--7  & $K_{1x,y,z}$ & Anisotropic exchange, shell 1 & meV \\
+8--10 & $K_{2x,y,z}$ & Anisotropic exchange, shell 2 & meV \\
+11--13 & $K_{3x,y,z}$ & Anisotropic exchange, shell 3 & meV \\
+14--16 & $K_{4x,y,z}$ & Anisotropic exchange, shell 4 & meV \\
+17--19 & $A_{x,y,z}$ & Single-ion anisotropy         & meV \\
+20--23 & NBS       & Neighbour-shell descriptor        & int \\
+24 & $T_c$        & Reference Curie temperature        & K \\
+25 & $D$          & DMI magnitude                     & meV \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Available materials}
+
+The \file{inputs/} directory includes over 60 parameterised materials, including
+CrI$_3$, CrBr$_3$, CrCl$_3$, CrPS$_4$, CrPS$_4$-ML, FePS$_3$, MnSe$_2$,
+VSe$_2$, and many more. Use \code{"Material": "CrI3"} in your config to load
+\file{inputs/TC\_CrI3.csv}.
+
+\subsection{The neighbour structure descriptor (NBS)}
+
+The NBS field (indices 20--23) encodes how many neighbours exist at each shell
+distance. The code uses this to select the correct CUDA kernel:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{NBS} & \textbf{Crystal} & \textbf{Typical materials} \\
+\midrule
+3-6-3-6  & Honeycomb & CrI$_3$, CrPS$_4$, CrBr$_3$ \\
+6-6-6-12 & Triangular & CrTe$_2$, MnSe$_2$ \\
+4-4-4-8  & Square    & CrO$_2$, MnO$_2$ \\
+2-2-4-2  & Rectangular & --- \\
+2-4-2-4  & Rectangular variant & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Running a Simulation (Single Layer)}
+\label{sec:singlelayer}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{The minimal workflow}
+
+\begin{lstlisting}[style=python, caption={Minimal single-layer simulation --- sample.py}]
+import construct as cst
+import numpy as np
+from tqdm import tqdm
+
+# 1. Create the simulation object from a config file
+sim = cst.MonteCarlo(config="sample_config.json")
+
+# 2. Initialise the spin grid
+sim.mc_init()
+sim.display_material()   # print material parameters to terminal
+
+# 3. Run the equilibration loop
+for i in tqdm(range(sim.S_Wrap), desc="Stability Runs"):
+    sim.generate_random_numbers(sim.stability_runs)
+    grid = sim.run_mc_dmi_66612(sim.T[0])   # returns current grid
+    np.save(f"{sim.save_directory}/grid_{i:04d}", grid)
+
+print("Done. Results saved in:", sim.save_directory)
+\end{lstlisting}
+
+\subsection{Step-by-step explanation}
+
+\paragraph{Step 1: \code{MonteCarlo(config=...)}}
+Reads the JSON config, loads the material CSV, allocates all GPU memory, and
+creates a timestamped output directory (e.g.\ \file{Output\_CrPS4\_2025\_01\_15\_14\_30\_00/}).
+A \file{metadata.json} summary is written there automatically.
+
+\paragraph{Step 2: \code{mc\_init()}}
+Allocates the spin grid on the CPU and GPU. If \param{FM\_Flag=1}, all spins
+are initialised to $(S_x, S_y, S_z) = (0, 0, S)$. If \param{FM\_Flag=0}, each
+spin is placed at a random point on the unit sphere and scaled by $S$.
+
+\paragraph{Step 3: The outer loop}
+Each iteration of the loop (controlled by \param{stability\_wrap}) does:
+\begin{enumerate}
+  \item \code{generate\_random\_numbers}: fill four GPU arrays with fresh uniform
+        random floats (for site selection, trial spin direction, and
+        Metropolis acceptance test).
+  \item \code{run\_mc\_*}: run \param{stability\_runs} Metropolis sweeps on the
+        GPU. Returns the updated spin grid as a flat \code{numpy} array.
+  \item \code{np.save}: write the current grid to disk for later visualisation.
+\end{enumerate}
+
+\subsection{Choosing the right \code{run\_mc\_*} method}
+
+Pick the method that matches your material's crystal structure:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Crystal / Use} \\
+\midrule
+\code{run\_mc\_dmi\_66612(T)} & Triangular lattice (6-6-6-12) with DMI \\
+\code{run\_mc\_dmi\_4448(T)}  & Square lattice (4-4-4-8) with DMI \\
+\code{run\_mc\_dmi\_3636(T)}  & Honeycomb lattice (3-6-3-6) with DMI \\
+\code{run\_mc\_3636\_multilayer(T, layers)} & Honeycomb multilayer \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Understanding the output directory}
+
+After the run, the output folder contains:
+\begin{itemize}
+  \item \file{metadata.json} --- all simulation parameters.
+  \item \file{grid\_0000.npy}, \file{grid\_0001.npy}, \dots ---
+        one spin grid snapshot per \param{stability\_wrap} iteration.
+        Each is a flat \code{float32} array of length
+        $\texttt{SIZE}^2 \times 3$.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Spin Grid: Memory Layout}
+\label{sec:gridlayout}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Understanding the grid layout is essential when you want to analyse or plot
+results yourself.
+
+\subsection{Single-layer layout}
+
+\begin{lstlisting}[style=python]
+# grid is a 1D float32 array of length SIZE*SIZE*3
+grid = sim.grid
+
+# Index of spin component k at site (row, col):
+# k=0 -> Sx,  k=1 -> Sy,  k=2 -> Sz
+site = row * SIZE + col
+value = grid[site * 3 + k]
+
+# Or reshape to a 3D array for convenient access:
+g = grid.reshape(SIZE, SIZE, 3)
+Sz = g[:, :, 2]   # 2D array of z-components
+\end{lstlisting}
+
+\subsection{Multilayer layout}
+
+For $L$ layers the grid is extended along a new outermost axis:
+
+\begin{lstlisting}[style=python]
+# grid is a 1D float32 array of length L*SIZE*SIZE*3
+# Layer index is outermost:
+pti = layer * SIZE*SIZE  +  row*SIZE  +  col
+value = grid[pti * 3 + k]
+
+# Or reshape to a 4D array:
+g = grid.reshape(L, SIZE, SIZE, 3)
+Sz_layer2 = g[2, :, :, 2]   # z-component of layer 2
+\end{lstlisting}
+
+Flat memory is laid out as:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+Layer 0 ($N^2 \times 3$ floats) & Layer 1 & Layer 2 & \ldots Layer $L{-}1$ \\
+\hline
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Multilayer Simulations}
+\label{sec:multilayer}
+% ─────────────────────────────────────────────────────────────────────────────
+
+A multilayer system stacks $L$ 2D honeycomb planes on top of each other.
+Spins within each layer interact via the usual in-plane exchange and DMI terms.
+Adjacent layers are coupled through an \textbf{interlayer exchange}
+$J_c$ (stored in the CSV file).
+
+\subsection{Physical picture}
+
+\begin{center}
+\begin{tabular}{c}
+\ttfamily\small
+\begin{tabular}{|c|}
+\hline
+$\cdot\cdot\cdot\cdot$ Layer $L-1$ (top) \\
+\hline
+$\cdot\cdot\cdot\cdot$ Layer $L-2$ \\
+\hline
+$\quad\vdots\quad$ \\
+\hline
+$\cdot\cdot\cdot\cdot$ Layer 1 \\
+\hline
+$\cdot\cdot\cdot\cdot$ Layer 0 (bottom) \\
+\hline
+\end{tabular}
+\end{tabular}
+\end{center}
+
+Each site in layer $\ell > 0$ feels an additional energy contribution from the
+spin directly below it (same row and column, layer $\ell - 1$) and above it
+(layer $\ell + 1$):
+\[
+H_{\text{inter}} = J_c \, \mathbf{S}_{i,\ell} \cdot \mathbf{S}_{i,\ell-1}
+                 + J_c \, \mathbf{S}_{i,\ell} \cdot \mathbf{S}_{i,\ell+1}
+\]
+
+For CrPS$_4$-ML, $J_c = -0.16\,\text{meV}$ (antiferromagnetic), meaning
+adjacent layers prefer to point in opposite directions. The competition
+between the ferromagnetic in-plane coupling and the antiferromagnetic
+interlayer coupling produces rich magnetic phase diagrams.
+
+\subsection{Running a multilayer simulation}
+
+\begin{lstlisting}[style=python, caption={multilayer.py workflow}]
+import construct as cst
+import numpy as np
+from tqdm import tqdm
+
+LAYERS = 8
+
+sim = cst.MonteCarlo(config="multilayer_config.json")
+sim.mc_init_multilayer(layers=LAYERS)    # note: different init call
+sim.display_material()
+
+# (Optional) apply a spatially varying field -- see Section 8
+sim.set_field_zones(
+    boundaries=[10, 50, 250, 290],
+    fields=[0.0, 0.0, 0.6, 0.0, 0.0]
+)
+
+for i in tqdm(range(sim.S_Wrap), desc="Stability Runs"):
+    sim.generate_random_numbers_multilayer(None)      # multilayer version
+    grid = sim.run_mc_3636_multilayer(sim.T[0], layers=LAYERS)
+    np.save(f"{sim.save_directory}/grid_{i:04d}", grid)
+\end{lstlisting}
+
+The key differences from the single-layer workflow are:
+\begin{enumerate}
+  \item Use \code{mc\_init\_multilayer(layers=L)} instead of \code{mc\_init()}.
+  \item Use \code{generate\_random\_numbers\_multilayer(None)} (the argument is
+        unused but kept for API consistency).
+  \item Use \code{run\_mc\_3636\_multilayer(T, layers=L)}.
+\end{enumerate}
+
+\subsection{Spin initialisation modes}
+
+\begin{center}
+\begin{tabular}{lp{10cm}}
+\toprule
+\textbf{FM\_Flag} & \textbf{Starting state} \\
+\midrule
+1 & \textbf{Ferromagnetic}: every spin in every layer is set to
+    $(S_x, S_y, S_z) = (0, 0, S)$ --- all pointing up. The system is
+    strongly stable at low temperature; very few moves are accepted
+    initially. \\[0.3em]
+0 & \textbf{Random}: each spin is placed at a uniformly random point
+    on the unit sphere. The system starts disordered and must equilibrate.
+    Required when applying field zones so that the spins have room to
+    respond to the spatial field gradient. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Measuring magnetisation}
+
+\begin{lstlisting}[style=python]
+# Returns (M_total, M_per_layer)
+M_tot, M_layers = sim.get_magnetization(layers=LAYERS)
+
+# M_tot: scalar, mean Sz / spin S, over all layers and sites
+# M_layers: numpy array of shape (LAYERS,), per-layer average
+print(f"Total Mz/Msat = {M_tot:.4f}")
+for i, ml in enumerate(M_layers):
+    print(f"  Layer {i}: Mz/Msat = {ml:.4f}")
+\end{lstlisting}
+
+Only the $z$-component of the spin ($S_z$) is used, normalised by the spin
+magnitude $S$. This gives $M_z / M_\text{sat} \in [-1, +1]$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Spatially Varying Magnetic Field Zones}
+\label{sec:fieldzones}
+% ─────────────────────────────────────────────────────────────────────────────
+
+By default, a single uniform external field is applied to the entire lattice.
+CUDA-METRO also supports \textbf{field zones}: different columns of the
+lattice can have different field values.
+
+\subsection{How it works}
+
+The GPU stores the field as an array of \param{SIZE} floats, one value per
+column. The Hamiltonian reads \code{b[col]} for each site, where
+\code{col = pti \% SIZE}. This means field zones are strips running vertically
+(parallel to the row axis).
+
+\subsection{API}
+
+\begin{lstlisting}[style=python]
+# Uniform field (backward-compatible):
+sim.set_field(0.6)
+
+# Spatially varying field:
+# boundaries: list of column indices dividing the lattice into zones
+# fields: one value per zone (must have len(boundaries) + 1 entries)
+sim.set_field_zones(
+    boundaries=[10, 50, 250, 290],   # 4 boundaries -> 5 zones
+    fields=[0.0, 0.0, 0.6, 0.0, 0.0]
+)
+\end{lstlisting}
+
+\subsection{Zone layout example}
+
+For a 300$\times$300 lattice with \code{boundaries=[10, 50, 250, 290]}:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Zone 0} & \textbf{Zone 1} & \textbf{Zone 2} & \textbf{Zone 3} & \textbf{Zone 4} \\
+cols 0--9 & cols 10--49 & cols 50--249 & cols 250--289 & cols 290--299 \\
+$B = 0.0$ & $B = 0.0$ & $B = 0.6$ & $B = 0.0$ & $B = 0.0$ \\
+(buffer) & (buffer) & (active) & (buffer) & (buffer) \\
+\hline
+\end{tabular}
+\end{center}
+
+The outer buffer zones have zero field and act as a magnetically neutral
+boundary. The central zone carries the experiment field. This design prevents
+edge effects from corrupting the region of interest.
+
+\begin{warnbox}
+\textbf{Always use \code{FM\_Flag = 0} (random start) with field zones.}
+Starting from an all-up FM state with a positive $z$-field makes the initial
+configuration so energetically stable that the acceptance rate collapses to
+near zero and the simulation appears frozen.
+\end{warnbox}
+
+\subsection{Number of zones is flexible}
+
+The number of zones is not locked to 5. Provide any list of boundaries and a
+matching \code{fields} list:
+
+\begin{lstlisting}[style=python]
+# 3 zones (two buffers, one central)
+sim.set_field_zones(
+    boundaries=[50, 150],
+    fields=[0.0, 1.0, 0.0]
+)
+
+# 7 zones
+sim.set_field_zones(
+    boundaries=[20, 50, 100, 200, 250, 280],
+    fields=[0.0, 0.2, 0.4, 0.6, 0.4, 0.2, 0.0]
+)
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Hysteresis Experiment}
+\label{sec:hysteresis}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\file{hysteresis.py} measures the $M_z$--$H$ hysteresis loop: how the
+magnetisation responds as the external field is swept up, then down, then back
+up again. This is the same measurement made in a physical magnetometer.
+
+\subsection{Field sweep protocol}
+
+The field is swept in three branches:
+
+\[
+0 \;\to\; +H_\text{max} \;\to\; -H_\text{max} \;\to\; +H_\text{max}
+\]
+
+\begin{lstlisting}[style=python]
+h1 = np.linspace(0,       H_MAX,  N_STEPS,    endpoint=False)  # ramp up
+h2 = np.linspace(H_MAX,  -H_MAX, 2*N_STEPS,   endpoint=False)  # down sweep
+h3 = np.linspace(-H_MAX,  H_MAX, 2*N_STEPS,   endpoint=True)   # up sweep
+H_sweep = np.concatenate([h1, h2, h3])
+\end{lstlisting}
+
+At each field value:
+\begin{enumerate}
+  \item \code{set\_field(h\_val)} updates the GPU field array.
+  \item \code{EQ\_WRAP} passes of \code{generate + run\_mc} equilibrate the
+        spins at this field.
+  \item \code{get\_magnetization()} records $M_z / M_\text{sat}$ and
+        $M_z / M_\text{sat}$ per layer.
+\end{enumerate}
+
+Crucially, the spin state is \textbf{not reset} between field steps. The
+configuration at field $H_n$ seeds the simulation at $H_{n+1}$. This is what
+produces hysteresis: the system remembers which way it was magnetised.
+
+\subsection{Equilibration (EQ\_WRAP)}
+
+\param{EQ\_WRAP} is the number of \code{generate + run\_mc} passes executed at
+each field point. More passes allow the spins more time to respond to a field
+change. The total number of Metropolis sweeps at each field point is:
+
+\[
+\text{sweeps per field point} = \texttt{EQ\_WRAP} \times \texttt{stability\_runs}
+\]
+
+At low temperatures (below $\sim 5\,\text{K}$ for CrPS$_4$-ML) thermal
+fluctuations are rare and the system needs more sweeps to overcome local energy
+barriers. Increasing \param{EQ\_WRAP} does not use extra GPU memory; it only
+adds compute time.
+
+\subsection{Key parameters}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Default} & \textbf{Meaning} \\
+\midrule
+\code{LAYERS}       & 12     & Number of magnetic layers \\
+\code{TEMPERATURES} & [0.1, 0.5, 1, 2, 5, 10, 15, 20]\,K & Temperatures to simulate \\
+\code{H\_MAX}       & 1.5    & Maximum normalised field \\
+\code{N\_STEPS}     & 4      & Field points per branch \\
+\code{EQ\_WRAP}     & 10     & Equilibration passes per field point \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Outputs}
+
+All outputs are saved in a timestamped directory
+\file{Hysteresis\_YYYY\_MM\_DD\_HH\_MM\_SS/}:
+
+\begin{center}
+\begin{tabular}{lp{9cm}}
+\toprule
+\textbf{File} & \textbf{Content} \\
+\midrule
+\file{hysteresis\_data.npy} & Raw data dictionary; keys are temperatures;
+                               each entry contains arrays \code{H}, \code{M\_total},
+                               \code{M\_layers}, and \code{snapshots} \\
+\file{MH\_all\_temps.png}   & $M_z/M_\text{sat}$ and emu/g vs $H$ for all
+                               temperatures; line style encodes branch \\
+\file{MH\_per\_layer\_T\{X\}K.png} & Per-layer $M_z$ vs $H$ at each temperature \\
+\file{spinstate\_T\{X\}K\_H0.png} & Heatmaps of $S_x$, $S_y$, $S_z$ components
+                                     at $H \approx 0$ for each temperature \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Magnetisation units}
+
+Magnetisation is reported in two units side by side:
+
+\begin{itemize}
+  \item \textbf{Normalised}: $M_z / M_\text{sat} \in [-1, +1]$, where $+1$
+        means all spins fully aligned along $+z$.
+  \item \textbf{emu/g}: the physical unit used in magnetometry. For CrPS$_4$:
+        \[
+          M_\text{sat}^{\text{emu/g}} = \frac{g \cdot \mu_B \cdot S \cdot N_A}{M_\text{molar}}
+          = \frac{2.0 \times 9.274\times10^{-21} \times 1.5 \times 6.022\times10^{23}}{211.21}
+          \approx 79.3\,\text{emu/g}
+        \]
+\end{itemize}
+
+\subsection{Loading saved data}
+
+\begin{lstlisting}[style=python]
+import numpy as np
+
+data = np.load("Hysteresis_2025_01_15_14_30_00/hysteresis_data.npy",
+               allow_pickle=True).item()
+
+# data is a dict keyed by temperature (float)
+T = 2.0
+H = data[T]["H"]           # field sweep array
+M = data[T]["M_total"]     # total Mz/Msat at each field point
+Ml = data[T]["M_layers"]   # shape (N_H, LAYERS): per-layer Mz
+snaps = data[T]["snapshots"]  # {H_value: grid_array}
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Visualisation and Analysis}
+\label{sec:viz}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{The Analyze class}
+
+\begin{lstlisting}[style=python]
+viewer = cst.Analyze(
+    directory="Output_CrPS4_2025_01_15_14_30_00",
+    reverse=False,     # False = plot frames in forward order
+)
+\end{lstlisting}
+
+\subsubsection{Single-layer methods}
+
+\begin{lstlisting}[style=python]
+viewer.spin_view()       # heatmaps of Sx, Sy, Sz for each saved grid
+viewer.quiver_view()     # in-plane (Sx, Sy) arrows coloured by Sz
+\end{lstlisting}
+
+\subsubsection{Multilayer methods}
+
+\begin{lstlisting}[style=python]
+viewer.spin_view_multilayer(layers=8)    # 3 x L heatmap grid
+viewer.quiver_view_multilayer(layers=8)  # quiver per layer, shared Sz colour
+\end{lstlisting}
+
+\subsection{Manual analysis example}
+
+\begin{lstlisting}[style=python]
+import numpy as np
+import matplotlib.pyplot as plt
+
+SIZE = 300
+LAYERS = 8
+
+# Load the last saved grid
+grid = np.load("Output_CrPS4/grid_0029.npy")
+g = grid.reshape(LAYERS, SIZE, SIZE, 3)
+
+fig, axes = plt.subplots(1, LAYERS, figsize=(4*LAYERS, 4))
+for i, ax in enumerate(axes):
+    ax.imshow(g[i, :, :, 2], cmap="coolwarm", vmin=-1.5, vmax=1.5)
+    ax.set_title(f"Layer {i}")
+    ax.axis("off")
+plt.suptitle("Sz per layer")
+plt.tight_layout()
+plt.savefig("sz_layers.png")
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Understanding CUDA Concepts (as a Python User)}
+\label{sec:cuda}
+% ─────────────────────────────────────────────────────────────────────────────
+
+You do not need to write any CUDA code yourself. But understanding what happens
+behind the scenes helps you tune performance and avoid common mistakes.
+
+\subsection{GPU vs CPU memory}
+
+A GPU has its own memory (VRAM), separate from the computer's regular RAM. Data
+must be explicitly copied between them. In pyCUDA:
+
+\begin{lstlisting}[style=python]
+# CPU -> GPU (host to device)
+drv.memcpy_htod(GPU_array, cpu_numpy_array)
+
+# GPU -> CPU (device to host)
+drv.memcpy_dtoh(cpu_numpy_array, GPU_array)
+\end{lstlisting}
+
+CUDA-METRO handles all of this for you inside \code{MonteCarlo}. When you call
+\code{run\_mc\_*()}, the function launches the GPU kernel, lets it run, then
+copies the result back to \code{sim.grid} on the CPU.
+
+\subsection{CUDA kernels}
+
+A CUDA kernel is a function that runs on the GPU, executed simultaneously by
+many threads. Each thread handles one spin proposal. The two threads in each
+block in CUDA-METRO work as a pair: one computes the energy of the current
+spin, the other computes the energy of the trial spin. They synchronise,
+compare, and write the result.
+
+\subsection{Pre-allocated random numbers}
+
+Generating random numbers on the GPU is expensive. CUDA-METRO pre-allocates
+eight large GPU arrays at \code{mc\_init\_multilayer} time:
+
+\[
+\text{size of each array} = \texttt{Blocks} \times \texttt{stability\_runs}
+\]
+
+Each outer loop iteration calls \code{rg.fill\_uniform()} to refill these in
+place (no new allocation). This is why changing \param{Blocks} or
+\param{stability\_runs} after initialisation is not supported --- the array
+sizes are fixed at init time.
+
+\subsection{VRAM budget}
+
+\begin{lstlisting}[style=python]
+import pycuda.driver as drv
+free, total = drv.mem_get_info()
+used_mb = (total - free) / 1024**2
+print(f"VRAM used: {used_mb:.1f} MB")
+\end{lstlisting}
+
+The dominant allocation is the random number arrays. For
+\param{Blocks = 4096}, \param{stability\_runs = 60000}:
+\[
+  8 \;\text{arrays} \times 4096 \times 60000 \times 4\,\text{bytes}
+  \approx 7.5\,\text{GB}
+\]
+On a GPU with 32\,GB VRAM, you have room to push this further.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Common Mistakes and How to Avoid Them}
+\label{sec:mistakes}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{enumerate}
+
+\item \textbf{Simulation appears frozen / no spin changes}
+
+  \textit{Cause}: \code{FM\_Flag = 1} combined with a field in the $+z$
+  direction. The system is fully polarised and every trial spin
+  (random direction) has higher energy --- almost no moves are accepted.
+
+  \textit{Fix}: Set \code{FM\_Flag = 0} in the config to start from a random
+  state, especially when using field zones or studying antiferromagnets.
+
+\item \textbf{Wrong number of layers initialised}
+
+  If you call \code{mc\_init\_multilayer(layers=8)} but your config was designed
+  for 4 layers, the spin grid will have 8 layers but the saved metadata will say
+  4. Always keep \code{LAYERS} consistent between the Python script and the config
+  file.
+
+\item \textbf{VRAM out-of-memory error}
+
+  \textit{Cause}: \param{Blocks} $\times$ \param{stability\_runs} is too large.
+
+  \textit{Fix}: Reduce one of them. A useful diagnostic:
+  \begin{lstlisting}[style=python]
+import pycuda.driver as drv
+free, total = drv.mem_get_info()
+print(f"Free VRAM: {free/1e9:.1f} GB")
+  \end{lstlisting}
+
+\item \textbf{Magnetisation does not saturate at low temperature}
+
+  \textit{Cause}: Too few equilibration passes. At very low $T$, the system
+  needs more sweeps to tunnel out of local energy minima.
+
+  \textit{Fix}: Increase \param{EQ\_WRAP} (hysteresis) or \param{stability\_wrap}
+  (multilayer) at the cost of longer run time.
+
+\item \textbf{Wrong material loaded}
+
+  The config field \code{"Material"} must exactly match the CSV filename stem
+  (case-sensitive on Linux). For \file{inputs/TC\_CrI3.csv}, use
+  \code{"Material": "CrI3"}.
+
+\item \textbf{ImportError when running outside \file{src/cudametro/}}
+
+  \code{construct.py} uses relative imports. Always run scripts from
+  \file{src/cudametro/} or add the directory to \code{sys.path}:
+  \begin{lstlisting}[style=python]
+import sys
+sys.path.insert(0, "/path/to/src/cudametro")
+import construct as cst
+  \end{lstlisting}
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Performance Tuning}
+\label{sec:perf}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Parallelism ratio}
+
+The fraction of sites updated per inner step is:
+\[
+  f = \frac{\texttt{Blocks}}{\texttt{SIZE}^2}
+\]
+
+Higher $f$ speeds up convergence per wall-clock second but reduces accuracy (the
+strict Metropolis detailed-balance condition is violated more). A ratio of
+$f \approx 0.1$ (10\% of sites per step) is the recommended default, giving
+accuracy comparable to single-spin-update algorithms.
+
+\subsection{Benchmark reference points}
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+\textbf{Lattice} & \textbf{GPU} & \textbf{Time per full run} \\
+\midrule
+200$\times$200 & NVIDIA V100 & $\sim$30\,s \\
+500$\times$500 & NVIDIA A100 & $\sim$300\,s \\
+750$\times$750 & NVIDIA A100 & $\sim$9\,h \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Tuning for a specific GPU}
+
+If you have a GPU with large VRAM (e.g.\ 32\,GB), you can increase
+\param{stability\_runs} and \param{Blocks} to run more sweeps per outer
+iteration without saving to disk as often. This reduces I/O overhead for very
+long runs.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Quick-Reference Tables}
+\label{sec:ref}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{MonteCarlo API}
+
+\begin{center}
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Method} & \textbf{Description} \\
+\midrule
+\endhead
+\code{MonteCarlo(config)} & Constructor. Reads config, loads material, allocates GPU memory. \\
+\code{mc\_init()} & Initialise single-layer spin grid. \\
+\code{mc\_init\_multilayer(layers=L)} & Initialise multilayer spin grid. \\
+\code{display\_material()} & Print material parameters to terminal. \\
+\code{generate\_random\_numbers(n)} & Single-layer: generate RNG arrays. \\
+\code{generate\_random\_numbers\_multilayer(n)} & Multilayer: refill pre-allocated RNG arrays. \\
+\code{run\_mc\_dmi\_66612(T)} & Run MC for triangular (6-6-6-12) crystal. \\
+\code{run\_mc\_dmi\_4448(T)} & Run MC for square (4-4-4-8) crystal. \\
+\code{run\_mc\_dmi\_3636(T)} & Run MC for honeycomb (3-6-3-6) crystal. \\
+\code{run\_mc\_3636\_multilayer(T, layers)} & Run MC for multilayer honeycomb system. \\
+\code{set\_field(B)} & Broadcast a uniform field to all columns. \\
+\code{set\_field\_zones(boundaries, fields)} & Set per-column spatially varying field. \\
+\code{get\_magnetization(layers)} & Return $(M_z/M_\text{sat},\; M_z\text{ per layer})$. \\
+\code{grid\_reset()} & Re-initialise the spin grid from scratch. \\
+\code{cleanup()} & Free GPU buffers. \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{Config key summary}
+
+\begin{center}
+\begin{longtable}{llp{7cm}}
+\toprule
+\textbf{Key} & \textbf{Type} & \textbf{Effect} \\
+\midrule
+\endhead
+\code{SIZE}              & int    & Lattice side length ($N \times N$) \\
+\code{Blocks}            & int    & Parallel MC proposals per step \\
+\code{stability\_runs}   & int    & Sweeps per outer loop iteration \\
+\code{stability\_wrap}   & int    & Number of outer loop iterations \\
+\code{FM\_Flag}          & 0/1    & 0=random start; 1=all-up FM start \\
+\code{DMI\_Flag}         & 0/1    & Include DMI term in Hamiltonian \\
+\code{TC\_Flag}          & 0/1    & 1=temperature sweep (Tc mode) \\
+\code{Static\_T\_Flag}   & 0/1    & 1=fixed T; 0=linspace to 2$T_c$ \\
+\code{Temps}             & list   & List of temperatures as strings \\
+\code{Material}          & string & Stem of CSV file in inputs/ \\
+\code{B}                 & string & Initial uniform field \\
+\code{Prefix}            & string & Output directory prefix \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Worked Example: CrPS$_4$-ML Hysteresis}
+\label{sec:example}
+% ─────────────────────────────────────────────────────────────────────────────
+
+This example walks through \file{hysteresis.py} line by line.
+
+\subsection{Setup}
+
+\begin{lstlisting}[style=python]
+# Physical constants for emu/g conversion
+MU_B_CGS = 9.2741e-21   # erg/G (CGS Bohr magneton)
+N_A      = 6.02214e23
+G_LANDE  = 2.0
+SPIN     = 1.5           # Cr3+ has S = 3/2
+M_MOLAR  = 51.996 + 30.974 + 4*32.06   # CrPS4 = 211.21 g/mol
+EMU_G_SAT = G_LANDE * MU_B_CGS * SPIN * N_A / M_MOLAR  # ~79.3 emu/g
+\end{lstlisting}
+
+\subsection{Field sweep construction}
+
+\begin{lstlisting}[style=python]
+H_MAX   = 1.5    # maximum field (in units of spin magnitude)
+N_STEPS = 4      # field points per branch
+
+h1 = np.linspace(0,      H_MAX,  N_STEPS,    endpoint=False)
+h2 = np.linspace(H_MAX, -H_MAX, 2*N_STEPS,   endpoint=False)
+h3 = np.linspace(-H_MAX, H_MAX, 2*N_STEPS,   endpoint=True)
+H_sweep = np.concatenate([h1, h2, h3])
+# Total: N_STEPS + 2*N_STEPS + 2*N_STEPS = 5*N_STEPS = 20 field points
+\end{lstlisting}
+
+\subsection{Temperature loop}
+
+\begin{lstlisting}[style=python]
+TEMPERATURES = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 15.0, 20.0]  # K
+EQ_WRAP      = 10   # equilibration passes per field point
+
+for T in TEMPERATURES:
+    sim = cst.MonteCarlo(config="hysteresis_config.json")
+    sim.mc_init_multilayer(layers=LAYERS)   # fresh random state each T
+
+    M_total_list, M_layers_list = [], []
+    snapshots = {}
+
+    for idx, h_val in enumerate(H_sweep):
+        sim.set_field(h_val)
+
+        # Equilibrate at this field
+        for _ in range(EQ_WRAP):
+            sim.generate_random_numbers_multilayer(None)
+            sim.run_mc_3636_multilayer(T, layers=LAYERS)
+
+        # Measure
+        M_tot, M_lay = sim.get_magnetization(LAYERS)
+        M_total_list.append(M_tot)
+        M_layers_list.append(M_lay.copy())
+
+        # Save a snapshot at H~0
+        if idx in SNAP_INDICES:
+            snapshots[h_val] = sim.grid.copy()
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{Why a fresh instance per temperature?}
+Each temperature sweep creates a new \code{MonteCarlo} object. This resets the
+spin state to a fresh random configuration so that different temperatures are
+independent experiments. The GPU memory from the previous instance will be
+freed when the Python object goes out of scope.
+\end{notebox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Next Steps and Further Reading}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Running your own material}
+
+\begin{enumerate}
+  \item Find or compute the exchange parameters $J_1, J_2, \ldots$, DMI $D$,
+        and anisotropy $A$ for your material (typically from DFT calculations
+        or literature).
+  \item Create a CSV file in \file{inputs/} following the format in
+        Section~4.
+  \item Set \code{"Material": "YourMaterial"} in the config.
+  \item Adjust \code{"SIZE"} and \code{"Blocks"} for your GPU.
+  \item Run \file{sample.py} or write your own driver script.
+\end{enumerate}
+
+\subsection{Finding the Curie temperature}
+
+Set \code{"TC\_Flag": 1} and \code{"Static\_T\_Flag": 0} in the config. The
+code will sweep temperature from near 0 to $2 T_c$ and return $\langle M \rangle$
+and the susceptibility $\chi$ at each temperature. The Curie temperature is
+identified as the peak of $\chi$.
+
+\subsection{Cite the software}
+
+If you use CUDA-METRO in a publication, please cite:
+
+\begin{quote}
+Hait \& Mahapatra (2025). \textit{CUDA-METRO: A GPU-Accelerated Metropolis
+Monte Carlo Simulator for 2D Magnetic Materials.} Journal of Open Source
+Software, 10(109), 7589.
+\end{quote}
+
+\subsection{Reporting issues}
+
+Bugs and feature requests can be filed at the project's GitHub repository.
+
+\end{document}

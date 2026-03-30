@@ -21,12 +21,14 @@ import sys
 import re
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir)
-import cudametro.montecarlo as mc
+import montecarlo as mc
 from tqdm import tqdm
 
 import csv
 import json
 import datetime
+
+KB_MEV_PER_K = 8.6173e-2   # Boltzmann constant in meV/K
 
 def read_2dmat(filename):
     '''
@@ -47,7 +49,7 @@ class MonteCarlo:
     '''
     Default MC class, use this to instantiate the Simulation object
     '''
-    def __init__(self, config, input_folder="../../inputs/", output_folder="outputs/"):
+    def __init__(self, config, input_folder="../../inputs/", output_folder="outputs/", layers=1):
         with open(config, 'r') as f:
             CONFIG = json.load(f)
         # FLAGS
@@ -80,7 +82,7 @@ class MonteCarlo:
         self.C1 = self.Blocks*self.stability_runs
         self.C2 = self.Blocks*self.calculation_runs
         size_int = np.array([self.size]).astype(np.int32)
-        self.b = np.array([self.B_C]).astype(np.float32)
+        self.b = np.full(self.size, self.B_C, dtype=np.float32)
         self.GSIZE = drv.mem_alloc(size_int.nbytes)
         self.B_GPU = drv.mem_alloc(self.b.nbytes)
         drv.memcpy_htod(self.GSIZE, size_int)
@@ -102,6 +104,7 @@ class MonteCarlo:
         drv.memcpy_htod(self.SGPU, spin_gpu)
         self.save_directory = "Output_"+self.Prefix+"_"+self.Material+"_"+str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
         self.NBS = int(self.MAT_PARAMS[20]), int(self.MAT_PARAMS[21]), int(self.MAT_PARAMS[22]), int(self.MAT_PARAMS[23])
+        self.layers = layers
         print("Output Folder default path: ", self.save_directory)
         self.metadata = {
             "Material": self.Material,
@@ -131,22 +134,35 @@ class MonteCarlo:
         with open(self.metadata_file, 'w+') as f:
             f.write(metadata_file)
         
-    def display_material(self):
+    def display_material(self, layers=1):
         '''
-        Print material properties
+        Print material properties in a formatted summary block.
         '''
-        print(f"\tMaterial: {self.Material}")
-        print(f"\tSize: {self.size}")
-        print(f"\tSpin: {self.spin}")
-        print(f"\tJ1: {self.MAT_PARAMS[1]:.4f} J2: {self.MAT_PARAMS[2]:.4f} J3: {self.MAT_PARAMS[3]:.4f} J4: {self.MAT_PARAMS[4]:.4f}")
-        print(f"\tK1x: {self.MAT_PARAMS[5]:.4f} K1y: {self.MAT_PARAMS[6]:.4f} K1z: {self.MAT_PARAMS[7]:.4f}")
-        print(f"\tK2x: {self.MAT_PARAMS[8]:.4f} K2y: {self.MAT_PARAMS[9]:.4f} K2z: {self.MAT_PARAMS[10]:.4f}")
-        print(f"\tK3x: {self.MAT_PARAMS[11]:.4f} K3y: {self.MAT_PARAMS[12]:.4f} K3z: {self.MAT_PARAMS[13]:.4f}")
-        print(f"\tK4x: {self.MAT_PARAMS[14]:.4f} K4y: {self.MAT_PARAMS[15]:.4f} K4z: {self.MAT_PARAMS[16]:.4f}")
-        print(f"\tAx: {self.MAT_PARAMS[17]:.4f} Ay: {self.MAT_PARAMS[18]:.4f} Az: {self.MAT_PARAMS[19]:.4f}")
-        print(f"\tNBS System: {self.NBS}")
-        print(f"\tFile TC/NC: {self.MAT_PARAMS[24]}")
-        print(f"\tConfig Temps: {self.Temps}")
+        w = 52
+        nbs_str = "+".join(str(n) for n in self.NBS)
+        temps_str = ", ".join(f"{t:.4g} K" for t in self.Temps)
+        init_str  = "FM (all +z)" if self.FM_Flag else "Random (AFM-like)"
+        d_val     = self.MAT_PARAMS[25] if len(self.MAT_PARAMS) > 25 else 0.0
+        dmi_str   = f"On  (D = {d_val:.4f} meV)" if (self.DMI_Flag and d_val != 0.0) else "Off"
+
+        print("  " + "─" * w)
+        print(f"  {'Material':.<28} {self.Material}")
+        print(f"  {'Lattice':.<28} {self.size} × {self.size}  (NBS: {nbs_str})")
+        print(f"  {'Spin S':.<28} {self.spin}")
+        print(f"  {'Temperature(s)':.<28} {temps_str}")
+        print(f"  {'Init state':.<28} {init_str}")
+        print(f"  {'DMI':.<28} {dmi_str}")
+        print(f"  {'Reference Tc':.<28} {self.MAT_PARAMS[24]:.2f} K")
+        print("  " + "─" * w)
+        print(f"  {'Exchange (meV)':.<28} J1={self.MAT_PARAMS[1]:.4f}  J2={self.MAT_PARAMS[2]:.4f}  "
+              f"J3={self.MAT_PARAMS[3]:.4f}  J4={self.MAT_PARAMS[4]:.4f}")
+        for shell in range(1, 5):
+            base = 4 + (shell - 1) * 3
+            kx, ky, kz = self.MAT_PARAMS[base], self.MAT_PARAMS[base+1], self.MAT_PARAMS[base+2]
+            print(f"  {f'Aniso. exchange K{shell} (meV)':.<28} x={kx:.4f}  y={ky:.4f}  z={kz:.4f}")
+        ax, ay, az = self.MAT_PARAMS[17], self.MAT_PARAMS[18], self.MAT_PARAMS[19]
+        print(f"  {'Single-ion aniso. (meV)':.<28} x={ax:.4f}  y={ay:.4f}  z={az:.4f}")
+        print("  " + "─" * w)
         
     def generate_random_numbers(self, deprecate):
         '''
@@ -164,6 +180,19 @@ class MonteCarlo:
 
         mc.NPREC(self.NLIST, self.NFULL, self.GSIZE, block=(1,1,1), grid=(self.C1,1,1))
         mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=(self.C1,1,1))
+
+    def generate_random_numbers_multilayer(self, deprecate):
+        '''
+        Generate 4 uniform random number arrays and split them for the multilayer simulation and copies them to the GPU.
+        Refills pre-allocated GPU arrays in-place to avoid repeated large alloc/dealloc.
+        '''
+        rg.fill_uniform(self.NLIST_LAYER)
+        rg.fill_uniform(self.ULIST)
+        rg.fill_uniform(self.VLIST)
+        rg.fill_uniform(self.RLIST)
+
+        mc.NPREC_ML(self.NLIST_LAYER, self.NFULL, self.GSIZE, self.LAYERS_GPU, block=(1,1,1), grid=((self.C1),1,1))
+        mc.VPREC(self.ULIST, self.VLIST, self.S1FULL, self.S2FULL, self.S3FULL, self.SGPU, block=(1,1,1), grid=((self.C1),1,1))
 
     def generate_ising_numbers(self, deprecate):
         '''
@@ -187,13 +216,15 @@ class MonteCarlo:
         self.GPU_N_SAMPLE = drv.mem_alloc(self.N_SAMPLE.nbytes)
         mc.NPREC(self.N_SAMPLE, self.GPU_N_SAMPLE, self.GSIZE, block=(1,1,1), grid=(self.Blocks,1,1))
 
-    def mc_init(self, tc_points=11):
+    def mc_init(self, tc_points=11, layers=1):
         '''
         Initialize the simulation
         '''
+    
         self.grid = np.zeros((self.size*self.size*3), dtype=np.float32)
-
+        
         self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
+        
         self.TMATRIX = np.zeros((self.Blocks*4), dtype=np.float32)
 
         self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
@@ -215,7 +246,75 @@ class MonteCarlo:
         drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
         drv.memcpy_htod(self.GRID_GPU, self.grid)
         drv.memcpy_htod(self.GPU_TRANS, self.TMATRIX)
- 
+        
+    def mc_init_multilayer(self, tc_points=11, layers=4, start_point=None):
+        '''
+        Initialize the simulation for multilayer materials
+        '''
+        # Initialize all layers at the same time
+        self.layers = layers
+        self.grid = np.zeros((self.size*self.size*3*self.layers), dtype=np.float32)
+        self.GRID_GPU = drv.mem_alloc(self.grid.nbytes)
+        
+        self.layer_indices = np.array([i*self.size*self.size*3 for i in range(self.layers)], dtype=np.int32)
+        self.TMATRIX = np.zeros((self.Blocks*4), dtype=np.float32)
+        self.GPU_TRANS = drv.mem_alloc(self.TMATRIX.nbytes)
+
+        if start_point:
+            self.grid = start_point.flatten()
+        else:
+            if self.FM_Flag:
+                mc.FM_N_Multilayer(self.grid, self.size)
+            else:
+                mc.AFM_N_Multilayer(self.grid, self.size)
+        self.grid *= self.spin
+        self.GPU_MAT = drv.mem_alloc(self.MAT_PARAMS.nbytes)
+        
+        if self.Static_T_Flag:
+            self.T = self.Temps
+        else:
+            self.T = np.linspace(0.01, np.float32(2.0*self.MAT_PARAMS[24]), tc_points)
+        self.BJ = drv.mem_alloc(self.T[0].nbytes)
+        drv.memcpy_htod(self.GPU_MAT, self.MAT_PARAMS)
+        drv.memcpy_htod(self.GRID_GPU, self.grid)
+        drv.memcpy_htod(self.GPU_TRANS, self.TMATRIX)
+        self.LAYERS_GPU = drv.mem_alloc(4)
+        drv.memcpy_htod(self.LAYERS_GPU, np.array([self.layers], dtype=np.int32))
+        self.NLIST_LAYER = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.ULIST       = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.VLIST       = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.RLIST       = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.NFULL       = pycuda.gpuarray.zeros((self.C1), dtype=np.int32)
+        self.S1FULL      = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.S2FULL      = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+        self.S3FULL      = pycuda.gpuarray.zeros((self.C1), dtype=np.float32)
+
+    def set_field(self, B_val):
+        '''Broadcast a uniform field to all columns.'''
+        drv.memcpy_htod(self.B_GPU, np.full(self.size, B_val, dtype=np.float32))
+
+    def set_field_zones(self, boundaries, fields):
+        '''Set a spatially varying field along the x (column) axis.
+
+        boundaries : list of N-1 column indices that divide SIZE columns into N zones.
+                     e.g. [50, 100, 150] splits SIZE=200 into zones [0,50), [50,100), [100,150), [150,200)
+        fields     : list of N field values, one per zone.
+        '''
+        if len(fields) != len(boundaries) + 1:
+            raise ValueError(f"Expected {len(boundaries)+1} field values for {len(boundaries)} boundaries, got {len(fields)}")
+        B_arr = np.zeros(self.size, dtype=np.float32)
+        edges = [0] + list(boundaries) + [self.size]
+        for i, (lo, hi) in enumerate(zip(edges[:-1], edges[1:])):
+            B_arr[lo:hi] = fields[i]
+        drv.memcpy_htod(self.B_GPU, B_arr)
+
+    def get_magnetization(self, layers):
+        '''Return (M_total, M_per_layer) normalised by spin, from the current grid.'''
+        g = self.grid.reshape(layers, self.size, self.size, 3)
+        M_layer = g[:, :, :, 2].mean(axis=(1, 2)) / self.spin
+        M_total = float(g[:, :, :, 2].mean()) / self.spin
+        return M_total, M_layer
+
     def grid_reset(self):
         self.grid = np.zeros((self.size*self.size*3), dtype=np.float32)
         if self.FM_Flag:
@@ -228,12 +327,23 @@ class MonteCarlo:
     DMI SECTOR
     This section has the MC simulation algorithms for materials that use a DMI term
     In order, this contains the following functions:
+    run_mc_multilayer_3_6_3_6: Runs the MC simulation for a 3 6 3 6 crystal structure material with multiple layers
     run_mc_dmi_66612: Runs the MC simulation for a 6 6 6 12 crystal structure material
     run_mc_dmi_4448: Runs the MC simulation for a 4 4 4 8 crystal structure material
     run_mc_dmi_3636: Runs the MC simulation for a 3 6 3 6 crystal structure material
     '''
+    def run_mc_3636_multilayer(self, T, layers):
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
+        drv.memcpy_htod(self.BJ,beta[0])
+        for j in range(self.stability_runs):
+            mc.METROPOLIS_MC_MULTILAYER_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, self.LAYERS_GPU, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
+            mc.GRID_COPY_MULTILAYER(self.GRID_GPU, self.GPU_TRANS, self.GSIZE, block=(4,1,1), grid=(self.Blocks,1,1))
+        drv.memcpy_dtoh(self.grid, self.GRID_GPU)
+        drv.Context.synchronize()
+        return self.grid
+
     def run_mc_dmi_66612(self, T):
-        beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
             mc.METROPOLIS_MC_DM1_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -244,7 +354,7 @@ class MonteCarlo:
 
 
     def run_mc_dmi_4448(self, T):
-        beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
             mc.METROPOLIS_MC_DM1_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.GPU_DMI_6, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -254,7 +364,7 @@ class MonteCarlo:
         return self.grid
     
     def run_mc_dmi_3636(self, T):
-        beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
             mc.METROPOLIS_MC_DM1_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.GPU_DMI_3, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -273,70 +383,58 @@ class MonteCarlo:
         '''
         Run the MC simulation for a 4 4 4 8 crystal structure material
         '''
-        Mt, Xt = 0.0, 0.0
-        ct = 0
         M, X = np.zeros(self.S_Wrap), np.zeros(self.S_Wrap)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)], dtype=np.float32)
+        drv.memcpy_htod(self.BJ, beta)
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
-            mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
-            drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM0_4_4_4_8(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-            self.grid = self.grid.reshape((self.size, self.size, 3))
-            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
-            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            g = self.grid.reshape((self.size, self.size, 3))
+            mag = np.array([np.sum(g[:,:,0]), np.sum(g[:,:,1]), np.sum(g[:,:,2])]) / (self.size**2)
             M[i] = np.abs(np.linalg.norm(mag))
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         drv.Context.synchronize()
         return Mt, Xt
-    
+
     def run_mc_tc_66612(self, T):
         '''
         Run the MC simulation for a 6 6 6 12 crystal structure material
         '''
-        Mt, Xt = 0.0, 0.0
-        ct = 0
         M, X = np.zeros(self.S_Wrap), np.zeros(self.S_Wrap)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)], dtype=np.float32)
+        drv.memcpy_htod(self.BJ, beta)
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
-            mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
-            drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM0_6_6_6_12(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-            self.grid = self.grid.reshape((self.size, self.size, 3))
-            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
-            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            g = self.grid.reshape((self.size, self.size, 3))
+            mag = np.array([np.sum(g[:,:,0]), np.sum(g[:,:,1]), np.sum(g[:,:,2])]) / (self.size**2)
             M[i] = np.abs(np.linalg.norm(mag))
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
         print(f"Mean Susceptibility at {T:.3f} = {Xt:.3f}")
         drv.Context.synchronize()
         return Mt, Xt
-    
+
     def run_mc_tc_3636(self, T):
         '''
         Run the MC simulation for a 3 6 3 6 crystal structure material
         '''
-        Mt, Xt = 0.0, 0.0
-        ct = 0
         M = np.zeros(self.S_Wrap)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)], dtype=np.float32)
+        drv.memcpy_htod(self.BJ, beta)
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
-            mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
-            drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM0_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-            self.grid = self.grid.reshape((self.size, self.size, 3))
-            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
-            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            g = self.grid.reshape((self.size, self.size, 3))
+            mag = np.array([np.sum(g[:,:,0]), np.sum(g[:,:,1]), np.sum(g[:,:,2])]) / (self.size**2)
             M[i] = np.abs(np.linalg.norm(mag))
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
@@ -352,7 +450,7 @@ class MonteCarlo:
         M = np.zeros(self.S_Wrap)
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
             mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM2_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -373,20 +471,16 @@ class MonteCarlo:
         '''
         Run the MC simulation for a 2 2 4 2 crystal structure material
         '''
-        Mt, Xt = 0.0, 0.0
-        ct = 0
         M = np.zeros(self.S_Wrap)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)], dtype=np.float32)
+        drv.memcpy_htod(self.BJ, beta)
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
-            mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
-            drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM0_2_2_4_2(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-            self.grid = self.grid.reshape((self.size, self.size, 3))
-            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
-            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            g = self.grid.reshape((self.size, self.size, 3))
+            mag = np.array([np.sum(g[:,:,0]), np.sum(g[:,:,1]), np.sum(g[:,:,2])]) / (self.size**2)
             M[i] = np.abs(np.linalg.norm(mag))
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
@@ -398,20 +492,16 @@ class MonteCarlo:
         '''
         Run the MC simulation for a 2 4 2 4 crystal structure material
         '''
-        Mt, Xt = 0.0, 0.0
-        ct = 0
         M = np.zeros(self.S_Wrap)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)], dtype=np.float32)
+        drv.memcpy_htod(self.BJ, beta)
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
-            mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
-            drv.memcpy_htod(self.BJ, beta)
             for j in range(self.stability_runs):
                 mc.METROPOLIS_MC_DM0_2_4_2_4(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
                 mc.GRID_COPY(self.GRID_GPU, self.GPU_TRANS, block=(2,1,1), grid=(self.Blocks,1,1))
             drv.memcpy_dtoh(self.grid, self.GRID_GPU)
-            self.grid = self.grid.reshape((self.size, self.size, 3))
-            magx, magy, magz = self.grid[:,:,0], self.grid[:,:,1], self.grid[:,:,2]
-            mag = np.array([np.sum(magx) , np.sum(magy) , np.sum(magz)])/(self.size**2)
+            g = self.grid.reshape((self.size, self.size, 3))
+            mag = np.array([np.sum(g[:,:,0]), np.sum(g[:,:,1]), np.sum(g[:,:,2])]) / (self.size**2)
             M[i] = np.abs(np.linalg.norm(mag))
         Mt, Xt = np.mean(M), np.std(M)/T
         print(f"Mean Magnetization at {T:.3f} = {Mt:.3f}")
@@ -438,7 +528,7 @@ class MonteCarlo:
 
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
             mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             ET_S = np.zeros(self.stability_runs)
             for j in range(self.stability_runs):
@@ -472,7 +562,7 @@ class MonteCarlo:
 
         for i in tqdm(range(self.S_Wrap), desc=f"Stabilizing at {T:.3f}", colour="blue"):
             mag_fluc =  np.zeros(self.stability_runs)
-            beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+            beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
             drv.memcpy_htod(self.BJ, beta)
             ET_S = np.zeros(self.stability_runs)
             for j in range(self.stability_runs):
@@ -532,7 +622,7 @@ class MonteCarlo:
     
     '''
     def run_mc_dmi_36362(self, T):
-        beta = np.array([1.0 / (T * 8.6173e-2)],dtype=np.float32)
+        beta = np.array([1.0 / (T * KB_MEV_PER_K)],dtype=np.float32)
         drv.memcpy_htod(self.BJ,beta[0])
         for j in range(self.stability_runs):
             mc.METROPOLIS_MC_DM2_3_6_3_6(self.GPU_MAT, self.GRID_GPU, self.BJ, self.NFULL[j*self.Blocks:(j+1)*self.Blocks], self.S1FULL[j*self.Blocks:(j+1)*self.Blocks], self.S2FULL[j*self.Blocks:(j+1)*self.Blocks], self.S3FULL[j*self.Blocks:(j+1)*self.Blocks], self.RLIST[j*self.Blocks:(j+1)*self.Blocks], self.GPU_TRANS, self.B_GPU, self.GSIZE, block=(self.Threads,1,1), grid=(self.Blocks,1,1))
@@ -591,9 +681,6 @@ class Analyze():
             print(f"Processing {file} mode: spin heatmap", end="\r")
             grid = np.load(self.directory+"/"+file)
             shape = grid.shape
-            with open(self.directory+"/metadata.json", 'r') as f:
-                metadata = json.load(f)
-            self.spin = np.float32(metadata["spin"])
             grid = grid.reshape((int(np.sqrt(shape[0]/3)), int(np.sqrt(shape[0]/3)), 3))
             #grid = grid.reshape((64, 64, 3))
             spinx, spiny, spinz = grid[:,:,0], grid[:,:,1], grid[:,:,2]
@@ -665,9 +752,100 @@ class Analyze():
         plt.plot(E_f)
         plt.savefig(self.directory+"/En.png")
         np.savetxt(self.directory+"/En.txt", E_f)
-        
-
-
     
-    
+    def spin_view_multilayer(self, layers=4):
+        '''
+        Generate a heatmap of the spin configuration at each time step for multilayer materials.
+        Grid layout in memory: [layer, row, col, component] — layer is outermost axis.
+        '''
+        ctr = 0
+        colormap = cm.coolwarm
+        for file in self.flist:
+            print(f"Processing {file} mode: spin heatmap", end="\r")
+            grid = np.load(self.directory+"/"+file)
+            size = self.size
+            # Infer actual number of layers from saved shape
+            actual_layers = grid.shape[0] // (size * size * 3)
+            if actual_layers < 1:
+                actual_layers = layers
+            # Correct reshape: layers is the outermost axis in memory
+            grid = grid.reshape(actual_layers, size, size, 3)
+            figure, axs = plt.subplots(3, actual_layers, figsize=(5*actual_layers, 15), dpi=200)
+            # Ensure axs is always 2D even for single layer
+            if actual_layers == 1:
+                axs = np.array(axs).reshape(3, 1)
+            plt.suptitle(f"Spin Configuration — Step {ctr}", fontsize=14)
+            norm = Normalize(vmin=-self.spin, vmax=self.spin)
+            for i in range(actual_layers):
+                spin_layer = grid[i]          # shape (size, size, 3)
+                spinx = spin_layer[:, :, 0]
+                spiny = spin_layer[:, :, 1]
+                spinz = spin_layer[:, :, 2]
+                sns.heatmap(spinx, cbar=False, cmap="coolwarm", square=True,
+                            xticklabels=False, yticklabels=False,
+                            vmin=-self.spin, vmax=self.spin, ax=axs[0][i])
+                axs[0][i].set_title(f"Layer {i+1} — Sx")
+                sns.heatmap(spiny, cbar=False, cmap="coolwarm", square=True,
+                            xticklabels=False, yticklabels=False,
+                            vmin=-self.spin, vmax=self.spin, ax=axs[1][i])
+                axs[1][i].set_title(f"Layer {i+1} — Sy")
+                sns.heatmap(spinz, cbar=False, cmap="coolwarm", square=True,
+                            xticklabels=False, yticklabels=False,
+                            vmin=-self.spin, vmax=self.spin, ax=axs[2][i])
+                axs[2][i].set_title(f"Layer {i+1} — Sz")
+            plt.tight_layout()
+            plt.savefig(self.directory+"/spin/spin_"+str(ctr)+".png")
+            plt.close()
+            ctr += 1
+        print("\n")
+        print("Exiting spin view mode")
+
+    def quiver_view_multilayer(self, layers=4):
+        '''
+        Generate a quiver plot of the spin configuration at each time step for multilayer materials.
+        Arrows show in-plane (Sx, Sy) components; colour encodes out-of-plane (Sz).
+        Grid layout in memory: [layer, row, col, component] — layer is outermost axis.
+        '''
+        ctr = 0
+        colormap = cm.bwr
+        for file in self.flist:
+            print(f"Processing {file} mode: quiver", end="\r")
+            grid = np.load(self.directory+"/"+file)
+            size = self.size
+            # Infer actual number of layers from saved shape
+            actual_layers = grid.shape[0] // (size * size * 3)
+            if actual_layers < 1:
+                actual_layers = layers
+            # Correct reshape: layers is the outermost axis in memory
+            grid = grid.reshape(actual_layers, size, size, 3)
+            x_mesh, y_mesh = np.meshgrid(np.arange(size), np.arange(size))
+            figure, axs = plt.subplots(1, actual_layers,
+                                       figsize=(5*actual_layers, 5), dpi=200)
+            # Ensure axs is iterable even for single layer
+            if actual_layers == 1:
+                axs = [axs]
+            plt.suptitle(f"Spin Quiver — Step {ctr}", fontsize=14)
+            # Shared normalisation across all layers so colours are comparable
+            all_sz = grid[:, :, :, 2]
+            norm = Normalize(vmin=-self.spin, vmax=self.spin)
+            for i in range(actual_layers):
+                spin_layer = grid[i]          # shape (size, size, 3)
+                spinx = spin_layer[:, :, 0]
+                spiny = spin_layer[:, :, 1]
+                spinz = spin_layer[:, :, 2]
+                colors = colormap(norm(spinz.flatten()))
+                axs[i].quiver(x_mesh, y_mesh, spinx, spiny,
+                              scale=self.spin, scale_units="xy",
+                              pivot="mid", color=colors,
+                              width=0.005, headwidth=4, headlength=5,
+                              headaxislength=4, minlength=0.1, minshaft=1)
+                axs[i].set_title(f"Layer {i+1}")
+                axs[i].set_aspect("equal")
+                axs[i].invert_yaxis()
+            plt.tight_layout()
+            plt.savefig(self.directory+"/quiver/quiver_"+str(ctr)+".png")
+            plt.close()
+            ctr += 1
+        print("\n")
+        print("Exiting quiver view mode")
     
