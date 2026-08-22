@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CUDA-METRO configuration reference — simulation config keys, material parameter vector, run modes and Monte Carlo phase structure.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;600;700&amp;display=swap">
+    <link rel="stylesheet" href="https://arkavo.github.io/css/theme.css">
+    <link rel="stylesheet" href="https://arkavo.github.io/css/project.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>Configuration · CUDA-METRO</title>
+    <script>
+        try {
+            var t = localStorage.getItem('theme');
+            if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+    </script>
+</head>
+<body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <svg id="cursor" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path class="cursor-halo" d="M1 10V1h9M22 1h9v9M31 22v9h-9M10 31H1v-9" fill="none" stroke-width="4" stroke-linecap="square"/>
+        <path d="M1 10V1h9M22 1h9v9M31 22v9h-9M10 31H1v-9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+
+    <header class="nav">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch colour theme">
+            <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0m-5 0h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/>
+            </svg>
+            <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3h.393a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z"/>
+            </svg>
+        </button>
+        <nav class="nav-links">
+            <a href="index.html">Overview</a>
+            <a href="usage.html" aria-current="page">Usage</a>
+            <a href="api.html">API</a>
+            <a class="nav-home" href="https://arkavo.github.io/" aria-label="Back to Base" title="Base"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 20h18L14.079 5.388a2.3 2.3 0 0 0-4.158 0z"/><path d="m7.5 11l2 2.5L12 11l2 3l2.5-2"/></g></svg></a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="section section-doc">
+            <div class="proj-head">
+                <p class="proj-eyebrow">CUDA-METRO · Reference</p>
+                <h1 class="proj-name">Configuration</h1>
+                <p class="proj-tagline">
+                    Every run is defined by three files — a JSON config, a material parameter file,
+                    and a script that binds them. This page covers the first two.
+                </p>
+            </div>
+        </section>
+
+        <section class="section section-doc">
+            <ul class="doc-nav">
+                <li><a href="#config">Config keys</a></li>
+                <li><a href="#phases">MC phases</a></li>
+                <li><a href="#material">Material vector</a></li>
+                <li><a href="#hamiltonian">Hamiltonian</a></li>
+            </ul>
+
+            <div class="prose" id="config">
+                <h3>Config file</h3>
+                <p>
+                    Copy a template from <code>/configs</code> — <code>test_config.json</code> for a
+                    single run, <code>tc_config.json</code> for a temperature sweep.
+                </p>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Key</th><th>Type</th><th>Meaning</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>Single_Mat_Flag</code></td><td>int</td><td>1 for a single material, 0 otherwise.</td></tr>
+                        <tr><td><code>DMI_Flag</code></td><td>int</td><td>1 to run in DMI mode. Mutually exclusive with <code>TC_Flag</code>.</td></tr>
+                        <tr><td><code>TC_Flag</code></td><td>int</td><td>1 to run in critical-temperature mode. Mutually exclusive with <code>DMI_Flag</code>.</td></tr>
+                        <tr><td><code>Static_T_Flag</code></td><td>int</td><td>1 if the simulation runs at a single temperature.</td></tr>
+                        <tr><td><code>FM_Flag</code></td><td>int</td><td>1 to start from a ferromagnetic state, 0 for a randomised (diamagnetic) start.</td></tr>
+                        <tr><td><code>Input_flag</code></td><td>int</td><td>1 to resume from a saved <code>.npy</code> state.</td></tr>
+                        <tr><td><code>Input_File</code></td><td>string</td><td>Filename of that starting state, when <code>Input_flag</code> is 1.</td></tr>
+                        <tr><td><code>Temps</code></td><td>array</td><td>Temperatures to sweep. Critical-temperature mode only.</td></tr>
+                        <tr><td><code>Material</code></td><td>string</td><td>Material name, without the <code>.csv</code> extension.</td></tr>
+                        <tr><td><code>Multiple_Materials</code></td><td>string</td><td>Filename holding several materials, without <code>.csv</code>.</td></tr>
+                        <tr><td><code>SIZE</code></td><td>int</td><td>Lattice edge length. The supercell is <code>SIZE</code><sup>2</sup>.</td></tr>
+                        <tr><td><code>Blocks</code></td><td>int</td><td>How much to parallelise — the spins proposed per step. The core tuning knob.</td></tr>
+                        <tr><td><code>Threads</code></td><td>int</td><td>Fixed at 2. Do not change.</td></tr>
+                        <tr><td><code>B</code></td><td>double</td><td>External magnetic field. Quote the value.</td></tr>
+                        <tr><td><code>stability_runs</code></td><td>int</td><td>Phase 1 batch count.</td></tr>
+                        <tr><td><code>stability_wrap</code></td><td>int</td><td>Phase 1 batch size.</td></tr>
+                        <tr><td><code>calculation_runs</code></td><td>int</td><td>Phase 2 batch count.</td></tr>
+                        <tr><td><code>calculation_wrap</code></td><td>int</td><td>Phase 2 batch size.</td></tr>
+                        <tr><td><code>Prefix</code></td><td>string</td><td>String prepended to the output folder name.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="note">
+                <b>Deprecated</b><br>
+                <code>Animation_Flags</code>, <code>Box</code> and <code>Cmpl_Flag</code> remain in
+                the template for backwards compatibility and are no longer read.
+            </div>
+
+            <div class="prose" id="phases">
+                <h3>Monte Carlo phases</h3>
+                <p>The total number of raw MC steps is:</p>
+<pre class="math-block"><code>Blocks &times; (stability_runs &times; stability_wrap
+        + calculation_runs &times; calculation_wrap)</code></pre>
+                <p>
+                    The split into two phases exists for critical-temperature work.
+                    <strong>Phase 1</strong> lets the lattice settle; <strong>Phase 2</strong> is the
+                    data-collection window from which statistical properties are drawn. For a raw
+                    simulation where you want the state evolution from start to finish, keep one
+                    phase and zero the other.
+                </p>
+
+                <div class="note">
+                    <b>Out of memory</b><br>
+                    <code>Blocks</code> governs VRAM use as well as parallelisation. If a run crashes
+                    or reports an out-of-memory error, lower it first.
+                </div>
+            </div>
+
+            <div class="prose" id="material">
+                <h3>Material parameters</h3>
+                <p>
+                    Material files live in <code>/inputs</code> as CSV, and hold one vector of
+                    24 entries describing the interactions and crystal configuration:
+                </p>
+<pre class="math-block"><code>[name, spin,
+ J1, J2, J3, J4,
+ K1x, K1y, K1z,  K2x, K2y, K2z,
+ K3x, K3y, K3z,  K4x, K4y, K4z,
+ Ax, Ay, Az,
+ Tc, structure, DMI]</code></pre>
+                <p>
+                    <code>J</code> are isotropic exchange parameters and <code>K</code> the
+                    anisotropic ones, subscripted by neighbour shell — <code>J1</code> is the first
+                    nearest neighbour, <code>J2</code> the second, and so on to the fourth.
+                    <code>A</code> is single-ion anisotropy, <code>Tc</code> the experimental Curie
+                    temperature for reference, and <code>DMI</code> the
+                    Dzyaloshinskii–Moriya parameter.
+                </p>
+                <p>
+                    Interactions stop at the fourth shell: in 2D materials the interaction energy is
+                    expected to have died away past that.
+                </p>
+            </div>
+
+            <div class="prose" id="hamiltonian">
+                <h3>Spin Hamiltonian</h3>
+                <p>
+                    Each atom is a 3D spin vector on a periodic lattice. The energy of atom
+                    <em>i</em> sums over four neighbour shells &mdash; {<em>j</em>}, {<em>k</em>},
+                    {<em>l</em>}, {<em>m</em>} &mdash; each contributing an isotropic exchange term
+                    and three anisotropic ones:
+                </p>
+<div class="eq">
+                    <div class="eq-row">
+                        <div class="eq-name"><i>H</i><sub>exchange</sub></div>
+                        <div class="eq-expr">&minus;<span class="sum"><span class="sum-lim">4</span><span class="sum-sig">&Sigma;</span><span class="sum-lim">n=1</span></span><span class="sum"><span class="sum-lim">&nbsp;</span><span class="sum-sig">&Sigma;</span><span class="sum-lim">j&isin;n</span></span> [ <i>J</i><sub>n</sub> (<b>s</b><sub>i</sub>&middot;<b>s</b><sub>j</sub>)<span class="eq-op">+</span> <i>K</i><sub>n</sub><sup>x</sup> <i>s</i><sub>i</sub><sup>x</sup><i>s</i><sub>j</sub><sup>x</sup><span class="eq-op">+</span> <i>K</i><sub>n</sub><sup>y</sup> <i>s</i><sub>i</sub><sup>y</sup><i>s</i><sub>j</sub><sup>y</sup><span class="eq-op">+</span> <i>K</i><sub>n</sub><sup>z</sup> <i>s</i><sub>i</sub><sup>z</sup><i>s</i><sub>j</sub><sup>z</sup> ]</div>
+                    </div>
+
+                    <div class="eq-row">
+                        <div class="eq-name"><i>H</i><sub>self</sub></div>
+                        <div class="eq-expr">&minus; [ <i>A</i><sup>x</sup> (<i>s</i><sub>i</sub><sup>x</sup>)<sup>2</sup><span class="eq-op">+</span> <i>A</i><sup>y</sup> (<i>s</i><sub>i</sub><sup>y</sup>)<sup>2</sup><span class="eq-op">+</span> <i>A</i><sup>z</sup> (<i>s</i><sub>i</sub><sup>z</sup>)<sup>2</sup> ]</div>
+                    </div>
+
+                    <div class="eq-row">
+                        <div class="eq-name"><i>H</i><sub>Zeeman</sub></div>
+                        <div class="eq-expr">&minus; <i>B</i> <i>s</i><sub>i</sub><sup>z</sup></div>
+                    </div>
+
+                    <div class="eq-row">
+                        <div class="eq-name"><i>H</i><sub>DMI</sub></div>
+                        <div class="eq-expr">&minus;<span class="sum"><span class="sum-lim">&nbsp;</span><span class="sum-sig">&Sigma;</span><span class="sum-lim">j&isin;1</span></span> <b>D</b><sub>ij</sub> &middot; (<b>s</b><sub>i</sub> &times; <b>s</b><sub>j</sub>)</div>
+                    </div>
+
+                    <div class="eq-row eq-total">
+                        <div class="eq-name"><i>H</i><sub>total</sub></div>
+                        <div class="eq-expr">= <i>H</i><sub>exchange</sub><span class="eq-op">+</span><i>H</i><sub>self</sub><span class="eq-op">+</span><i>H</i><sub>Zeeman</sub><span class="eq-op">+</span><i>H</i><sub>DMI</sub></div>
+                    </div>
+                </div>
+                </div>
+                <ul>
+                    <li><strong>Exchange</strong> runs over the four neighbour shells.
+                        <code>J&#8345;</code> is the isotropic term for shell <em>n</em>;
+                        <code>K&#8345;&#739;</code>, <code>K&#8345;&#696;</code>, <code>K&#8345;&#7611;</code>
+                        are anisotropic and apply component-wise. Shells stop at four because in 2D
+                        materials the interaction energy is expected to have died away past that.</li>
+                    <li><strong>Self</strong> is single-ion anisotropy, per axis on squared
+                        components, from the <code>Ax, Ay, Az</code> inputs.</li>
+                    <li><strong>Zeeman</strong> couples the applied field to the <em>z</em>
+                        component only.</li>
+                    <li><strong>DMI</strong> is first-shell only and appears just in the
+                        <code>dm1</code> and <code>dm2</code> kernels; it is absent from
+                        <code>dm0</code>.</li>
+                </ul>
+                <p>
+                    Everything except <code>B</code> is material-specific and comes from the input
+                    file.
+                </p>
+
+                <div class="note">
+                    <b>Reading the code, not the paper</b><br>
+                    Three details differ from the general expression quoted in the repository
+                    README, and the form above follows
+                    <code>montecarlo.py</code>. Single-ion anisotropy is applied
+                    <strong>per axis on squared components</strong> using the separate
+                    <code>Ax, Ay, Az</code> inputs, not as a single scalar
+                    <code>A&nbsp;s_i&middot;s_i</code> &mdash; which for unit spins would be a
+                    constant. The field enters as <strong><code>B s&#7611;</code></strong>, coupling
+                    to the <em>z</em> component alone rather than as a vector dot product. And there
+                    is <strong>no biquadratic term</strong> in the kernels, so the
+                    <code>&lambda;(s_i&middot;s_j)<sup>2</sup></code> term from the README is omitted here.
+                    The DMI term is present only in the <code>dm1</code> and <code>dm2</code>
+                    kernels, which take the neighbour-vector array.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Arkavo Hait · <a href="https://github.com/arkavo/CUDA-METRO" target="_blank" rel="noopener">GitHub</a></p>
+    </footer>
+
+    <script src="https://arkavo.github.io/js/background.js"></script>
+    <script src="https://arkavo.github.io/js/cursor.js"></script>
+    <script src="https://arkavo.github.io/js/theme.js"></script>
+</body>
+</html>

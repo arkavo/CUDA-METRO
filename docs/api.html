@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CUDA-METRO API reference — construct.MonteCarlo and construct.Analyze methods for running and visualising GPU Metropolis Monte Carlo spin simulations.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;600;700&amp;display=swap">
+    <link rel="stylesheet" href="https://arkavo.github.io/css/theme.css">
+    <link rel="stylesheet" href="https://arkavo.github.io/css/project.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>API · CUDA-METRO</title>
+    <script>
+        try {
+            var t = localStorage.getItem('theme');
+            if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+    </script>
+</head>
+<body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <svg id="cursor" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path class="cursor-halo" d="M1 10V1h9M22 1h9v9M31 22v9h-9M10 31H1v-9" fill="none" stroke-width="4" stroke-linecap="square"/>
+        <path d="M1 10V1h9M22 1h9v9M31 22v9h-9M10 31H1v-9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+
+    <header class="nav">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch colour theme">
+            <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0m-5 0h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/>
+            </svg>
+            <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3h.393a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z"/>
+            </svg>
+        </button>
+        <nav class="nav-links">
+            <a href="index.html">Overview</a>
+            <a href="usage.html">Usage</a>
+            <a href="api.html" aria-current="page">API</a>
+            <a class="nav-home" href="https://arkavo.github.io/" aria-label="Back to Base" title="Base"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 20h18L14.079 5.388a2.3 2.3 0 0 0-4.158 0z"/><path d="m7.5 11l2 2.5L12 11l2 3l2.5-2"/></g></svg></a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="section section-doc">
+            <div class="proj-head">
+                <p class="proj-eyebrow">CUDA-METRO · Reference</p>
+                <h1 class="proj-name">API</h1>
+                <p class="proj-tagline">
+                    Two modules. <code>construct</code> holds the driver classes;
+                    <code>montecarlo</code> holds the CUDA kernels, compiled at runtime through
+                    pyCUDA's <code>SourceModule</code>.
+                </p>
+            </div>
+        </section>
+
+        <section class="section section-doc">
+            <ul class="doc-nav">
+                <li><a href="#setup">Setup</a></li>
+                <li><a href="#montecarlo">MonteCarlo</a></li>
+                <li><a href="#runners">Run modes</a></li>
+                <li><a href="#analyze">Analyze</a></li>
+            </ul>
+
+            <div class="prose" id="setup">
+                <h3>Imports</h3>
+<pre><code><span class="k">import</span> construct
+<span class="k">import</span> montecarlo</code></pre>
+                <p>
+                    <code>construct</code> is the code you call.
+                    <code>montecarlo</code> carries the Hamiltonian implementations as GPU kernels
+                    written in CUDA C — you rarely touch it directly, but that is where the physics
+                    lives.
+                </p>
+            </div>
+
+            <div class="prose" id="montecarlo">
+                <h3>construct.MonteCarlo</h3>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Effect</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>MonteCarlo(config_file, input_folder, output_folder)</code></td>
+                            <td>Base constructor. The folder arguments default to values that work when running <code>sample.py</code> from its own directory; set them to anything you like.</td>
+                        </tr>
+                        <tr><td><code>load_config()</code></td><td>Reads the JSON config.</td></tr>
+                        <tr><td><code>load_material()</code></td><td>Reads a single material's parameters from the input file.</td></tr>
+                        <tr><td><code>load_materials()</code></td><td>Reads the multiple-materials file instead.</td></tr>
+                        <tr>
+                            <td><code>mc_init(tc_points: int)</code></td>
+                            <td>Initialises the simulation from the loaded parameters without running it. <code>tc_points</code> sets how many temperature points span the range; defaults to 11.</td>
+                        </tr>
+                        <tr><td><code>display_material()</code></td><td>Prints the current material properties.</td></tr>
+                        <tr>
+                            <td><code>grid_reset()</code></td>
+                            <td>Resets the lattice. With <code>FM_Flag = 1</code> every spin becomes (0,0,1); otherwise spins are randomised to a diamagnetic state.</td>
+                        </tr>
+                        <tr>
+                            <td><code>generate_random_numbers(size: int)</code></td>
+                            <td>Allocates four GPU arrays of length <code>size</code> using pyCUDA's XORWOW generator.</td>
+                        </tr>
+                        <tr>
+                            <td><code>generate_ising_numbers(size: int)</code></td>
+                            <td>As above, but spin vectors are constrained to (0,0,1) or (0,0,−1).</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="prose" id="runners">
+                <h3>Run modes</h3>
+                <p>Runners follow one shape:</p>
+<pre><code>run_mc_&lt;mode&gt;_&lt;lattice&gt;(T: double) -&gt; numpy.ndarray</code></pre>
+                <p>
+                    Each call executes one Phase 1 batch and returns an
+                    <code>N &times; N &times; 3</code> array of raw spin directions, ready for
+                    <code>np.save</code>. <code>&lt;mode&gt;</code> is <code>tc</code> or
+                    <code>dmi</code>; <code>&lt;lattice&gt;</code> is one of the coordination codes.
+                </p>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Lattice</th><th><code>tc</code></th><th><code>dmi</code></th><th>Example</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>66612</code></td><td>Yes</td><td>Yes</td><td><code>run_mc_dmi_66612(T)</code></td></tr>
+                        <tr><td><code>3636</code></td><td>Yes</td><td>Yes</td><td><code>run_mc_dmi_3636(T)</code></td></tr>
+                        <tr><td><code>4448</code></td><td>Yes</td><td>Yes</td><td><code>run_mc_dmi_4448(T)</code></td></tr>
+                        <tr><td><code>2424</code></td><td>Yes</td><td>—</td><td><code>run_mc_tc_2424(T)</code></td></tr>
+                        <tr><td><code>2242</code></td><td>Yes</td><td>—</td><td><code>run_mc_tc_2242(T)</code></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="note">
+                <b>No DMI kernel?</b><br>
+                For <code>2424</code> and <code>2242</code>, run <code>tc</code> mode at a single
+                temperature to get an open, evolving simulation.
+            </div>
+
+            <div class="prose" id="analyze">
+                <h3>construct.Analyze</h3>
+                <p>
+                    The analyser walks a folder of saved <code>.npy</code> states and renders each
+                    one. It needs no config file — just a path. <code>visualize.py</code> is a
+                    ready-to-run template.
+                </p>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Method</th><th>Effect</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Analyze(folder_path: str, reverse=False)</code></td>
+                            <td>Creates the analyser. <code>reverse=True</code> starts from the far end, for when you want the final state first.</td>
+                        </tr>
+                        <tr>
+                            <td><code>spin_view()</code></td>
+                            <td>Writes a <code>spins/</code> subfolder — spin vectors split into components as <em>z</em> = s(<em>x</em>,<em>y</em>).</td>
+                        </tr>
+                        <tr>
+                            <td><code>quiver_view()</code></td>
+                            <td>Writes a <code>quiver/</code> subfolder — the planar (<em>xy</em>) component only, on a flat surface. Best for spotting patterns.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="prose">
+                <p>From the command line:</p>
+<pre><code>python visualize.py &lt;folder_path&gt;</code></pre>
+                <p>
+                    which covers most cases. For a custom job, pass your own script:
+                    <code>python &lt;visual_script&gt; &lt;folder_path&gt;</code>.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Arkavo Hait · <a href="https://github.com/arkavo/CUDA-METRO" target="_blank" rel="noopener">GitHub</a></p>
+    </footer>
+
+    <script src="https://arkavo.github.io/js/background.js"></script>
+    <script src="https://arkavo.github.io/js/cursor.js"></script>
+    <script src="https://arkavo.github.io/js/theme.js"></script>
+</body>
+</html>

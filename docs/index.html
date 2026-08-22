@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CUDA-METRO — GPU-parallel Metropolis Monte Carlo for 2D atomistic spin texture simulation. A pyCUDA engine for skyrmions, merons and magnetic phase transitions.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;600;700&amp;display=swap">
+    <!-- theme + project layout are served from the parent site, so all three
+         sites share one source of truth (same origin, no CORS involved) -->
+    <link rel="stylesheet" href="https://arkavo.github.io/css/theme.css">
+    <link rel="stylesheet" href="https://arkavo.github.io/css/project.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>CUDA-METRO</title>
+    <script>
+        try {
+            var t = localStorage.getItem('theme');
+            if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+    </script>
+</head>
+<body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <svg id="cursor" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path class="cursor-halo" d="M1 10V1h9M22 1h9v9M31 22v9h-9M10 31H1v-9" fill="none" stroke-width="4" stroke-linecap="square"/>
+        <path d="M1 10V1h9M22 1h9v9M31 22v9h-9M10 31H1v-9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+
+    <header class="nav">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch colour theme">
+            <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0m-5 0h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/>
+            </svg>
+            <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3h.393a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 2.992z"/>
+            </svg>
+        </button>
+        <nav class="nav-links">
+            <a href="index.html" aria-current="page">Overview</a>
+            <a href="usage.html">Usage</a>
+            <a href="api.html">API</a>
+            <a class="nav-home" href="https://arkavo.github.io/" aria-label="Back to Base" title="Base"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 20h18L14.079 5.388a2.3 2.3 0 0 0-4.158 0z"/><path d="m7.5 11l2 2.5L12 11l2 3l2.5-2"/></g></svg></a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="section section-doc">
+            <div class="proj-head">
+                <p class="proj-eyebrow">Arkavo Hait · Santanu Mahapatra · IISc Bangalore</p>
+                <h1 class="proj-name">CUDA-METRO</h1>
+                <p class="proj-tagline">
+                    GPU-parallel Metropolis Monte Carlo for 2D atomistic spin texture simulation.
+                    A pyCUDA engine that updates many spins at once, reaching the ground state of
+                    supercells far beyond the reach of sequential single-spin-update schemes.
+                </p>
+                <ul class="badges">
+                    <li><a class="badge" href="https://doi.org/10.21105/joss.07589" target="_blank" rel="noopener">JOSS <b>10.21105/joss.07589</b></a></li>
+                    <li><a class="badge" href="https://pypi.org/project/cudametro/" target="_blank" rel="noopener">PyPI <b>cudametro</b></a></li>
+                    <li><span class="badge">License <b>Apache-2.0</b></span></li>
+                    <li><span class="badge">Python <b>&ge; 3.8</b></span></li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section section-doc">
+            <ul class="doc-nav">
+                <li><a href="#why">Why</a></li>
+                <li><a href="#install">Install</a></li>
+                <li><a href="#quickstart">Quickstart</a></li>
+                <li><a href="#lattices">Lattices</a></li>
+                <li><a href="#results">Results</a></li>
+                <li><a href="#cite">Cite</a></li>
+                <li><a href="usage.html">Configuration &rarr;</a></li>
+                <li><a href="api.html">API &rarr;</a></li>
+            </ul>
+
+            <div class="prose" id="why">
+                <h3>The problem</h3>
+                <p>
+                    Metropolis Monte Carlo resists parallelisation. The Markov property makes each
+                    proposed state depend on the one before it, so the textbook implementation walks
+                    the lattice one spin at a time. That is tolerable for the Ising model on a small
+                    square grid, and untenable for 2D magnetic materials, which carry finite
+                    magnetocrystalline anisotropy, non-trivial crystal structures and long-range
+                    interactions whose cost scales as <i>N</i><sup>2</sup> — prohibitive beyond
+                    <i>N</i>&nbsp;=&nbsp;100.
+                </p>
+                <p>
+                    CUDA-METRO updates <strong>many spins simultaneously, irrespective of their
+                    mutual correlation</strong>, and recovers the physics by tuning how much of the
+                    lattice is touched per step. The deviation from strict detailed balance is a
+                    parameter you control rather than an accident.
+                </p>
+
+                <dl class="stats">
+                    <div class="stat"><dt>Largest supercell</dt><dd>750&nbsp;&times;&nbsp;750</dd></div>
+                    <div class="stat"><dt>Ground state in</dt><dd>9 h</dd></div>
+                    <div class="stat"><dt>On</dt><dd>A100-SXM4</dd></div>
+                    <div class="stat"><dt>Lattice types</dt><dd>5</dd></div>
+                </dl>
+
+                <div class="note">
+                    <b>Trade-off</b><br>
+                    Parallel proposals break detailed balance. Figure&nbsp;1 below quantifies the
+                    error against published reference data: at roughly 10% parallelisation the
+                    results are essentially indistinguishable from the sequential result. Choose the
+                    ratio for the accuracy the problem needs.
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-doc" id="install">
+            <h2>Install</h2>
+            <div class="prose">
+                <p>From PyPI:</p>
+<pre><code>pip install cudametro</code></pre>
+                <p>Or from source:</p>
+<pre><code>git clone https://github.com/arkavo/CUDA-METRO.git
+cd CUDA-METRO
+pip install ./</code></pre>
+                <p>
+                    A CUDA-capable NVIDIA GPU is required — the kernels are compiled at runtime by
+                    pyCUDA. A fresh Python 3.8+ environment is recommended. Dependencies are
+                    <code>pycuda</code>, <code>numpy</code>, <code>seaborn</code> and
+                    <code>tqdm</code>; <code>pip install -r requirements.pip</code> pulls them in
+                    when working from source.
+                </p>
+                <p>To confirm the install, run the files under <code>/tests</code>. They execute on the GPU and will fail if the toolchain is not wired up correctly.</p>
+            </div>
+        </section>
+
+        <section class="section section-doc" id="quickstart">
+            <h2>Quickstart</h2>
+            <div class="prose">
+                <p>
+                    A run needs three things: a <strong>config file</strong> (simulation
+                    parameters), a <strong>material file</strong> (interaction parameters and
+                    crystal structure), and a <strong>script</strong> that binds them together.
+                    Samples for each ship in <code>/configs</code>, <code>/inputs</code> and
+                    <code>/src/cudametro</code>.
+                </p>
+<pre><code><span class="c"># a single-temperature run, MnSeTe</span>
+<span class="k">import</span> construct
+
+mc = construct.MonteCarlo(config_file, input_folder, output_folder)
+mc.load_config()
+mc.load_material()
+mc.mc_init()
+mc.grid_reset()
+
+grid = mc.run_mc_dmi_66612(T)   <span class="c"># -&gt; ndarray, N x N x 3</span>
+</code></pre>
+                <p>
+                    The lattice is a flat array of 3D spin vectors,
+                    <code>[s1x s1y s1z s2x … sNz]</code>, saved to the output folder as
+                    <code>.npy</code>. To render it:
+                </p>
+<pre><code>python visualize.py &lt;folder_path&gt;</code></pre>
+                <p>
+                    For a Curie-temperature sweep, edit <code>/configs/tc_config.json</code> and run
+                    <code>python tc_sims.py</code> — it plots its own graph. Full parameter reference
+                    is on the <a href="usage.html">Configuration</a> page.
+                </p>
+            </div>
+        </section>
+
+        <section class="section section-doc" id="lattices">
+            <h2>Lattices &amp; kernels</h2>
+            <div class="prose">
+                <p>
+                    Rather than branching inside the hot loop, CUDA-METRO compiles a
+                    <strong>separate kernel per crystal geometry</strong>. Kernel names encode the
+                    neighbour counts across the four interaction shells (<i>J</i><sub>1</sub>&ndash;<i>J</i><sub>4</sub>), with a
+                    <code>dm</code> prefix for the Dzyaloshinskii–Moriya setting — so
+                    <code>run_mc_dmi_66612</code> is the DMI kernel for a 6-6-6-12 coordination.
+                </p>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Mode</th><th>Coordination</th><th>Lattice</th><th>DMI</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>66612</code></td><td class="num">6-6-6-12</td><td>Hexagonal / triangular</td><td>Yes</td></tr>
+                        <tr><td><code>3636</code></td><td class="num">3-6-3-6</td><td>Honeycomb</td><td>Yes</td></tr>
+                        <tr><td><code>4448</code></td><td class="num">4-4-4-8</td><td>Square</td><td>Yes</td></tr>
+                        <tr><td><code>2424</code></td><td class="num">2-4-2-4</td><td>Rectangular</td><td>—</td></tr>
+                        <tr><td><code>2242</code></td><td class="num">2-2-4-2</td><td>Centred rectangular</td><td>—</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="prose">
+                <p>
+                    Every mode is available in <code>tc</code> (critical temperature) form. The three
+                    marked above additionally support <code>dmi</code> mode, which is what produces
+                    skyrmions and merons. For the remaining two, open a running simulation with
+                    <code>tc</code> mode at a single temperature.
+                </p>
+            </div>
+        </section>
+
+        <section class="section section-doc" id="results">
+            <h2>Results</h2>
+
+            <figure class="figure">
+                <img src="img/Figure_1.png" alt="Simulation error against reference data at increasing parallelisation ratios" loading="lazy">
+                <figcaption><b>Fig 1</b> — Discrepancy between simulation and reference results at
+                differing parallelisation. By roughly 10% the two are almost indistinguishable.</figcaption>
+            </figure>
+
+            <figure class="figure">
+                <img src="img/Figure_2.png" alt="Meron and anti-meron spin textures in CrCl3" loading="lazy">
+                <figcaption><b>Fig 2</b> — Merons and anti-merons in CrCl<sub>3</sub> (honeycomb, third
+                nearest neighbour with biquadratic exchange). All four structures appear, in a
+                500&times;500 supercell (143&times;143 nm<sup>2</sup>) at 3% parallelisation on an
+                A100-SXM4. Colour is the normalised <em>z</em> spin.</figcaption>
+            </figure>
+
+            <figure class="figure">
+                <img src="img/Figure_3.png" alt="Skyrmion textures in MnBr2 and CrInSe3" loading="lazy">
+                <figcaption><b>Fig 3</b> — Skyrmions in MnBr<sub>2</sub> (square, anisotropic DMI,
+                antiferromagnetic ground state) and CrInSe<sub>3</sub> (hexagonal, nearest neighbour only).
+                200&times;200 supercells (49&times;49 nm<sup>2</sup>), 30 s at 20% parallelisation on a
+                V100-SXM2. Antiferromagnetic skyrmions matter technologically because they show no
+                skyrmion Hall effect.</figcaption>
+            </figure>
+
+            <div class="prose">
+                <p>
+                    Two results go beyond reproduction. For <strong>MnSTe</strong> the simulation
+                    shows skyrmions nucleating and then vanishing as the lattice becomes uniformly
+                    ferromagnetic along the applied field — an evolution absent from the original
+                    literature, plausibly because the sequential scheme makes it too expensive to
+                    reach. For <strong>VZr<sub>3</sub>C<sub>3</sub>II</strong> a giant skyrmion of 21&nbsp;nm diameter is
+                    hosted in a 750&times;750 supercell at 1% parallelisation using 70% of an
+                    A100-SXM4's VRAM: even at that ratio, 8000 lattice points are accessed
+                    simultaneously, and the ground state emerges in 9 hours.
+                </p>
+            </div>
+        </section>
+
+        <section class="section section-doc" id="cite">
+            <h2>Cite</h2>
+            <div class="prose">
+                <p>If CUDA-METRO contributes to your work, please cite the JOSS paper:</p>
+<pre><code>@article{Hait2025,
+  title   = {CUDA-METRO: Parallel Metropolis Monte Carlo for
+             2D Atomistic Spin Texture Simulation},
+  author  = {Hait, Arkavo and Mahapatra, Santanu},
+  journal = {Journal of Open Source Software},
+  volume  = {10},
+  number  = {109},
+  pages   = {7589},
+  year    = {2025},
+  doi     = {10.21105/joss.07589}
+}</code></pre>
+                <p>
+                    The follow-up analysis of the parallelisation ratio and its effect on ergodic
+                    sampling appears in
+                    <a href="https://doi.org/10.1109/HiPCW66559.2025.00102" target="_blank" rel="noopener">Unbound
+                    Parallelization on Heisenberg Model</a> (IEEE HiPCW 2025).
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Arkavo Hait · <a href="https://github.com/arkavo/CUDA-METRO" target="_blank" rel="noopener">GitHub</a></p>
+    </footer>
+
+    <script src="https://arkavo.github.io/js/background.js"></script>
+    <script src="https://arkavo.github.io/js/cursor.js"></script>
+    <script src="https://arkavo.github.io/js/theme.js"></script>
+</body>
+</html>
