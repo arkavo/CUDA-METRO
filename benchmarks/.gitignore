@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+# scheduler and run noise
+*.out
+*.err
+*.log
+*.pid
+# stray CSVs written into the working dir; keep measured data in results/
+/*.csv
+/cpu/*.csv
+frontier.png
+figD_cpu.svg

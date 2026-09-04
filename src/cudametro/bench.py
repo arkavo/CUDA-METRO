@@ -51,5 +51,5 @@ for i in range(len(blocks)):
     Time = np.append(Time, (t_end-t_curr).total_seconds())
     print(f"Time taken for {blocks[i]} blocks: {t_end-t_curr}")
 
-np.save(f"{bench_MC.save_direcotry}/Timings", Time)
+np.save(f"{bench_MC.save_directory}/Timings", Time)
 print("=====================================")
