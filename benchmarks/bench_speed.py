@@ -24,7 +24,9 @@ import argparse
 import csv
 import datetime as dt
 import gc
+import json
 import os
+import shutil
 import socket
 import sys
 
@@ -59,6 +61,27 @@ args = ap.parse_args()
 CONFIG = args.config or _repo.config("bench.json")
 if not os.path.exists(CONFIG):
     sys.exit(f"config not found: {CONFIG}\npass --config with an explicit path.")
+
+# MonteCarlo.__init__ writes Output_<prefix>_<material>_<timestamp>/ into the
+# CURRENT directory, and os.mkdir (not makedirs) raises FileExistsError when
+# two constructions land in the same second - which they will, on fast points.
+# Two defences: run from a disposable scratch dir, and give every point a
+# unique Prefix so the names cannot collide in the first place.
+SCRATCH = _repo.scratch()
+shutil.rmtree(SCRATCH, ignore_errors=True)
+os.makedirs(SCRATCH, exist_ok=True)
+_BASE_CFG = json.load(open(CONFIG))
+
+
+def config_for(size, P, rep):
+    """A per-point config whose Prefix makes save_directory unique."""
+    c = dict(_BASE_CFG)
+    c["Prefix"] = f"b{size}_{P}_{rep}"
+    p = os.path.join(SCRATCH, f"cfg_{size}_{P}_{rep}.json")
+    with open(p, "w") as fh:
+        json.dump(c, fh)
+    return p
+
 
 SIZES = [int(x) for x in args.sizes.split(",")]
 BLOCKS = [int(x) for x in args.blocks.split(",")]
@@ -97,6 +120,11 @@ print(f"T = {args.temp} K  ->  beta = {float(BETA[0]):.5f} 1/meV")
 print(f"attempts per point: {TARGET_ATTEMPTS:,}   "
       f"RNG buffers ~{TARGET_ATTEMPTS*4*9/1024**3:.2f} GB\n", flush=True)
 
+args.out = os.path.abspath(args.out)     # resolve BEFORE the chdir below
+if args.resume:
+    args.resume = os.path.abspath(args.resume)
+os.chdir(SCRATCH)
+
 new = not os.path.exists(args.out)
 fh = open(args.out, "a", newline="")
 w = csv.writer(fh)
@@ -123,7 +151,8 @@ for size in SIZES:
                 continue
             m = None
             try:
-                m = cst.MonteCarlo(config=CONFIG)
+                m = cst.MonteCarlo(config=config_for(size, P, rep),
+                                   input_folder=_repo.inputs())
                 m.size = size
                 m.Blocks = P                 # must precede mc_init: it sizes
                 m.stability_runs = rounds    # TMATRIX and GPU_TRANS

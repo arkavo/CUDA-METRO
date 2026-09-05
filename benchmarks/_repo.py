@@ -32,3 +32,23 @@ if not os.path.isdir(PKG):
 def config(name="bench.json"):
     """Absolute path to a file in <repo>/configs, whatever the cwd is."""
     return os.path.join(CONFIGS, name)
+
+
+def inputs():
+    """Absolute path to <repo>/inputs.
+
+    construct.MonteCarlo defaults input_folder="../../inputs/", which only
+    resolves when the cwd happens to be src/cudametro. Pass this instead."""
+    return os.path.join(REPO, "inputs") + os.sep
+
+
+def scratch():
+    """A throwaway cwd for the benchmark.
+
+    MonteCarlo.__init__ does os.mkdir("Output_<prefix>_<material>_<timestamp>")
+    in the CURRENT directory - so every construction litters, and two
+    constructions in the same second collide with FileExistsError. Run from
+    here and the mess is contained and disposable."""
+    d = os.path.join(HERE, ".run", "scratch")
+    os.makedirs(d, exist_ok=True)
+    return d

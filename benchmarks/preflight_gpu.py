@@ -96,7 +96,8 @@ if FAIL:
     sys.exit("\nfix the config path first; nothing below can run.")
 
 print("\n4. MonteCarlo object and attributes")
-m = cst.MonteCarlo(config=CONFIG)
+os.chdir(_repo.scratch())        # contain the Output_* dir it creates
+m = cst.MonteCarlo(config=CONFIG, input_folder=_repo.inputs())
 m.size = args.size
 m.Blocks = args.blocks
 m.stability_runs = 8

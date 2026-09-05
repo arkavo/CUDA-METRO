@@ -10,3 +10,5 @@ __pycache__/
 /cpu/*.csv
 frontier.png
 figD_cpu.svg
+# run state: pids, resolved toolchain, host-compiler shim, scratch
+.run/
