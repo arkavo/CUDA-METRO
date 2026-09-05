@@ -210,10 +210,11 @@ def ensure_macro(text):
 #endif
 
 """
-    # after the include guard if there is one, else at the very top
-    m = re.search(r'^\s*#define\s+__\w+_H__?\s*$', text, re.M)
-    if m:
-        return text[:m.end()] + "\n\n" + shim + text[m.end():]
+    # Line 1, unconditionally. Placing it "after the include guard" is the bug
+    # that produced `expected a "{"`: the first #define matching a guard-like
+    # name can sit further down the file than the declarations being patched,
+    # leaving the macro undefined exactly where it is used. The shim is an
+    # idempotent #if !defined block, so it is harmless above the guard.
     return shim + text
 
 
@@ -362,6 +363,19 @@ def main():
 
     ok, err = compile_stub(cuda, arch, HOSTCC)
     print()
+    if not ok and ERR.search(err) is None:
+        # A new KIND of failure means our edit made things worse. Put the
+        # headers back before reporting: a half-patched system header is a
+        # worse outcome than the original clash.
+        for h in hs:
+            b = h + ".pre-glibc-fix"
+            if os.path.exists(b):
+                shutil.copy2(b, h)
+                os.remove(b)
+        print("the patch did not help and introduced a different error, so the")
+        print("headers have been REVERTED automatically. nvcc said:\n")
+        print("\n".join(err.strip().splitlines()[:8]))
+        sys.exit(1)
     if ok:
         print(f"PATCHED: {', '.join(fixed)}")
         if HOSTCC:
