@@ -17,6 +17,7 @@ Checks, in the order they would bite you:
 Exit code 0 = safe to sbatch. Anything else, read the message.
 """
 import argparse
+import json
 import os
 import sys
 import traceback
@@ -97,11 +98,14 @@ if FAIL:
 
 print("\n4. MonteCarlo object and attributes")
 os.chdir(_repo.scratch())        # contain the Output_* dir it creates
-m = cst.MonteCarlo(config=CONFIG, input_folder=_repo.inputs())
-m.size = args.size
-m.Blocks = args.blocks
-m.stability_runs = 8
-m.S_Wrap = 1
+# SIZE/Blocks must travel through the config: __init__ copies SIZE into the
+# device buffer GSIZE once, and assigning m.size afterwards leaves GSIZE stale.
+_cfg = json.load(open(CONFIG))
+_cfg.update(SIZE=args.size, Blocks=args.blocks, stability_runs=8,
+            stability_wrap=1, Prefix="preflight")
+_cfgp = os.path.join(_repo.scratch(), "preflight_cfg.json")
+json.dump(_cfg, open(_cfgp, "w"))
+m = cst.MonteCarlo(config=_cfgp, input_folder=_repo.inputs())
 m.C1 = m.Blocks * m.stability_runs
 m.mc_init()
 m.grid_reset()
@@ -109,6 +113,18 @@ m.grid_reset()
 for a in ["GPU_MAT", "GRID_GPU", "BJ", "GPU_TRANS", "B_GPU", "GSIZE",
           "Threads", "Blocks", "size", "spin", "grid"]:
     check(f"m.{a}", lambda a=a: type(getattr(m, a)).__name__)
+
+# GSIZE is the device's idea of the lattice edge. If it disagrees with
+# m.size, the RNG draws indices outside the allocated grid and the first
+# kernel launch dies with an illegal memory access.
+def _gsize():
+    v = np.zeros(1, dtype=np.int32)
+    cuda.memcpy_dtoh(v, m.GSIZE)
+    if int(v[0]) != m.size:
+        raise AssertionError(f"device GSIZE={int(v[0])} but m.size={m.size} "
+                             f"- SIZE must be set via the config, not after")
+    return f"GSIZE={int(v[0])} == m.size"
+check("device GSIZE matches m.size", _gsize)
 
 check("m.generate_random_numbers(1)", lambda: m.generate_random_numbers(1))
 for a in ["NFULL", "S1FULL", "S2FULL", "S3FULL", "RLIST"]:
@@ -146,7 +162,12 @@ try:
     print("  ok    kernel launch + sync, argument list accepted")
 except Exception as e:
     print(f"  FAIL  kernel launch\n          {type(e).__name__}: {e}")
-    FAIL.append("kernel launch")
+    print("\n  The CUDA context is dead; anything further would only print"
+          "\n  more cleanup noise. Stopping here.")
+    if "illegal memory access" in str(e):
+        print("  An illegal access at this point almost always means a device"
+              "\n  buffer disagrees with a host-side size. Check GSIZE vs m.size.")
+    sys.exit(1)
 
 after = np.zeros_like(m.grid)
 cuda.memcpy_dtoh(after, m.GRID_GPU)

@@ -73,9 +73,19 @@ os.makedirs(SCRATCH, exist_ok=True)
 _BASE_CFG = json.load(open(CONFIG))
 
 
-def config_for(size, P, rep):
-    """A per-point config whose Prefix makes save_directory unique."""
+def config_for(size, P, rep, rounds):
+    """A per-point config.
+
+    SIZE and Blocks MUST go through the config, not be assigned afterwards:
+    __init__ copies SIZE into the device buffer GSIZE exactly once, and the
+    RNG draws site indices as floor(u * GSIZE^2). Setting m.size later leaves
+    GSIZE at the config value, so the kernel indexes a lattice larger than the
+    one allocated -> illegal memory access. Prefix keeps save_directory unique."""
     c = dict(_BASE_CFG)
+    c["SIZE"] = size
+    c["Blocks"] = P
+    c["stability_runs"] = rounds
+    c["stability_wrap"] = 1
     c["Prefix"] = f"b{size}_{P}_{rep}"
     p = os.path.join(SCRATCH, f"cfg_{size}_{P}_{rep}.json")
     with open(p, "w") as fh:
@@ -151,12 +161,9 @@ for size in SIZES:
                 continue
             m = None
             try:
-                m = cst.MonteCarlo(config=config_for(size, P, rep),
+                m = cst.MonteCarlo(config=config_for(size, P, rep, rounds),
                                    input_folder=_repo.inputs())
-                m.size = size
-                m.Blocks = P                 # must precede mc_init: it sizes
-                m.stability_runs = rounds    # TMATRIX and GPU_TRANS
-                m.S_Wrap = 1
+                assert m.size == size and m.Blocks == P
                 m.C1 = m.Blocks * m.stability_runs
                 m.mc_init()
                 m.grid_reset()
