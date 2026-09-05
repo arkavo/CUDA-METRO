@@ -13,13 +13,15 @@ speed–accuracy frontier rather than two unrelated plots.
 
 ```
 benchmarks/
+  run.sh                THE RUNNER for a machine you control: setup/preflight/
+                        smoke/start/status/log/stop/resume/analyze
   _repo.py              path bootstrap; import it and `import construct` works from any cwd
-  check_slurm.sh        can you submit a GPU job on this cluster at all?
+  check_slurm.sh        SLURM only: can you submit a GPU job at all?
   preflight_gpu.py      7 checks in seconds; gate the sweep on this
   bench_speed.py        the GPU sweep: wall-clock vs Blocks (=P) vs lattice size
-  submit_bench.slurm    batch job (runs preflight first, dies if it fails)
-  deploy_gpu.sh         driver: setup / preflight / run / status / analyze
-  run_detached.sh       alternative launcher (sbatch, or setsid+nohup off-scheduler)
+  submit_bench.slurm    SLURM only: batch job (runs preflight first)
+  deploy_gpu.sh         SLURM only: setup / preflight / run / status / analyze
+  run_detached.sh       SLURM only: alternative launcher
   analyze_bench.py      measured speed × fitted error law → frontier + usable-P ceiling
   cpu/                  shared-memory CPU thread-scaling variant (no GPU needed)
 ```
@@ -28,38 +30,48 @@ Nothing here is copied into `src/cudametro/`. `_repo.py` puts `<repo>/src` and
 `<repo>/src/cudametro` on `sys.path`, so there is exactly one copy of every
 script and it is the one that runs. Scripts work from any working directory.
 
-## Quick start on a cluster
+## Quick start — machine you control, no scheduler
 
 ```bash
 git clone https://github.com/arkavo/CUDA-METRO.git && cd CUDA-METRO/benchmarks
 chmod +x *.sh
 
-bash check_slurm.sh                    # partitions, gres, QoS, fairshare
-
-# edit the four paths + module names at the top of deploy_gpu.sh
-./deploy_gpu.sh setup                  # venv, pycuda, install the package
-
-srun --gres=gpu:1 --time=00:15:00 --pty bash
-python preflight_gpu.py                # must print PREFLIGHT PASSED
-exit
-
-./deploy_gpu.sh run                    # sbatch — detached, close the terminal
-./deploy_gpu.sh status
-./deploy_gpu.sh analyze
+./run.sh setup          # venv + pycuda + the package
+./run.sh preflight      # must end: PREFLIGHT PASSED
+./run.sh smoke          # ~2 min, prints to the terminal
+./run.sh start          # full sweep, detached — close the terminal
+./run.sh status         # alive? how many points measured?
+./run.sh analyze
 ```
 
-## On detachment
+Pick a card with `GPU=2 ./run.sh start`. Narrow the sweep with environment
+variables: `SIZES=64,128 BLOCKS=64,256,1024 ATTEMPTS=2e6 REPEATS=1`.
 
-`sbatch` is **already detached**. The scheduler owns the job; closing the
-terminal, logging out, or dropping the VPN does not touch a queued or running
-batch job. Do not wrap it in `nohup` — that would detach it from a shell it was
-never attached to.
+If a run dies — power cut, driver reset, someone else's job — `./run.sh
+resume` restarts it on the same card and skips every `(size, P, repeat)`
+already in the CSV. Rows are `fsync`ed as they are written, so nothing
+measured is ever lost.
 
-`./run_detached.sh local` exists for a plain GPU box with no scheduler, and
-uses `setsid nohup … < /dev/null &` with a PID file. **Do not use it inside an
-`salloc`/`srun --pty` allocation**: most clusters tear the allocation's cgroup
-down when the session ends and kill every process in it regardless of
-`setsid`. On a scheduler, sbatch is the only durable option.
+### Why `start` really survives logout
+
+`spawn()` launches the child under `setsid`, giving it a new session with no
+controlling terminal, so the `SIGHUP` your shell sends on exit never reaches
+it. `nohup` is belt and braces, and `</dev/null` keeps it from ever blocking
+on a read from a terminal that no longer exists.
+
+The child writes its **own** PID and then `exec`s. `$!` is wrong here: when
+the background process is already a process-group leader, `setsid` forks and
+the parent exits immediately, so `$!` names a corpse and every later
+`kill -0` would report a healthy run as dead.
+
+## If you are on a shared, scheduled cluster instead
+
+`check_slurm.sh`, `submit_bench.slurm`, `deploy_gpu.sh` and `run_detached.sh`
+are the SLURM path, kept for portability. `sbatch` is already detached — the
+scheduler owns the job, so do not wrap it in `nohup`. Never use `run.sh` or
+`run_detached.sh local` inside an `salloc`/`srun --pty` allocation: most sites
+tear the allocation's cgroup down when the session ends and kill every process
+in it regardless of `setsid`.
 
 ## What the sweep measures, and why each choice
 

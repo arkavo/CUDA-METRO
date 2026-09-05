@@ -24,11 +24,21 @@ it without a human watching.
 
 ## Environment assumptions
 
-- `sbatch` present → use it. It is already detached; the scheduler owns the
-  job and terminal loss is irrelevant. Do not wrap it in `nohup`.
-- `sbatch` absent → `./run_detached.sh local`. Do **not** use this inside an
-  `salloc`/`srun --pty` allocation: the cgroup is torn down when the session
-  ends and `setsid` will not save the process.
+Default is the **raw runner** `./run.sh` — a machine the user controls, no
+scheduler. It detaches with `setsid`, the child reports its own PID, and the
+CSV is `fsync`ed per row so `./run.sh resume` is always safe.
+
+- Never poll faster than once a minute; `./run.sh status` is cheap but the log
+  is the thing to read, not re-run.
+- After any abnormal exit, `./run.sh resume` — never `start`, which opens a new
+  CSV and re-measures everything.
+- `GPU=n` selects a card. If several are free, one sweep per card with
+  different `GPU=` values is fine; they write separate CSVs and
+  `analyze_bench.py` takes them all.
+- Only if the site actually has SLURM: `sbatch submit_bench.slurm`. That is
+  already detached — the scheduler owns it; do not wrap it in `nohup`. Never
+  run `./run.sh start` inside an `salloc`/`srun --pty` allocation: the cgroup
+  is torn down when the session ends and `setsid` will not save it.
 - Site-specific values live at the top of `deploy_gpu.sh` (`REPO`, `VENV`,
   `RESULTS`, `CUDA_MODULE`, `PY_MODULE`) and in the `#SBATCH` header of
   `submit_bench.slurm` (`--partition`, `--gres`, `--time`). These are the only
@@ -38,13 +48,16 @@ it without a human watching.
 
 ```bash
 cd <repo>/benchmarks && chmod +x *.sh
-bash check_slurm.sh                          # capture output into the report
-./deploy_gpu.sh setup
-srun --gres=gpu:1 --time=00:15:00 python preflight_gpu.py   # must exit 0
-./deploy_gpu.sh run                          # capture the job id
-# poll; when State=COMPLETED:
-./deploy_gpu.sh analyze
+./run.sh setup
+./run.sh preflight                 # must exit 0 and print PREFLIGHT PASSED
+./run.sh smoke                     # must produce 3 sane rows
+./run.sh start
+# poll ./run.sh status until "not running" AND the log ends with "wrote <csv>"
+./run.sh analyze
 ```
+
+"not running" alone does not mean success — a crash also stops the process.
+Confirm the log's last line is `wrote <csv>` before reporting completion.
 
 ## Failure playbook
 
@@ -53,10 +66,11 @@ srun --gres=gpu:1 --time=00:15:00 python preflight_gpu.py   # must exit 0
 | `ModuleNotFoundError: construct` | not run from `benchmarks/`, or `_repo.py` missing | run from `benchmarks/`; confirm it sits at the repo root beside `src/` |
 | `ModuleNotFoundError: pycuda` | wrong venv | `source $VENV/bin/activate`; if it is not installed, `which nvcc` before blaming pip |
 | pycuda build fails in `setup` | CUDA toolkit not on PATH | `module load` the CUDA module, check `which nvcc`, then retry |
-| `no nvidia-smi` in preflight | on a login node | get a GPU: `srun --gres=gpu:1 --time=00:15:00 --pty bash` |
+| `no nvidia-smi` on this host | wrong machine, or driver down | check `nvidia-smi` by hand; do not proceed |
+| process vanished mid-sweep | OOM killer, driver reset, reboot | `./run.sh resume` — never `start` |
 | preflight: "the lattice did not change" | β unwritten, or every move rejected | do **not** proceed. Check `--temp`; the sweep is meaningless without this |
 | `cuda.MemoryError` mid-sweep | RNG buffers too big | lower `--attempts` (buffers ≈ `attempts × 36 bytes`); record the new value |
-| job hits the time limit | sweep too long | the CSV is flushed per row, so **keep it**; resubmit the remaining points with narrowed `--sizes`/`--blocks` and append |
+| run interrupted for any reason | anything | `./run.sh resume`; rows are fsynced, nothing measured is lost |
 | `AttributeError` on any `m.<attr>` | repo changed under us | stop. Re-run preflight, report which attribute vanished; do not guess a replacement |
 | `Invalid account / association` from sbatch | no GPU allocation on this account | `check_slurm.sh` output has the associations; escalate to a human |
 
@@ -64,9 +78,9 @@ srun --gres=gpu:1 --time=00:15:00 python preflight_gpu.py   # must exit 0
 
 Always, whether it worked or not:
 
-- the `check_slurm.sh` summary (partitions, gres, QoS limits)
-- GPU model, SM count, and the `maxBlocks/SM × SMs` product from preflight
-- job id, final `sacct` State, Elapsed, ExitCode
+- host name, GPU model, SM count, and the `maxBlocks/SM × SMs` product
+  from preflight
+- the PID, whether the log ends with `wrote <csv>`, and any resume you did
 - the CSV path and its row count
 - `analyze_bench.py` stdout in full — specifically, for each lattice size, the
   P at which parallel efficiency drops below 50%, and whether the hardware or
