@@ -6,7 +6,8 @@
 #   ./run.sh preflight        7 checks in seconds; do this before a long run
 #   ./run.sh smoke            ~2 min sanity sweep, prints to the terminal
 #   ./run.sh start            full sweep, DETACHED (survives logout)
-#   ./run.sh status           alive? how far along?
+#   ./run.sh status           running / completed / failed / died, + progress
+#   ./run.sh wait             block until it ends, then report how it ended
 #   ./run.sh log              follow the live log
 #   ./run.sh stop             kill it
 #   ./run.sh resume           restart, skipping points already measured
@@ -270,6 +271,7 @@ mkdir -p "$RESULTS" "$RUN"
 [ -f "$HERE/.run/env" ] && . "$HERE/.run/env"
 PIDFILE="$RUN/bench.pid"
 CSVPTR="$RUN/bench.csv.path"
+EXITFILE="$RUN/bench.exit"
 GPUPTR="$RUN/bench.gpu"
 LOGPTR="$RUN/bench.log.path"
 
@@ -289,8 +291,12 @@ spawn() {
     local log="$1" pidfile="$2"; shift 2
     local launcher=(); command -v setsid >/dev/null 2>&1 && launcher=(setsid)
     "${launcher[@]}" nohup bash -c '
-        printf "%s\n" "$$" > "$1"; shift
-        exec "$@"' _ "$pidfile" "$@" </dev/null >"$log" 2>&1 &
+        pidfile="$1"; exitfile="$2"; shift 2
+        printf "%s\n" "$$" > "$pidfile"
+        rm -f "$exitfile"
+        "$@"; code=$?
+        printf "%s %s\n" "$code" "$(date +%s)" > "$exitfile"
+        exit $code' _ "$pidfile" "$EXITFILE" "$@" </dev/null >"$log" 2>&1 &
     # give the child a moment to write the file before anyone reads it
     for _ in 1 2 3 4 5 6 7 8 9 10; do
         [ -s "$pidfile" ] && break
@@ -394,7 +400,7 @@ start|resume)
     fi
     echo "$CSV" > "$CSVPTR"; echo "$LOG" > "$LOGPTR"; echo "$GPU" > "$GPUPTR"
 
-    rm -f "$PIDFILE"
+    rm -f "$PIDFILE" "$EXITFILE"
     spawn "$LOG" "$PIDFILE" \
         env "CUDA_VISIBLE_DEVICES=$GPU" "PATH=$PATH" \
             "LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}" "CUDA_HOME=${CUDA_HOME:-}" \
@@ -418,24 +424,56 @@ start|resume)
     ;;
 
 status)
+    CSV=""; [ -f "$CSVPTR" ] && CSV="$(cat "$CSVPTR")"
+    LOG=""; [ -f "$LOGPTR" ] && LOG="$(cat "$LOGPTR")"
+
     if running; then
-        echo "RUNNING  pid $(cat "$PIDFILE")"
-    else
-        echo "not running"
-    fi
-    if [ -f "$CSVPTR" ]; then
-        CSV="$(cat "$CSVPTR")"
-        if [ -f "$CSV" ]; then
-            echo "csv      $CSV"
-            echo "measured $(($(wc -l < "$CSV") - 1)) points"
+        VERDICT="RUNNING   pid $(cat "$PIDFILE")"
+    elif [ -f "$EXITFILE" ]; then
+        read -r CODE WHEN < "$EXITFILE"
+        if [ "$CODE" = 0 ]; then
+            VERDICT="COMPLETED  (exit 0, $(date -d "@$WHEN" 2>/dev/null || echo "at $WHEN"))"
+        else
+            VERDICT="FAILED     (exit $CODE) - read the log, then ./run.sh resume"
         fi
+    elif [ -n "$LOG" ]; then
+        VERDICT="DIED       (no exit status recorded: killed, OOM, or reboot)
+           nothing measured is lost - ./run.sh resume"
+    else
+        VERDICT="no run yet"
     fi
-    [ -f "$LOGPTR" ] && { echo "--- last 8 log lines ---"; tail -8 "$(cat "$LOGPTR")"; }
+    echo "$VERDICT"
+
+    if [ -n "$CSV" ] && [ -f "$CSV" ]; then
+        echo "csv       $CSV"
+        echo "measured  $(($(wc -l < "$CSV") - 1)) points"
+    fi
+    if [ -n "$LOG" ] && [ -f "$LOG" ]; then
+        # bench_speed prints "[n/total] ..." per point
+        PROG="$(grep -o '\[[0-9]\+/[0-9]\+\]' "$LOG" | tail -1 | tr -d '[]')"
+        [ -n "$PROG" ] && echo "progress  ${PROG%/*} of ${PROG#*/} points"
+        echo "--- last 6 log lines ---"
+        tail -6 "$LOG"
+    fi
     if command -v nvidia-smi >/dev/null 2>&1; then
         echo "--- gpu ---"
         nvidia-smi --query-gpu=index,utilization.gpu,memory.used --format=csv,noheader
     fi
     exit 0
+    ;;
+
+wait)
+    # Block until the run ends, then say how it ended. Handy over ssh:
+    #   ./run.sh wait && ./run.sh analyze
+    running || { echo "not running"; exit 0; }
+    echo "waiting for pid $(cat "$PIDFILE") ..."
+    while running; do sleep 30; done
+    if [ -f "$EXITFILE" ]; then
+        read -r CODE WHEN < "$EXITFILE"
+        [ "$CODE" = 0 ] && echo "COMPLETED" || { echo "FAILED (exit $CODE)"; exit "$CODE"; }
+    else
+        echo "DIED without recording an exit status - ./run.sh resume"; exit 1
+    fi
     ;;
 
 log)
@@ -446,9 +484,15 @@ log)
 stop)
     running || { echo "not running"; exit 0; }
     PID="$(cat "$PIDFILE")"
-    kill "$PID" && echo "sent TERM to $PID"
+    # setsid made the wrapper a session leader, so pid == process-group id:
+    # kill the GROUP or python survives its parent.
+    kill -TERM -"$PID" 2>/dev/null || kill -TERM "$PID" 2>/dev/null
+    echo "sent TERM to process group $PID"
     sleep 3
-    kill -0 "$PID" 2>/dev/null && { kill -9 "$PID"; echo "SIGKILLed"; }
+    if kill -0 "$PID" 2>/dev/null; then
+        kill -9 -"$PID" 2>/dev/null || kill -9 "$PID" 2>/dev/null
+        echo "SIGKILLed"
+    fi
     rm -f "$PIDFILE"
     echo "the CSV is fsynced per row - ./run.sh resume picks up where it stopped"
     ;;
