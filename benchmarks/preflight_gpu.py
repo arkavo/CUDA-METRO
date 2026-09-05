@@ -55,12 +55,23 @@ try:
     import construct as cst
     import cudametro.montecarlo as mc
     print("  ok    pycuda, construct, cudametro.montecarlo")
+except ModuleNotFoundError as e:
+    # Distinguish "the package isn't installed" from "the path is wrong".
+    # construct.py imports seaborn/tqdm at module scope, and the repo's
+    # pyproject declares only numpy, so a plain install leaves them missing.
+    missing = e.name or "?"
+    if missing in ("construct", "cudametro"):
+        sys.exit(f"\ncannot import {missing}: this is a PATH problem. Check that "
+                 f"benchmarks/ sits at the repo root beside src/, and that "
+                 f"_repo.py is next to this script.")
+    sys.exit(f"\nmissing package: {missing}\n"
+             f"  install it into the venv running this script:\n"
+             f"    {sys.executable} -m pip install {missing}\n"
+             f"  (or re-run ./run.sh setup, which installs the full set)")
 except Exception:
     traceback.print_exc()
-    sys.exit("\nimports failed. _repo.py should have made `import construct` "
-             "work from any cwd - check that benchmarks/ sits at the repo root "
-             "beside src/, and that you are inside the venv where pycuda and "
-             "CUDA-METRO are installed.")
+    sys.exit("\nimports failed for a reason other than a missing module - "
+             "the traceback above is the thing to read.")
 
 print("\n2. device")
 dev = cuda.Device(0)

@@ -129,7 +129,7 @@ PYX
 }
 
 check_arch() {
-    local ENVFILE="$HERE/.run/env" arch tmp cuda cc ex why pf
+    local ENVFILE="$HERE/.run/env" arch tmp cuda cc ex why pf shim ccc
     arch="$(device_arch)" || { echo "note: cannot query the GPU yet (venv not built); skipping arch check"; return 0; }
     [ -n "$arch" ] || { echo "note: could not read compute capability; skipping arch check"; return 0; }
     echo "device compute capability: sm_$arch"
@@ -186,7 +186,31 @@ check_arch() {
                     [ -n "$ex" ] && pf="$pf $ex"
                     [ -n "${NVCC_ALLOW_UNSUPPORTED:-}" ] && pf="$pf -allow-unsupported-compiler"
                     export PYCUDA_DEFAULT_NVCC_FLAGS="$pf"
+
+                    # PYCUDA_DEFAULT_NVCC_FLAGS alone is NOT enough. pycuda
+                    # honours it only when the caller passes no options, and
+                    # montecarlo.py calls
+                    #     SourceModule(..., options=["-std=c++17","-O0"])
+                    # so -ccbin never reaches nvcc for the real kernels.
+                    # Absent -ccbin, nvcc takes the host compiler as plain
+                    # `g++` from PATH - so put the right one there under that
+                    # name. Works however nvcc ends up being invoked.
+                    if [ -n "$cc" ]; then
+                        shim="$HERE/.run/hostcc"
+                        mkdir -p "$shim"
+                        ln -sf "$cc" "$shim/g++"
+                        ln -sf "$cc" "$shim/c++"
+                        ccc="${cc/g++/gcc}"
+                        if [ -x "$ccc" ]; then
+                            ln -sf "$ccc" "$shim/gcc"
+                            ln -sf "$ccc" "$shim/cc"
+                        fi
+                        export PATH="$shim:$PATH"
+                        echo "  host-compiler shim: $shim/g++ -> $cc"
+                    fi
+
                     {   printf 'export CUDA_HOME=%s\n' "$cuda"
+                        [ -n "$cc" ] && printf 'export PATH=%s/.run/hostcc:$PATH\n' "$HERE"
                         printf 'export PATH=%s/bin:$PATH\n' "$cuda"
                         printf 'export LD_LIBRARY_PATH=%s/lib64:${LD_LIBRARY_PATH:-}\n' "$cuda"
                         printf 'export PYCUDA_DEFAULT_NVCC_FLAGS="%s"\n' "$pf"
@@ -303,7 +327,7 @@ setup)
     fi
     . "$VENV/bin/activate"
     pip install -q --upgrade pip wheel
-    pip install -q numpy pandas matplotlib || exit 1
+    pip install -q numpy pandas matplotlib seaborn tqdm || exit 1
     echo "installing pycuda (compiles against the CUDA toolkit; slow) ..."
     pip install -q pycuda || {
         echo "pycuda failed. Almost always nvcc not on PATH, or no matching"
