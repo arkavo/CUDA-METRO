@@ -35,12 +35,18 @@ df["gpu"] = df["gpu"].astype(str).str.strip()
 
 # NOTE the "gpu" key. Without it, two machines' timings for the same (size, P)
 # are medianed into one meaningless number.
-# "attempts" MUST be a grouping key. Sweeps run with different --attempts
+# Group on the TARGET attempts, not the achieved count. rounds = attempts // P,
+# so the realised total is P * (target // P) - which differs per P (19,988,480
+# vs 20,000,000). Keying on the raw value shatters a sweep into one fragment
+# per P and destroys every curve. Two significant figures recovers the target.
+df["sweep"] = df["attempts"].apply(lambda a: float(f"{a:.2g}"))
+
+# The target MUST be a grouping key. Sweeps run with different --attempts
 # produce different kernel times for the same (size, P), and pooling them
 # medians incomparable numbers: a P present in only one sweep is then compared
 # against a P whose median came from another, and the curve grows spikes that
 # look like hardware behaviour and are pure bookkeeping.
-g = df.groupby(["gpu", "attempts", "size", "N", "blocks_P", "N_over_P"],
+g = df.groupby(["gpu", "sweep", "size", "N", "blocks_P", "N_over_P"],
                as_index=False).agg(
     kernel_s=("kernel_s", "median"), rng_s=("rng_s", "median"),
     rounds=("rounds", "median"),
@@ -50,9 +56,9 @@ print(f"{len(df)} rows from {len(paths)} file(s); "
       f"{df.gpu.nunique()} GPU model(s): {', '.join(sorted(df.gpu.unique()))}\n")
 
 summary = {}
-for (gpu, att), gd in g.groupby(["gpu", "attempts"]):
+for (gpu, att), gd in g.groupby(["gpu", "sweep"]):
     print("=" * 70)
-    print(f"GPU: {gpu}    attempts/point = {int(att):,}")
+    print(f"GPU: {gpu}    target attempts/point = {att:.0e}")
     print("=" * 70)
     for size, s in gd.groupby("size"):
         s = s.sort_values("blocks_P")
@@ -100,7 +106,7 @@ for (gpu, att), gd in g.groupby(["gpu", "attempts"]):
               f"(observed max {float(s.speedup.max()):.0f}x)")
         print(f"    -> peak throughput {peak.attempts_per_s/1e6:.1f} Mattempt/s "
               f"at P={int(peak.blocks_P)}")
-        summary.setdefault(f"{gpu}  [attempts={int(att):,}]", []).append(
+        summary.setdefault(f"{gpu}  [attempts={att:.0e}]", []).append(
             (size, int(sat), censored))
         N = size ** 2
         for A in TARGETS:
@@ -129,7 +135,7 @@ for gpu, rows in summary.items():
 # ---- frontier: measured speedup vs predicted accuracy, one line per (gpu,size)
 fig, ax = plt.subplots(figsize=(9, 5.5))
 styles = ["-o", "-s", "-^", "-D", "-v", "-P"]
-for gi, ((gpu, att), gd) in enumerate(g.groupby(["gpu", "attempts"])):
+for gi, ((gpu, att), gd) in enumerate(g.groupby(["gpu", "sweep"])):
     for si, (size, s) in enumerate(gd.groupby("size")):
         s = s.sort_values("blocks_P")
         t1 = float(s.kernel_s.iloc[0])
