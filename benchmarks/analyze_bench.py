@@ -60,11 +60,40 @@ for gpu, gd in g.groupby("gpu"):
                   f"speedup={r.speedup:8.2f}x  ideal={r.ideal:8.1f}x  "
                   f"eff={r.eff:6.1%}  RNG={r.rng_frac:4.0%}")
         sat = s[s.eff >= 0.5].blocks_P.max()
+        pmax = s.blocks_P.max()
+        # If efficiency never fell below 50%, the "ceiling" is just the largest
+        # P we tried - the measurement is CENSORED, not saturated. Reporting it
+        # as a hardware ceiling invents a limit the data does not show. This
+        # bites hardest at small L, where P <= N caps the sweep on its own.
+        censored = bool(sat == pmax)
         peak = s.loc[s.attempts_per_s.idxmax()]
-        print(f"    -> hardware ceiling (eff >= 50%): P ~ {int(sat)}")
+        if censored:
+            cap = " (P capped by N)" if pmax >= size ** 2 else ""
+            print(f"    -> ceiling NOT REACHED: efficiency still "
+                  f"{float(s.eff.iloc[-1]):.0%} at the largest P tested "
+                  f"({int(pmax)}){cap}")
+        else:
+            print(f"    -> hardware ceiling (eff >= 50%): P ~ {int(sat)}")
+        # ---- the two-parameter model ------------------------------------
+        # A round costs a fixed launch+sync latency L until the work in it
+        # exceeds what the GPU can do; after that it costs work/throughput.
+        #     t(P) = rounds * L                 while P < P*
+        #     t(P) = attempts / T               once P > P*
+        # Setting them equal gives the crossover and the speedup ceiling:
+        #     P* = L * T          speedup_max = P* / P_min
+        # Two measured constants predict the entire curve.
+        s = s.assign(us_per_round=1e6 * s.kernel_s / s.rounds)
+        L_us = float(s.us_per_round.min())            # flat region = pure latency
+        T = float(s.attempts_per_s.max())             # plateau = peak throughput
+        p_star = L_us * 1e-6 * T
+        print(f"    -> per-round latency L = {L_us:.1f} us   "
+              f"peak throughput T = {T/1e6:.1f} Mattempt/s")
+        print(f"    -> model: P* = L x T = {p_star:,.0f}   "
+              f"speedup ceiling = P*/{int(p1)} = {p_star/p1:.0f}x  "
+              f"(observed max {float(s.speedup.max()):.0f}x)")
         print(f"    -> peak throughput {peak.attempts_per_s/1e6:.1f} Mattempt/s "
               f"at P={int(peak.blocks_P)}")
-        summary.setdefault(gpu, []).append((size, int(sat), float(peak.blocks_P)))
+        summary.setdefault(gpu, []).append((size, int(sat), censored))
         N = size ** 2
         for A in TARGETS:
             p_acc = (1 - A) / C_ERR * N
@@ -76,11 +105,18 @@ print("\n" + "=" * 70)
 print("SATURATION SUMMARY  (compare against maxBlocks/SM x SMs from preflight)")
 print("=" * 70)
 for gpu, rows in summary.items():
-    sats = [s for _, s, _ in rows]
+    real = [s for _, s, c in rows if not c]
+    cens = [s for _, s, c in rows if c]
     print(f"  {gpu}")
-    print(f"    per-size eff>=50% ceilings: {sats}")
-    print(f"    median {int(np.median(sats))}  -- if this tracks the block "
-          f"ceiling rather than core count, launch geometry is the constraint")
+    if real:
+        print(f"    measured ceilings (eff dropped below 50%): {real}")
+        print(f"    median {int(np.median(real))}")
+    if cens:
+        print(f"    NOT reached at these sizes (largest P tried): {cens}"
+              f"  <- censored, not a limit")
+    if not real:
+        print("    no ceiling observed anywhere: the sweep never went far "
+              "enough in P. Run ./run.sh big.")
 
 # ---- frontier: measured speedup vs predicted accuracy, one line per (gpu,size)
 fig, ax = plt.subplots(figsize=(9, 5.5))

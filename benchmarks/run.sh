@@ -261,6 +261,12 @@ PYTHON_EXPLICIT="${PYTHON+set}"
 GPU_EXPLICIT="${GPU+set}"      # was GPU= given on this command line?
 GPU="${GPU:-0}"
 
+# Capture explicitness BEFORE applying defaults. Without this, `big` cannot
+# tell "user said nothing" from "the default already filled it in", and its
+# ${VAR:-preset} fallbacks never fire - the preset then runs the default sweep
+# while printing that it is doing something else.
+SIZES_SET="${SIZES+y}"; BLOCKS_SET="${BLOCKS+y}"
+ATTEMPTS_SET="${ATTEMPTS+y}"; REPEATS_SET="${REPEATS+y}"
 SIZES="${SIZES:-64,128,256,512}"
 BLOCKS="${BLOCKS:-64,128,256,512,1024,2048,4096,8192,16384}"
 ATTEMPTS="${ATTEMPTS:-2e7}"
@@ -377,10 +383,11 @@ big)
     # The full sweep, as a preset. Passing SIZES=/BLOCKS=/ATTEMPTS= by hand is
     # easy to forget, and the run then silently repeats the defaults - which
     # looks like success and produces the wrong data.
-    export SIZES="${SIZES:-64,128,256,512,750,1024,2048}"
-    export BLOCKS="${BLOCKS:-64,128,256,512,1024,2048,2560,3072,4096,8192,16384,32768,65536}"
-    export ATTEMPTS="${ATTEMPTS:-1e8}"
-    export REPEATS="${REPEATS:-5}"
+    [ -z "$SIZES_SET" ]    && SIZES="64,128,256,512,750,1024,2048"
+    [ -z "$BLOCKS_SET" ]   && BLOCKS="64,128,256,512,1024,2048,2560,3072,4096,8192,16384,32768,65536"
+    [ -z "$ATTEMPTS_SET" ] && ATTEMPTS="1e8"
+    [ -z "$REPEATS_SET" ]  && REPEATS="5"
+    export SIZES BLOCKS ATTEMPTS REPEATS
     echo "big sweep:"
     echo "  sizes    $SIZES"
     echo "  blocks   $BLOCKS"
