@@ -242,6 +242,10 @@ def main():
     print(f"toolkit : {cuda}")
     print(f"header  : {hs[0]}" + (f"  (+{len(hs)-1} more)" if len(hs) > 1 else ""))
 
+    dirty = [h for h in hs if MARK in open(h).read()]
+    if dirty and not args.revert:
+        print(f"note: {len(dirty)} header(s) still carry a patch from a previous run")
+
     if args.revert:
         n = 0
         for h in hs:
@@ -293,6 +297,17 @@ def main():
     if HOSTCC:
         print(f"host cc : {note}   (gcc {os.popen('gcc -dumpversion').read().strip()} "
               f"is too new for this toolkit)")
+
+    # Start from a PRISTINE header. A file left half-patched by an earlier run
+    # matches none of the declaration patterns, so the script would report "no
+    # declaration found to patch" and walk away leaving the damage in place.
+    # This must happen before any error is classified, because a broken header
+    # fails with a syntax error that looks like "not the glibc clash".
+    for h in hs:
+        b = h + ".pre-glibc-fix"
+        if os.path.exists(b):
+            shutil.copy2(b, h)
+            print(f"note: restored {os.path.basename(h)} from an earlier run's backup")
 
     ok, err = compile_stub(cuda, arch, HOSTCC)
     if ok:
