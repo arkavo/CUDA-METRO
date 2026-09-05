@@ -129,17 +129,27 @@ PYX
 }
 
 check_arch() {
-    local ENVFILE="$HERE/.run/env" arch tmp cuda cc why
+    local ENVFILE="$HERE/.run/env" arch tmp cuda cc ex why pf
     arch="$(device_arch)" || { echo "note: cannot query the GPU yet (venv not built); skipping arch check"; return 0; }
     [ -n "$arch" ] || { echo "note: could not read compute capability; skipping arch check"; return 0; }
     echo "device compute capability: sm_$arch"
 
-    tmp="$(mktemp -d)"; printf '__global__ void k(){}\n' > "$tmp/t.cu"
+    tmp="$(mktemp -d)"; printf '#include <math.h>\n__global__ void k(){}\n' > "$tmp/t.cu"
 
-    # Toolkit and host compiler are NOT independent. A toolkit is rejected only
-    # when it fails for EVERY host compiler - otherwise "nvcc failed" gets
-    # misreported as "this toolkit cannot build for your GPU", which is how you
-    # end up being told no toolkit supports a card that three of them support.
+    # Three axes, and they are NOT independent:
+    #   toolkit      - CUDA 13 dropped Volta, so 13.x cannot target sm_70
+    #   host gcc     - each toolkit accepts only up to some gcc version
+    #   glibc headers- glibc >= 2.41 added the C23 functions cospi/sinpi/tanpi;
+    #                  CUDA's crt/math_functions.h redeclares them without the
+    #                  matching noexcept, so every compile dies with
+    #                  "exception specification is incompatible". -ccbin does
+    #                  NOT fix that: an older g++ still reads the same
+    #                  /usr/include. Only a define or a newer CUDA does.
+    # So try the full matrix and report the real refusal per toolkit.
+    local extras=(""
+        "-D__GLIBC_USE_IEC_60559_FUNCS_EXT_C23=0"
+        "-D__GLIBC_USE_IEC_60559_FUNCS_EXT_C2X=0"
+        "-D__GLIBC_USE_IEC_60559_FUNCS_EXT_C23=0 -D__GLIBC_USE_IEC_60559_FUNCS_EXT_C2X=0")
     local cudas=() ccs=("")
     [ -n "$CUDA_HOME_HINT" ] && cudas+=("$CUDA_HOME_HINT")
     command -v nvcc >/dev/null 2>&1 && cudas+=("$(dirname "$(dirname "$(command -v nvcc)")")")
@@ -150,49 +160,62 @@ check_arch() {
         [ -x "$g" ] && ccs+=("$g")
     done
 
-    echo "  toolkits: $(printf '%s ' "${cudas[@]}" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')"
-    echo "  host compilers to try: default $(printf '%s ' "${ccs[@]:1}")"
+    echo "  toolkits: $(printf '%s\n' "${cudas[@]}" | awk '!s[$0]++' | tr '\n' ' ')"
+    echo "  host compilers: default $(printf '%s ' "${ccs[@]:1}")"
+    echo "  glibc $(ldd --version 2>/dev/null | head -1 | awk '{print $NF}')  gcc $(gcc -dumpversion 2>/dev/null)"
 
-    local tried_default_err=""
-    for cuda in $(printf '%s\n' "${cudas[@]}" | awk '!seen[$0]++'); do
+    for cuda in $(printf '%s\n' "${cudas[@]}" | awk '!s[$0]++'); do
+        why=""
         for cc in "${ccs[@]}"; do
-            local flags=(-arch="sm_$arch" -cubin -o "$tmp/t.cubin")
-            [ -n "$cc" ] && flags+=(-ccbin="$cc")
-            if [ -n "${NVCC_ALLOW_UNSUPPORTED:-}" ]; then
-                flags+=(-allow-unsupported-compiler)
-                export PYCUDA_DEFAULT_NVCC_FLAGS="${PYCUDA_DEFAULT_NVCC_FLAGS:-} -allow-unsupported-compiler"
-            fi
-            if "$cuda/bin/nvcc" "${flags[@]}" "$tmp/t.cu" >"$tmp/err" 2>&1; then
-                echo "  OK: $cuda${cc:+  with host compiler $cc}"
-                CUDA_ROOT="$cuda"
-                export CUDA_HOME="$cuda"
-                export PATH="$cuda/bin:$PATH"
-                export LD_LIBRARY_PATH="$cuda/lib64:${LD_LIBRARY_PATH:-}"
-                {   printf 'export CUDA_HOME=%s\n' "$cuda"
-                    printf 'export PATH=%s/bin:$PATH\n' "$cuda"
-                    printf 'export LD_LIBRARY_PATH=%s/lib64:${LD_LIBRARY_PATH:-}\n' "$cuda"
-                } >> "$ENVFILE"
-                if [ -n "$cc" ]; then
-                    export PYCUDA_DEFAULT_NVCC_FLAGS="-ccbin=$cc"
-                    printf 'export PYCUDA_DEFAULT_NVCC_FLAGS="-ccbin=%s"\n' "$cc" >> "$ENVFILE"
+            for ex in "${extras[@]}"; do
+                local flags=(-arch="sm_$arch" -cubin -Wno-deprecated-gpu-targets -o "$tmp/t.cubin")
+                [ -n "$cc" ] && flags+=(-ccbin="$cc")
+                if [ -n "$ex" ]; then
+                    local exarr; read -r -a exarr <<< "$ex"; flags+=("${exarr[@]}")
                 fi
-                rm -rf "$tmp"; return 0
-            fi
-            why="$(head -3 "$tmp/err" | tr '\n' ' ')"
+                [ -n "${NVCC_ALLOW_UNSUPPORTED:-}" ] && flags+=(-allow-unsupported-compiler)
+
+                if "$cuda/bin/nvcc" "${flags[@]}" "$tmp/t.cu" >"$tmp/err" 2>&1; then
+                    echo "  OK: $cuda${cc:+   ccbin $cc}${ex:+   $ex}"
+                    CUDA_ROOT="$cuda"
+                    export CUDA_HOME="$cuda"
+                    export PATH="$cuda/bin:$PATH"
+                    export LD_LIBRARY_PATH="$cuda/lib64:${LD_LIBRARY_PATH:-}"
+                    pf="-Wno-deprecated-gpu-targets"
+                    [ -n "$cc" ] && pf="$pf -ccbin=$cc"
+                    [ -n "$ex" ] && pf="$pf $ex"
+                    [ -n "${NVCC_ALLOW_UNSUPPORTED:-}" ] && pf="$pf -allow-unsupported-compiler"
+                    export PYCUDA_DEFAULT_NVCC_FLAGS="$pf"
+                    {   printf 'export CUDA_HOME=%s\n' "$cuda"
+                        printf 'export PATH=%s/bin:$PATH\n' "$cuda"
+                        printf 'export LD_LIBRARY_PATH=%s/lib64:${LD_LIBRARY_PATH:-}\n' "$cuda"
+                        printf 'export PYCUDA_DEFAULT_NVCC_FLAGS="%s"\n' "$pf"
+                    } >> "$ENVFILE"
+                    rm -rf "$tmp"; return 0
+                fi
+                why="$(grep -m1 -E 'error|fatal error|nvcc fatal' "$tmp/err" | cut -c1-150)"
+                [ -n "$why" ] || why="$(head -1 "$tmp/err" | cut -c1-150)"
+            done
         done
-        echo "  no: $cuda -> $why"
+        echo "  no: $(basename "$cuda") -> $why"
     done
 
     echo
-    echo "Nothing works yet. What each refusal actually means:"
-    echo "  'Unsupported gpu architecture sm_$arch'  -> CUDA 13 dropped Volta; use a 12.x toolkit."
-    echo "  'unsupported GNU version'                -> host gcc newer than that toolkit accepts."
-    echo "You have gcc $(gcc -dumpversion 2>/dev/null). CUDA 12.9 accepts up to gcc 14."
-    echo "Fix (Fedora):   sudo dnf install gcc14-c++   then re-run; it is picked up automatically."
-    echo "Escape hatch:   CUDA_HOME=/usr/local/cuda-12.9 NVCC_ALLOW_UNSUPPORTED=1 ./run.sh preflight"
+    echo "No working (toolkit, compiler, flags) combination. Decode the refusal:"
+    echo "  'Unsupported gpu architecture sm_$arch'"
+    echo "      CUDA 13 dropped Volta. Only a 12.x toolkit can target this card."
+    echo "  'unsupported GNU version'"
+    echo "      host gcc too new for that toolkit -> sudo dnf install gcc14-c++"
+    echo "  'exception specification is incompatible ... cospi'"
+    echo "      glibc >= 2.41 vs CUDA headers. NOT a gcc-version problem, so"
+    echo "      -ccbin and gcc14 cannot fix it - an older g++ still reads the"
+    echo "      same /usr/include. Needs a CUDA new enough for this glibc."
+    echo
+    echo "  Most likely fix here: install CUDA 12.9 update 1 or newer from the"
+    echo "  NVIDIA repo, or run the sweep inside nvidia/cuda:12.x-devel (its"
+    echo "  glibc matches its headers). Send me the 'no:' lines above."
     rm -rf "$tmp"; return 1
 }
-
 cuda_or_die() {
     find_cuda || {
         echo "nvcc not found."
