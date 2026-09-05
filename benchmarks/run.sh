@@ -207,13 +207,13 @@ check_arch() {
     echo "  'unsupported GNU version'"
     echo "      host gcc too new for that toolkit -> sudo dnf install gcc14-c++"
     echo "  'exception specification is incompatible ... cospi'"
-    echo "      glibc >= 2.41 vs CUDA headers. NOT a gcc-version problem, so"
-    echo "      -ccbin and gcc14 cannot fix it - an older g++ still reads the"
-    echo "      same /usr/include. Needs a CUDA new enough for this glibc."
-    echo
-    echo "  Most likely fix here: install CUDA 12.9 update 1 or newer from the"
-    echo "  NVIDIA repo, or run the sweep inside nvidia/cuda:12.x-devel (its"
-    echo "  glibc matches its headers). Send me the 'no:' lines above."
+    echo "      glibc >= 2.41 vs CUDA headers. NOT a gcc-version problem: an"
+    echo "      older g++ reads the same /usr/include, and -D of the glibc"
+    echo "      feature macro does not survive (features.h redefines it)."
+    echo "      ==> FIX IT:  python3 fix_cuda_glibc.py --dry-run"
+    echo "                   sudo python3 fix_cuda_glibc.py --cuda /usr/local/cuda-12.9"
+    echo "                   (adds the missing noexcept to CUDA's declarations;"
+    echo "                    backs up, and --revert restores byte-identically)"
     rm -rf "$tmp"; return 1
 }
 cuda_or_die() {
