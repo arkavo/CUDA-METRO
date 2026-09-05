@@ -5,7 +5,8 @@
 #   ./run.sh setup            create the venv and install everything
 #   ./run.sh preflight        7 checks in seconds; do this before a long run
 #   ./run.sh smoke            ~2 min sanity sweep, prints to the terminal
-#   ./run.sh start            full sweep, DETACHED (survives logout)
+#   ./run.sh start            sweep with current settings, DETACHED
+#   ./run.sh big              the FULL sweep preset (7 sizes, P to 65536, 1e8 attempts)
 #   ./run.sh status           running / completed / failed / died, + progress
 #   ./run.sh wait             block until it ends, then report how it ended
 #   ./run.sh log              follow the live log
@@ -372,6 +373,23 @@ smoke)
         --out /tmp/smoke.csv
     ;;
 
+big)
+    # The full sweep, as a preset. Passing SIZES=/BLOCKS=/ATTEMPTS= by hand is
+    # easy to forget, and the run then silently repeats the defaults - which
+    # looks like success and produces the wrong data.
+    export SIZES="${SIZES:-64,128,256,512,750,1024,2048}"
+    export BLOCKS="${BLOCKS:-64,128,256,512,1024,2048,2560,3072,4096,8192,16384,32768,65536}"
+    export ATTEMPTS="${ATTEMPTS:-1e8}"
+    export REPEATS="${REPEATS:-5}"
+    echo "big sweep:"
+    echo "  sizes    $SIZES"
+    echo "  blocks   $BLOCKS"
+    echo "  attempts $ATTEMPTS   repeats $REPEATS"
+    echo "  expect ~1.5-2 h (the small-P points are launch-bound, not compute-bound)"
+    echo
+    exec "$0" start
+    ;;
+
 start|resume)
     cuda_or_die start
     activate || { echo "no venv - run ./run.sh setup"; exit 1; }
@@ -399,6 +417,7 @@ start|resume)
         echo "new run -> $CSV"
     fi
     echo "$CSV" > "$CSVPTR"; echo "$LOG" > "$LOGPTR"; echo "$GPU" > "$GPUPTR"
+    echo "sweep: sizes=$SIZES blocks=$BLOCKS attempts=$ATTEMPTS repeats=$REPEATS"
 
     rm -f "$PIDFILE" "$EXITFILE"
     spawn "$LOG" "$PIDFILE" \
