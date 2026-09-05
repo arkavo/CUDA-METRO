@@ -35,17 +35,24 @@ df["gpu"] = df["gpu"].astype(str).str.strip()
 
 # NOTE the "gpu" key. Without it, two machines' timings for the same (size, P)
 # are medianed into one meaningless number.
-g = df.groupby(["gpu", "size", "N", "blocks_P", "N_over_P"], as_index=False).agg(
+# "attempts" MUST be a grouping key. Sweeps run with different --attempts
+# produce different kernel times for the same (size, P), and pooling them
+# medians incomparable numbers: a P present in only one sweep is then compared
+# against a P whose median came from another, and the curve grows spikes that
+# look like hardware behaviour and are pure bookkeeping.
+g = df.groupby(["gpu", "attempts", "size", "N", "blocks_P", "N_over_P"],
+               as_index=False).agg(
     kernel_s=("kernel_s", "median"), rng_s=("rng_s", "median"),
+    rounds=("rounds", "median"),
     attempts_per_s=("attempts_per_s", "median"), n=("kernel_s", "size"))
 
 print(f"{len(df)} rows from {len(paths)} file(s); "
       f"{df.gpu.nunique()} GPU model(s): {', '.join(sorted(df.gpu.unique()))}\n")
 
 summary = {}
-for gpu, gd in g.groupby("gpu"):
+for (gpu, att), gd in g.groupby(["gpu", "attempts"]):
     print("=" * 70)
-    print(f"GPU: {gpu}")
+    print(f"GPU: {gpu}    attempts/point = {int(att):,}")
     print("=" * 70)
     for size, s in gd.groupby("size"):
         s = s.sort_values("blocks_P")
@@ -93,7 +100,8 @@ for gpu, gd in g.groupby("gpu"):
               f"(observed max {float(s.speedup.max()):.0f}x)")
         print(f"    -> peak throughput {peak.attempts_per_s/1e6:.1f} Mattempt/s "
               f"at P={int(peak.blocks_P)}")
-        summary.setdefault(gpu, []).append((size, int(sat), censored))
+        summary.setdefault(f"{gpu}  [attempts={int(att):,}]", []).append(
+            (size, int(sat), censored))
         N = size ** 2
         for A in TARGETS:
             p_acc = (1 - A) / C_ERR * N
@@ -121,7 +129,7 @@ for gpu, rows in summary.items():
 # ---- frontier: measured speedup vs predicted accuracy, one line per (gpu,size)
 fig, ax = plt.subplots(figsize=(9, 5.5))
 styles = ["-o", "-s", "-^", "-D", "-v", "-P"]
-for gi, (gpu, gd) in enumerate(g.groupby("gpu")):
+for gi, ((gpu, att), gd) in enumerate(g.groupby(["gpu", "attempts"])):
     for si, (size, s) in enumerate(gd.groupby("size")):
         s = s.sort_values("blocks_P")
         t1 = float(s.kernel_s.iloc[0])
