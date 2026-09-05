@@ -1,19 +1,21 @@
 """
-Close the loop: combine measured GPU speed with the measured accuracy law
-into the speed-accuracy frontier, and read off the optimal P.
+Close the loop: measured GPU speed x the measured accuracy law -> the
+speed-accuracy frontier, and the usable-P ceiling.
 
-Speed side (from bench_speed.py):   speedup(P) = t_kernel(P=1) / t_kernel(P)
-Accuracy side (from the MC study):  error(P/N) ~ 0.0276 * (P/N)   [ordered phase]
+    python analyze_bench.py results/*.csv
+
+Speed side (bench_speed.py):        speedup(P) = t_kernel(P_min) / t_kernel(P)
+Accuracy side (the MC study):       error(P/N) ~ 0.0276 * (P/N)  [ordered phase]
 
 Two ceilings bound the useful P, and the smaller one wins:
-  * HARDWARE  - speedup stops growing once the GPU saturates. With the
-    current launch geometry (one lattice site per BLOCK, 2 threads per
-    block) that ceiling is set by resident-blocks-per-SM, not by core
-    count, so it may arrive far earlier than the core count suggests.
-  * PHYSICS   - P must stay under the accuracy budget: for a target
-    accuracy A, P/N <= (1 - A)/0.0276.
+  HARDWARE - speedup stops growing once the GPU saturates. The launch geometry
+    is one lattice site per BLOCK with Threads=2, so the ceiling is set by
+    resident BLOCKS per SM (maxBlocks/SM x SMs), NOT by CUDA core count. That
+    product is what preflight_gpu.py prints.
+  PHYSICS  - for a target accuracy A, P/N <= (1 - A)/0.0276.
 
-Run:  python analyze_bench.py bench_speed_*.csv
+EVERYTHING IS PER GPU. Medians are taken within one GPU model; pooling two
+different cards would average away the very effect being measured.
 """
 import sys
 import numpy as np
@@ -27,54 +29,77 @@ TARGETS = [0.99, 0.95]
 
 paths = sys.argv[1:] or ["bench_speed.csv"]
 df = pd.concat([pd.read_csv(p) for p in paths], ignore_index=True)
-df = df.groupby(["size", "N", "blocks_P", "N_over_P"], as_index=False).agg(
+if "gpu" not in df.columns:
+    df["gpu"] = "unknown GPU"
+df["gpu"] = df["gpu"].astype(str).str.strip()
+
+# NOTE the "gpu" key. Without it, two machines' timings for the same (size, P)
+# are medianed into one meaningless number.
+g = df.groupby(["gpu", "size", "N", "blocks_P", "N_over_P"], as_index=False).agg(
     kernel_s=("kernel_s", "median"), rng_s=("rng_s", "median"),
-    attempts_per_s=("attempts_per_s", "median"))
+    attempts_per_s=("attempts_per_s", "median"), n=("kernel_s", "size"))
 
-print("=== measured throughput ===")
-for size, g in df.groupby("size"):
-    g = g.sort_values("blocks_P")
-    base = g[g.blocks_P == g.blocks_P.min()]
-    if base.empty:
-        continue
-    t1, p1 = float(base.kernel_s.iloc[0]), int(base.blocks_P.iloc[0])
-    print(f"\nL={size} (N={size**2}), speedup relative to P={p1}:")
-    for _, r in g.iterrows():
-        su = t1 / r.kernel_s
-        ideal = r.blocks_P / p1
-        eff = su / ideal
-        rng_frac = r.rng_s / (r.rng_s + r.kernel_s)
-        print(f"  P={int(r.blocks_P):6d}  kernel={r.kernel_s:8.3f}s  "
-              f"speedup={su:7.2f}x  ideal={ideal:7.1f}x  "
-              f"parallel-efficiency={eff:5.1%}  RNG share={rng_frac:4.0%}")
+print(f"{len(df)} rows from {len(paths)} file(s); "
+      f"{df.gpu.nunique()} GPU model(s): {', '.join(sorted(df.gpu.unique()))}\n")
 
-    # where does it stop scaling? last P whose efficiency is still >= 50%
-    g = g.assign(speedup=t1 / g.kernel_s, ideal=g.blocks_P / p1)
-    g = g.assign(eff=g.speedup / g.ideal)
-    sat = g[g.eff >= 0.5].blocks_P.max()
-    print(f"  -> hardware ceiling (parallel efficiency >= 50%): P ~ {sat}")
+summary = {}
+for gpu, gd in g.groupby("gpu"):
+    print("=" * 70)
+    print(f"GPU: {gpu}")
+    print("=" * 70)
+    for size, s in gd.groupby("size"):
+        s = s.sort_values("blocks_P")
+        t1 = float(s.kernel_s.iloc[0]); p1 = float(s.blocks_P.iloc[0])
+        s = s.assign(speedup=t1 / s.kernel_s,
+                     ideal=s.blocks_P / p1)
+        s = s.assign(eff=s.speedup / s.ideal,
+                     rng_frac=s.rng_s / (s.rng_s + s.kernel_s))
+        print(f"\n  L={size} (N={size**2:,}), relative to P={int(p1)}:")
+        for _, r in s.iterrows():
+            print(f"    P={int(r.blocks_P):7d}  kernel={r.kernel_s:9.4f}s  "
+                  f"speedup={r.speedup:8.2f}x  ideal={r.ideal:8.1f}x  "
+                  f"eff={r.eff:6.1%}  RNG={r.rng_frac:4.0%}")
+        sat = s[s.eff >= 0.5].blocks_P.max()
+        peak = s.loc[s.attempts_per_s.idxmax()]
+        print(f"    -> hardware ceiling (eff >= 50%): P ~ {int(sat)}")
+        print(f"    -> peak throughput {peak.attempts_per_s/1e6:.1f} Mattempt/s "
+              f"at P={int(peak.blocks_P)}")
+        summary.setdefault(gpu, []).append((size, int(sat), float(peak.blocks_P)))
+        N = size ** 2
+        for A in TARGETS:
+            p_acc = (1 - A) / C_ERR * N
+            lim = "hardware" if sat < p_acc else "accuracy"
+            print(f"    -> {A:.0%} accuracy allows P <= {p_acc:,.0f}"
+                  f"  ==> usable P = {min(sat, p_acc):,.0f}  ({lim}-limited)")
 
-    N = size ** 2
-    for A in TARGETS:
-        p_acc = (1 - A) / C_ERR * N
-        print(f"  -> accuracy ceiling at {A:.0%}: P <= {p_acc:,.0f}"
-              f"   ==> usable P = {min(sat, p_acc):,.0f}"
-              f"  ({'hardware' if sat < p_acc else 'accuracy'}-limited)")
+print("\n" + "=" * 70)
+print("SATURATION SUMMARY  (compare against maxBlocks/SM x SMs from preflight)")
+print("=" * 70)
+for gpu, rows in summary.items():
+    sats = [s for _, s, _ in rows]
+    print(f"  {gpu}")
+    print(f"    per-size eff>=50% ceilings: {sats}")
+    print(f"    median {int(np.median(sats))}  -- if this tracks the block "
+          f"ceiling rather than core count, launch geometry is the constraint")
 
-# ---- the frontier plot: speedup you actually get vs accuracy you keep ----
-fig, ax = plt.subplots(figsize=(8, 5.5))
-for size, g in df.groupby("size"):
-    g = g.sort_values("blocks_P")
-    t1 = float(g.kernel_s.iloc[0]); p1 = float(g.blocks_P.iloc[0])
-    acc = 1 - C_ERR * (g.blocks_P / (size ** 2))
-    ax.plot(acc, t1 / g.kernel_s, "o-", markersize=7, label=f"L={size}")
+# ---- frontier: measured speedup vs predicted accuracy, one line per (gpu,size)
+fig, ax = plt.subplots(figsize=(9, 5.5))
+styles = ["-o", "-s", "-^", "-D", "-v", "-P"]
+for gi, (gpu, gd) in enumerate(g.groupby("gpu")):
+    for si, (size, s) in enumerate(gd.groupby("size")):
+        s = s.sort_values("blocks_P")
+        t1 = float(s.kernel_s.iloc[0])
+        acc = 1 - C_ERR * (s.blocks_P / (size ** 2))
+        ax.plot(acc, t1 / s.kernel_s, styles[si % len(styles)], markersize=6,
+                alpha=0.85, label=f"{gpu.split()[-1] if ' ' in gpu else gpu} L={size}")
 for A in TARGETS:
     ax.axvline(A, color="crimson", ls="--", lw=1)
     ax.text(A, ax.get_ylim()[1] * 0.97, f" {A:.0%}", color="crimson", fontsize=9)
 ax.set_xlabel("predicted accuracy (from the fitted error law)")
 ax.set_ylabel("measured speedup vs smallest P")
 ax.set_title("Speed-accuracy frontier: measured time, predicted accuracy")
-ax.legend(); ax.grid(alpha=0.3)
+ax.legend(fontsize=8, ncol=2)
+ax.grid(alpha=0.3)
 ax.invert_xaxis()
 fig.tight_layout()
 fig.savefig("frontier.png", dpi=150)
