@@ -86,6 +86,81 @@ def headers(cuda):
     return out
 
 
+def query_arch():
+    """pycuda usually lives in the benchmark venv, not in the system python
+    this script may be running under (it needs no third-party imports of its
+    own, and is often run with sudo). Ask each candidate interpreter."""
+    snippet = ("import pycuda.autoinit, pycuda.driver as d;"
+               "print('%d%d' % d.Device(0).compute_capability())")
+    cands = [sys.executable]
+    for v in (os.environ.get("VENV"), os.path.expanduser("~/venv-cudametro")):
+        if v:
+            cands.append(os.path.join(v, "bin", "python"))
+    # under sudo, the user's venv is the interesting one
+    sudo_user = os.environ.get("SUDO_USER")
+    if sudo_user:
+        cands.append(f"/home/{sudo_user}/venv-cudametro/bin/python")
+    for py in cands:
+        if not py or not os.path.exists(py):
+            continue
+        try:
+            p = subprocess.run([py, "-c", snippet], capture_output=True,
+                               text=True, timeout=60)
+            out = (p.stdout or "").strip()
+            if p.returncode == 0 and out.isdigit():
+                return out
+        except Exception:
+            continue
+    return None
+
+
+def host_compilers():
+    """Older g++ first: nvcc rejects host compilers newer than it knows."""
+    import glob
+    out = []
+    for p in sorted(glob.glob("/usr/bin/g++-1?") + glob.glob("/usr/bin/g++1?"),
+                    reverse=True):
+        if os.access(p, os.X_OK):
+            out.append(p)
+    return out
+
+
+def working_hostcc(cuda, arch):
+    """Flags needed to get PAST nvcc's host-compiler version check.
+
+    This is a separate gate from the glibc clash and it comes first: with the
+    default gcc you never even reach the math headers. Returns (extra_flags,
+    note) or (None, reason)."""
+    ok, err = compile_stub(cuda, arch)
+    if ok or "unsupported GNU version" not in err:
+        return [], ""                    # default compiler is fine (or fails later)
+    for cc in host_compilers():
+        ok, err = compile_stub(cuda, arch, [f"-ccbin={cc}"])
+        if ok or "unsupported GNU version" not in err:
+            return [f"-ccbin={cc}"], cc
+    return None, ("no installed g++ satisfies this toolkit's version check.\n"
+                  "  Fedora: sudo dnf install gcc14-c++")
+
+
+def supports_arch(cuda, arch):
+    ok, err = compile_stub(cuda, arch)
+    return ok or "Unsupported gpu architecture" not in err
+
+
+def all_toolkits():
+    out = []
+    for d in sorted(os.listdir("/usr/local"), reverse=True):
+        p = f"/usr/local/{d}"
+        if d.startswith("cuda") and os.path.exists(f"{p}/bin/nvcc"):
+            out.append(os.path.realpath(p))
+    seen, uniq = set(), []
+    for p in out:
+        if p not in seen:
+            seen.add(p)
+            uniq.append(p)
+    return uniq
+
+
 def compile_stub(cuda, arch, extra=()):
     with tempfile.TemporaryDirectory() as td:
         src = os.path.join(td, "t.cu")
@@ -179,18 +254,51 @@ def main():
 
     arch = args.arch
     if not arch:
-        try:
-            import pycuda.autoinit  # noqa: F401
-            import pycuda.driver as d
-            arch = "%d%d" % d.Device(0).compute_capability()
-        except Exception:
+        arch = query_arch()
+        if arch:
+            print(f"(compute capability read from the device)")
+        else:
             arch = "70"
             print("note: could not query the GPU; assuming sm_70 (--arch to override)")
     print(f"arch    : sm_{arch}")
 
     ok, err = compile_stub(cuda, arch)
+
+    if not ok and "Unsupported gpu architecture" in err:
+        # This toolkit is simply wrong for this card (CUDA 13 dropped Volta).
+        # Patching its headers would be pointless, so find one that can build
+        # for sm_<arch> before going any further.
+        print(f"\n{os.path.basename(cuda)} cannot target sm_{arch}; looking for one that can")
+        alt = next((t for t in all_toolkits()
+                    if t != cuda and supports_arch(t, arch)), None)
+        if not alt:
+            sys.exit(f"no installed toolkit can target sm_{arch}.\n"
+                     f"Installed: {' '.join(all_toolkits())}")
+        print(f"  using {alt}")
+        cuda = alt
+        hs = headers(cuda)
+        if not hs:
+            sys.exit(f"no crt/math_functions.h under {cuda}")
+        print(f"  header  : {hs[0]}")
+        ok, err = compile_stub(cuda, arch)
+
+    # Host-compiler gate BEFORE the header question: with a too-new gcc, nvcc
+    # stops at host_config.h and never reaches crt/math_functions.h, so the
+    # clash we are here to fix is invisible.
+    HOSTCC, note = working_hostcc(cuda, arch)
+    if HOSTCC is None:
+        print(f"\nthis toolkit rejects every installed host compiler.\n  {note}")
+        sys.exit(1)
+    if HOSTCC:
+        print(f"host cc : {note}   (gcc {os.popen('gcc -dumpversion').read().strip()} "
+              f"is too new for this toolkit)")
+
+    ok, err = compile_stub(cuda, arch, HOSTCC)
     if ok:
-        print("\nnothing to do: the stub already compiles.")
+        print("\nnothing to do: the stub already compiles"
+              + (f" (with {note})" if HOSTCC else "") + ".")
+        if HOSTCC:
+            print(f"  run.sh discovers this too; nothing further needed.")
         return
     if not ERR.search(err):
         print("\nthis is NOT the glibc C23 clash. nvcc says:\n")
@@ -204,7 +312,7 @@ def main():
     fixed = []
 
     for _ in range(args.max_iter):
-        ok, err = compile_stub(cuda, arch)
+        ok, err = compile_stub(cuda, arch, HOSTCC)
         if ok:
             break
         m = ERR.search(err)
@@ -252,10 +360,13 @@ def main():
               "\nthe real run repeats until nvcc is satisfied.")
         return
 
-    ok, err = compile_stub(cuda, arch)
+    ok, err = compile_stub(cuda, arch, HOSTCC)
     print()
     if ok:
         print(f"PATCHED: {', '.join(fixed)}")
+        if HOSTCC:
+            print(f"NOTE: this toolkit also needs {note} as the host compiler."
+                  f"\n      run.sh finds that on its own and pins it for pycuda.")
         print("stub compiles. Backups at <header>.pre-glibc-fix "
               "(python3 fix_cuda_glibc.py --revert)")
     else:
